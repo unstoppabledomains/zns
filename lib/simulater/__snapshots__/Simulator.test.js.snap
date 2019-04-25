@@ -1,0 +1,271 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`should deploy contract correctly 1`] = `
+Object {
+  "accounts": Object {
+    "0xa56193e39780d268b02bf5d9387179cc7ac9884b": Object {
+      "address": "0xa56193e39780d268b02bf5d9387179cc7ac9884b",
+      "balance": 999999999008262n,
+      "smartContracts": Array [],
+      "transactions": Array [],
+    },
+    "0xdead1234dead1234dead1234dead1234dead1234": Object {
+      "address": "0xdead1234dead1234dead1234dead1234dead1234",
+      "balance": 0n,
+      "code": "scilla_version 0
+
+(* HelloWorld contract *)
+
+import ListUtils
+
+(***************************************************)
+(*               Associated library                *)
+(***************************************************)
+library HelloWorld
+
+let one_msg = 
+  fun (msg : Message) => 
+  let nil_msg = Nil {Message} in
+  Cons {Message} msg nil_msg
+  
+let not_owner_code = Int32 1
+let set_hello_code = Int32 2
+
+(***************************************************)
+(*             The contract definition             *)
+(***************************************************)
+
+contract HelloWorld
+(owner: ByStr20)
+
+field welcome_msg : String = \\"\\"
+
+transition setHello (msg : String)
+  is_owner = builtin eq owner _sender;
+  match is_owner with
+  | False =>
+    e = {_eventname : \\"setHello()\\"; code : not_owner_code};
+    event e
+  | True =>
+    welcome_msg := msg;
+    e = {_eventname : \\"setHello()\\"; code : set_hello_code};
+    event e
+  end
+end
+
+
+transition getHello ()
+    r <- welcome_msg;
+    e = {_eventname: \\"getHello()\\"; msg: r};
+    event e
+end
+
+transition multipleMsgs()
+  msg1 = {_tag : \\"\\"; _recipient : _sender; _amount : Uint128 0};
+  msg2 = {_tag : \\"\\"; _recipient : _sender; _amount : Uint128 0};
+  msgs1 = one_msg msg1;
+  msgs2 = Cons {Message} msg2 msgs1;
+  send msgs2
+end
+
+transition contrAddr()
+  msg1 = {_eventname : \\"ContractAddress\\"; addr : _this_address };
+  event msg1
+end
+",
+      "init": Array [
+        Object {
+          "type": "BNum",
+          "value": "0",
+          "vname": "_creation_block",
+        },
+        Object {
+          "type": "Uint32",
+          "value": "0",
+          "vname": "_scilla_version",
+        },
+        Object {
+          "type": "ByStr20",
+          "value": "0xdead1234dead1234dead1234dead1234dead1234",
+          "vname": "_this_address",
+        },
+        Object {
+          "type": "ByStr20",
+          "value": "0xa56193e39780d268b02bf5d9387179cc7ac9884b",
+          "vname": "owner",
+        },
+      ],
+      "input": undefined,
+      "state": Array [
+        Object {
+          "type": "Uint128",
+          "value": "0",
+          "vname": "_balance",
+        },
+      ],
+      "transactions": Array [],
+    },
+  },
+  "blockNumber": 0,
+  "blocks": Array [],
+  "currentBlock": Array [
+    "0x47e7a20867f04c007c2b76e96ec49bf8d9398bd8930e1192174c2e5ae4673679",
+  ],
+  "events": Object {},
+  "transactions": Object {
+    "0x47e7a20867f04c007c2b76e96ec49bf8d9398bd8930e1192174c2e5ae4673679": Object {
+      "ID": "0x47e7a20867f04c007c2b76e96ec49bf8d9398bd8930e1192174c2e5ae4673679",
+      "amount": "0",
+      "fromAddr": "0xa56193e39780d268b02bf5d9387179cc7ac9884b",
+      "gasLimit": "10000",
+      "gasPrice": "100",
+      "meta": Object {
+        "contractAddress": "0xdead1234dead1234dead1234dead1234dead1234",
+      },
+      "nonce": "NaN",
+      "receipt": Object {
+        "cumulative_gas": "991738",
+        "epoch_num": "0",
+        "success": true,
+      },
+      "toAddr": "0x0000000000000000000000000000000000000000",
+      "version": "30134273",
+    },
+  },
+}
+`;
+
+exports[`should deploy contract correctly 2`] = `
+Object {
+  "accounts": Object {
+    "0xa56193e39780d268b02bf5d9387179cc7ac9884b": Object {
+      "address": "0xa56193e39780d268b02bf5d9387179cc7ac9884b",
+      "balance": 999999999008262n,
+      "smartContracts": Array [],
+      "transactions": Array [],
+    },
+    "0xdead1234dead1234dead1234dead1234dead1234": Object {
+      "address": "0xdead1234dead1234dead1234dead1234dead1234",
+      "balance": 0n,
+      "code": "scilla_version 0
+
+(* HelloWorld contract *)
+
+import ListUtils
+
+(***************************************************)
+(*               Associated library                *)
+(***************************************************)
+library HelloWorld
+
+let one_msg = 
+  fun (msg : Message) => 
+  let nil_msg = Nil {Message} in
+  Cons {Message} msg nil_msg
+  
+let not_owner_code = Int32 1
+let set_hello_code = Int32 2
+
+(***************************************************)
+(*             The contract definition             *)
+(***************************************************)
+
+contract HelloWorld
+(owner: ByStr20)
+
+field welcome_msg : String = \\"\\"
+
+transition setHello (msg : String)
+  is_owner = builtin eq owner _sender;
+  match is_owner with
+  | False =>
+    e = {_eventname : \\"setHello()\\"; code : not_owner_code};
+    event e
+  | True =>
+    welcome_msg := msg;
+    e = {_eventname : \\"setHello()\\"; code : set_hello_code};
+    event e
+  end
+end
+
+
+transition getHello ()
+    r <- welcome_msg;
+    e = {_eventname: \\"getHello()\\"; msg: r};
+    event e
+end
+
+transition multipleMsgs()
+  msg1 = {_tag : \\"\\"; _recipient : _sender; _amount : Uint128 0};
+  msg2 = {_tag : \\"\\"; _recipient : _sender; _amount : Uint128 0};
+  msgs1 = one_msg msg1;
+  msgs2 = Cons {Message} msg2 msgs1;
+  send msgs2
+end
+
+transition contrAddr()
+  msg1 = {_eventname : \\"ContractAddress\\"; addr : _this_address };
+  event msg1
+end
+",
+      "init": Array [
+        Object {
+          "type": "BNum",
+          "value": "0",
+          "vname": "_creation_block",
+        },
+        Object {
+          "type": "Uint32",
+          "value": "0",
+          "vname": "_scilla_version",
+        },
+        Object {
+          "type": "ByStr20",
+          "value": "0xdead1234dead1234dead1234dead1234dead1234",
+          "vname": "_this_address",
+        },
+        Object {
+          "type": "ByStr20",
+          "value": "0xa56193e39780d268b02bf5d9387179cc7ac9884b",
+          "vname": "owner",
+        },
+      ],
+      "input": undefined,
+      "state": Array [
+        Object {
+          "type": "Uint128",
+          "value": "0",
+          "vname": "_balance",
+        },
+      ],
+      "transactions": Array [],
+    },
+  },
+  "blockNumber": 0,
+  "blocks": Array [],
+  "currentBlock": Array [
+    "0x47e7a20867f04c007c2b76e96ec49bf8d9398bd8930e1192174c2e5ae4673679",
+  ],
+  "events": Object {},
+  "transactions": Object {
+    "0x47e7a20867f04c007c2b76e96ec49bf8d9398bd8930e1192174c2e5ae4673679": Object {
+      "ID": "0x47e7a20867f04c007c2b76e96ec49bf8d9398bd8930e1192174c2e5ae4673679",
+      "amount": "0",
+      "fromAddr": "0xa56193e39780d268b02bf5d9387179cc7ac9884b",
+      "gasLimit": "10000",
+      "gasPrice": "100",
+      "meta": Object {
+        "contractAddress": "0xdead1234dead1234dead1234dead1234dead1234",
+      },
+      "nonce": "NaN",
+      "receipt": Object {
+        "cumulative_gas": "991738",
+        "epoch_num": "0",
+        "success": true,
+      },
+      "toAddr": "0x0000000000000000000000000000000000000000",
+      "version": "30134273",
+    },
+  },
+}
+`;
