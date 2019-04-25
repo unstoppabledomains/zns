@@ -1,0 +1,288 @@
+scilla_version 0
+
+import BoolUtils ListUtils
+
+library ZNSLib
+
+let one_msg =
+  fun(msg: Message) =>
+    let nil_msg = Nil {Message} in
+    Cons {Message} msg nil_msg
+
+let uint64_zero = Uint64 0
+let bystr20_zero = 0x0000000000000000000000000000000000000000
+let bystr32_zero = 
+  0x0000000000000000000000000000000000000000000000000000000000000000
+let nil_bystr20 = Nil {ByStr20}
+
+let is_eq_bystr20 =
+  fun(b1: ByStr20) =>
+  fun(b2: ByStr20) =>
+    builtin eq b1 b2
+
+let list_mem_bystr20 = @list_mem ByStr20
+let list_mem_bystr32 = @list_mem ByStr32
+let list_filter_bystr20 = @list_filter ByStr20
+
+type Record =
+| Record of ByStr20 ByStr20
+(* of owner resolver *)
+
+let parent_label_to_node = 
+  fun(parent: ByStr32) =>
+  fun(label: String) =>
+    let label_hash = builtin sha256hash label in
+    let node_input = builtin concat parent label_hash in
+      builtin sha256hash node_input
+
+let record_mem_owner =
+  fun(maybe_record: Option Record) =>
+    match maybe_record with
+    | None =>
+      bystr20_zero
+    | Some record =>
+      match record with
+      | Record owner resolver => 
+        owner
+      end
+    end
+
+let calc_ok_sender =
+  fun(sender: ByStr20) =>
+  fun(record_owner: ByStr20) =>
+  fun(mabye_root_admins: Option (List ByStr20)) =>
+  fun(maybe_node_admins: Option (List ByStr20)) =>
+    let is_sender_owner = builtin eq sender record_owner in
+    let is_sender_global_admin = 
+      match mabye_root_admins with
+      | None => False
+      | Some root_admins => list_mem_bystr20 is_eq_bystr20 sender root_admins
+      end in
+    let is_sender_node_admin = 
+      match maybe_node_admins with
+      | None => False
+      | Some node_admins => list_mem_bystr20 is_eq_bystr20 sender node_admins
+      end in
+    let is_sender_admin = orb is_sender_global_admin is_sender_node_admin in
+      orb is_sender_admin is_sender_owner
+
+let event_NewGlobalAdmin =
+  fun(admin: ByStr20) =>
+    {_eventname: "NewGlobalAdmin"; admin: admin}
+
+let event_RemoveGlobalAdmin =
+  fun(admin: ByStr20) =>
+    {_eventname: "RemoveGlobalAdmin"; admin: admin}
+
+let event_NewAdmin =
+  fun(node: ByStr32) =>
+  fun(admin: ByStr20) =>
+    {_eventname: "NewAdmin"; node: node; admin: admin}
+
+let event_RemoveAdmin =
+  fun(node: ByStr32) =>
+  fun(admin: ByStr20) =>
+    {_eventname: "RemoveAdmin"; node: node; admin: admin}
+
+let event_NewDomain =
+  fun(label: String) =>
+  fun(parent: ByStr32) =>
+    {_eventname: "NewDomain"; label: label; parent: parent}
+
+let event_Configure =
+  fun(node: ByStr32) =>
+  fun(owner: ByStr20) =>
+  fun(resolver: ByStr20) =>
+    {_eventname: "Configure"; node: node; owner: owner; 
+     resolver: resolver}
+
+let event_Transfer =
+  fun(node: ByStr32) =>
+  fun(owner: ByStr20) =>
+    {_eventname: "Transfer"; node: node; owner: owner}
+
+contract ZNS(
+  initial_owner: ByStr20
+)
+
+field admins: Map ByStr32 (List ByStr20) =
+  let empty_admins = Emp ByStr32 (List ByStr20) in 
+  let root_admins = Cons {ByStr20} initial_owner nil_bystr20 in
+    builtin put empty_admins bystr32_zero root_admins
+
+field records: Map ByStr32 Record = 
+  let empty_records = Emp ByStr32 Record in 
+  let root_record = Record initial_owner bystr20_zero in
+    builtin put empty_records bystr32_zero root_record
+
+(**********)
+(* Admins *)
+(**********)
+
+transition addAdmin(node: ByStr32, admin: ByStr20)
+  mem_record <- records[node];
+  record_owner = record_mem_owner mem_record;
+  is_ok_sender = builtin eq record_owner _sender;
+
+  mem_node_admins <- admins[node];
+  is_ok_admin = match mem_node_admins with
+  | None =>
+    True
+  | Some node_admins =>
+    let is_admin_in_admins = list_mem_bystr20 is_eq_bystr20 admin node_admins in
+      negb is_admin_in_admins
+  end;
+
+  is_ok = andb is_ok_sender is_ok_admin;
+
+  match is_ok with
+  | True =>
+    new_admins = match mem_record with
+    | None =>
+      Cons {ByStr20} admin nil_bystr20
+    | _ =>
+      match mem_node_admins with
+      | Some node_admins => 
+        Cons {ByStr20} admin node_admins
+      | _ => 
+        nil_bystr20
+      end
+    end;
+    admins[node] := new_admins;
+    e = event_NewAdmin node admin;
+    event e
+  | False =>
+  end
+end
+
+transition removeAdmin(node: ByStr32, admin: ByStr20)
+  mem_record <- records[node];
+  record_owner = record_mem_owner mem_record;
+  is_ok_sender = builtin eq record_owner _sender;
+
+  mem_node_admins <- admins[node];
+  is_ok_admin = match mem_node_admins with
+  | None =>
+    False
+  | Some node_admins =>
+    list_mem_bystr20 is_eq_bystr20 admin node_admins
+  end;
+
+  is_ok = andb is_ok_sender is_ok_admin;
+
+  match is_ok with
+  | True =>
+    filter =
+      fun(b: ByStr20) =>
+        builtin eq b admin;
+    new_admins = match mem_node_admins with
+    | Some node_admins =>
+      list_filter_bystr20 filter node_admins
+    | _ =>
+      nil_bystr20
+    end;
+    admins[node] := new_admins;
+    e = event_RemoveAdmin node admin;
+    event e
+  | False =>
+  end
+end
+
+transition assign(parent: ByStr32, label: String, owner: ByStr20)
+  node = parent_label_to_node parent label;
+
+  record_exists <- exists records[node];
+  match record_exists with
+  | False =>
+    e = event_NewDomain label parent;
+    event e
+  | _ => 
+  end;
+
+  mem_parent <- records[parent];
+  parent_owner = record_mem_owner mem_parent;
+  mem_root_admins <- admins[bystr32_zero];
+  mem_parent_admins <- admins[parent];
+  is_ok_sender = 
+    calc_ok_sender _sender parent_owner mem_root_admins mem_parent_admins;
+
+  match is_ok_sender with
+  | True =>
+    new_record = Record owner bystr20_zero;
+    records[node] := new_record;
+
+    e = event_Transfer node owner;
+    event e
+  | False =>
+  end
+end
+
+transition configure(
+  node: ByStr32, 
+  owner: ByStr20, 
+  resolver: ByStr20
+)
+  mem_record <- records[node];
+  record_owner = record_mem_owner mem_record;
+  mem_root_admins <- admins[bystr32_zero];
+  mem_node_admins <- admins[node];
+  is_ok_sender = 
+    calc_ok_sender _sender record_owner mem_root_admins mem_node_admins;
+
+  record_exists <- exists records[node];
+  is_ok = andb is_ok_sender record_exists;
+
+  match is_ok with
+  | True =>
+    new_record = Record owner resolver;
+    records[node] := new_record;
+    e = event_Configure node owner resolver;
+    event e
+  | False =>
+  end
+end
+
+transition transfer(node: ByStr32, owner: ByStr20)
+  mem_record <- records[node];
+  record_owner = record_mem_owner mem_record;
+  mem_root_admins <- admins[bystr32_zero];
+  mem_node_admins <- admins[node];
+  is_ok_sender = 
+    calc_ok_sender _sender record_owner mem_root_admins mem_node_admins;
+
+  record_exists <- exists records[node];
+  is_ok = andb is_ok_sender record_exists;
+
+  match is_ok with
+  | True =>
+    admins[node] := nil_bystr20;
+    new_record = Record owner bystr20_zero;
+    records[node] := new_record;
+    e = event_Transfer node owner;
+    event e
+  | False =>
+  end
+end
+
+transition sendZNSRecordTo(recipient: ByStr20, parent: ByStr32, label: String)
+  accept;
+
+  node = parent_label_to_node parent label;
+  mem_record <- records[node];
+
+  msg = match mem_record with
+  | None =>
+    {_tag: "onZNSRecordReceived"; _amount: _amount; _recipient: recipient; 
+     origin: _sender; node: node; parent: parent; label: label; 
+     owner: bystr20_zero; resolver: bystr20_zero}
+  | Some record => 
+    match record with
+    | Record owner resolver =>
+      {_tag: "onZNSRecordReceived"; _amount: _amount; _recipient: recipient; 
+       origin: _sender; node: node; parent: parent; label: label; 
+       owner: owner; resolver: resolver}
+    end
+  end;
+  msgs = one_msg msg;
+  send msgs
+end
