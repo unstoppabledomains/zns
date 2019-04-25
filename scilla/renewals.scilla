@@ -1,0 +1,40 @@
+scilla_version 0
+
+import BoolUtils
+
+library Renewals
+
+let one_msg =
+  fun(msg : Message) =>
+    let nil_msg = Nil {Message} in
+    Cons {Message} msg nil_msg
+
+contract Renewals 
+(
+  registy: ByStr20,
+  renewal_length: Uint64,
+  renewal_cost: Uint128
+)
+
+transition renew(node: ByStr32, ttl: Uint64)
+  blk <- & BLOCKNUMBER;
+
+  blk_plus_renewal = builtin badd blk renewal_length;
+  is_not_too_soon = builtin blt blk_plus_renewal ttl;
+  is_not_too_late = builtin blt blk ttl;
+  is_ok_blocknumber = andb is_not_too_soon is_not_too_late;
+
+  is_ok_amount = builtin eq renewal_cost _amount;
+
+  is_ok = andb is_ok_blocknumber is_ok_amount;
+
+  match is_ok with
+  | True =>
+    accept;
+    new_ttl = builtin badd ttl renewal_length;
+    msg = {_tag: _tag; _amount: Uint128 0; _recipient: _sender; node: node; new_ttl: new_ttl};
+    msgs = one_msg msg;
+    send msgs
+  | False =>
+  end
+end

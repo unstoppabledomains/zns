@@ -1,0 +1,200 @@
+scilla_version 0
+
+import BoolUtils IntUtils ListUtils NatUtils PairUtils
+
+library AuctionRegistrarLib
+
+let one_msg =
+  fun(msg: Message) =>
+    let nil_msg = Nil {Message} in
+    Cons {Message} msg nil_msg
+
+type Auction = 
+| Auction of ByStr20 Uint128 BNum String
+(* Leader, Current Bid, Ending Block Label *)
+
+let calc_minimum_bid = 
+  fun(increment: Uint128) => 
+  fun(scale: Uint128) => 
+  fun(current_bid: Uint128) =>
+    let f1 = builtin add increment scale in
+    let f2 = builtin div current_bid scale in
+      builtin mul f1 f2
+
+let calc_ending_blk =
+  fun(minimum_auction_length: Uint64) => 
+  fun(blk: BNum) => 
+  fun(ending_blk: BNum) =>
+    let min_auction_ending = builtin badd blk minimum_auction_length in
+    let is_current_ending_blk_too_short = 
+      builtin blt ending_blk min_auction_ending in
+      match is_current_ending_blk_too_short with
+      | True => 
+        min_auction_ending
+      | False => 
+        ending_blk
+      end
+
+(**********)
+(* Events *)
+(**********)
+
+let event_Start =
+  fun(node: ByStr32) =>
+  fun(bidder: ByStr20) =>
+  fun(bid: Uint128) =>
+  fun(ending_blk: BNum) =>
+    {_eventname: "Start"; node: node; bidder: bidder; bid: bid; 
+     ending_blk: ending_blk}
+
+let event_Bid =
+  fun(node: ByStr32) =>
+  fun(bidder: ByStr20) =>
+  fun(bid: Uint128) =>
+  fun(ending_blk: BNum) =>
+    {_eventname: "Bid"; node: node; bidder: bidder; bid: bid; 
+     ending_blk: ending_blk}
+
+let event_Close =
+  fun(node: ByStr32) =>
+  fun(bidder: ByStr20) =>
+  fun(bid: Uint128) =>
+    {_eventname: "Close"; node: node; bidder: bidder; bid: bid}
+
+contract AuctionRegistrar(
+  owner: ByStr20,
+  registry: ByStr20,
+  increment: Uint128,
+  owned_node: ByStr32,
+  scale: Uint128,
+  minimum_bid: Uint128,
+  minimum_auction_length: Uint64,
+  initial_auction_length: Uint64
+)
+
+field running: Bool = False
+field auctions: Map ByStr32 Auction = Emp ByStr32 Auction 
+
+transition onZNSRecordReceived(
+  origin: ByStr20, 
+  node: ByStr32, 
+  parent: ByStr32, 
+  label: String, 
+  owner: ByStr20, 
+  resolver: ByStr20
+)
+  accept;
+
+  auction_exists <- exists auctions[node];
+
+  match auction_exists with
+  | True =>
+    is_ok_amount = builtin lt minimum_bid _amount;
+    
+    is_running <- running;
+    is_ok = andb is_running is_ok_amount;
+
+    match is_ok with
+    | True =>
+        blk <- & BLOCKNUMBER;
+        ending_blk = builtin badd blk initial_auction_length;
+        new_auction = Auction origin _amount ending_blk label;
+        auctions[node] := new_auction;
+
+        e = event_Start node origin _amount ending_blk;
+        event e
+    | False =>
+      msg = {_tag: ""; _recipient: origin; _amount: _amount};
+      msgs = one_msg msg;
+      send msgs
+    end
+  | False =>
+    msg = {_tag: ""; _recipient: origin; _amount: _amount};
+    msgs = one_msg msg;
+    send msgs
+  end
+end
+
+transition bid(node: ByStr32)
+  mem_auction <- auctions[node];
+
+  match mem_auction with
+  | None =>
+  | Some auction =>
+    match auction with
+    | Auction highest_bidder current_bid ending_blk label =>
+      min_bid = calc_minimum_bid increment scale current_bid;
+      is_ok_amount = builtin lt min_bid _amount;
+
+      blk <- & BLOCKNUMBER;
+      is_ok_blk = builtin blt blk ending_blk;
+
+      is_ok = andb is_ok_amount is_ok_blk;
+
+      match is_ok with
+      | True =>
+        new_ending_blk = calc_ending_blk minimum_auction_length blk ending_blk;
+        new_auction = Auction _sender _amount new_ending_blk label;
+        auctions[node]:= new_auction;
+
+        accept;
+
+        e = event_Bid node _sender _amount new_ending_blk;
+        event e;
+
+        msg = {_tag: ""; _recipient: highest_bidder; _amount: current_bid};
+        msgs = one_msg msg;
+        send msgs
+      | _ =>
+      end
+    end
+  end
+end
+
+transition close(node: ByStr32)
+  mem_auction <- auctions[node];
+
+  match mem_auction with
+  | None =>
+  | Some auction => 
+    match auction with
+    | Auction highest_bidder current_bid ending_blk label => 
+      blk <- & BLOCKNUMBER;
+      is_ok_blk = builtin blt ending_blk blk;
+
+      match is_ok_blk with
+      | True =>
+        delete auctions[node];
+        e = event_Close node highest_bidder current_bid;
+
+        msg = {_tag: "assign"; _recipient: registry; _amount: Uint128 0; 
+              parent: owned_node; label: label; owner: highest_bidder};
+        msgs = one_msg msg;
+        send msgs
+      | _ => 
+      end
+    end
+  end
+end
+
+transition setRunning(new_running: Bool)
+  is_ok_sender = builtin eq _sender owner;
+
+  match is_ok_sender with
+  | True => 
+    running := new_running
+  | _ =>
+  end
+end
+
+transition withdraw(recipient: ByStr20, amount: Uint128)
+  is_ok_sender = builtin eq _sender owner;
+
+  match is_ok_sender with
+  | True =>
+    msg = {_tag: ""; _recipient: recipient; _amount: amount};
+    msgs = one_msg msg;
+    send msgs
+  | _ =>
+  end
+end
