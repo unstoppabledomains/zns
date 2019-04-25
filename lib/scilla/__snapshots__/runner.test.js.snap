@@ -1,0 +1,56 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`should deploy without state or message 1`] = `
+Object {
+  "_accepted": "false",
+  "events": Array [],
+  "gas_remaining": "8262",
+  "message": null,
+  "scilla_major_version": "0",
+  "states": Array [
+    Object {
+      "type": "Uint128",
+      "value": "0",
+      "vname": "_balance",
+    },
+    Object {
+      "type": "String",
+      "value": "",
+      "vname": "welcome_msg",
+    },
+  ],
+}
+`;
+
+exports[`should run function with state and message 1`] = `
+Object {
+  "_accepted": "false",
+  "events": Array [
+    Object {
+      "_eventname": "setHello()",
+      "params": Array [
+        Object {
+          "type": "Int32",
+          "value": "1",
+          "vname": "code",
+        },
+      ],
+    },
+  ],
+  "gas_remaining": "707",
+  "message": null,
+  "scilla_major_version": "0",
+  "states": Array [
+    Object {
+      "type": "Uint128",
+      "value": "0",
+      "vname": "_balance",
+    },
+    Object {
+      "type": "String",
+      "value": "",
+      "vname": "welcome_msg",
+    },
+  ],
+}
+`;

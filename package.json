@@ -1,0 +1,22 @@
+{
+  "name": "zns",
+  "version": "0.0.0",
+  "devDependencies": {
+    "@types/jest": "^24.0.11",
+    "jest": "^24.7.1",
+    "prettier": "^1.17.0",
+    "rimraf": "^2.6.3",
+    "uuid": "^3.3.2"
+  },
+  "dependencies": {},
+  "jest": {
+    "verbose": true
+  },
+  "scripts": {
+    "test": "jest --detectOpenHandles --ci",
+    "update-snapshot": "jest -u -t"
+  },
+  "engines": {
+    "node": "^10"
+  }
+}

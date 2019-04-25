@@ -1,0 +1,92 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`should pass a valid scilla file 1`] = `
+Object {
+  "cashflow_tags": Object {
+    "ADT constructors": Array [],
+    "State variables": Array [
+      Object {
+        "field": "owner",
+        "tag": "NotMoney",
+      },
+      Object {
+        "field": "welcome_msg",
+        "tag": "NoInfo",
+      },
+    ],
+  },
+  "warnings": Array [
+    Object {
+      "end_location": Object {
+        "column": 0,
+        "file": "",
+        "line": 0,
+      },
+      "start_location": Object {
+        "column": 3,
+        "file": "/Users/laptop3/ZilliqaNameService/contracts/lib/example_contracts/hello.scilla",
+        "line": 54,
+      },
+      "warning_id": 1,
+      "warning_message": "Unable to validate that send arguments is null or single message",
+    },
+    Object {
+      "end_location": Object {
+        "column": 0,
+        "file": "",
+        "line": 0,
+      },
+      "start_location": Object {
+        "column": 0,
+        "file": "",
+        "line": 0,
+      },
+      "warning_id": 1,
+      "warning_message": "No transition in contract HelloWorld contains an accept statement
+",
+    },
+  ],
+}
+`;
+
+exports[`should throw on error scilla file 1`] = `
+"{
+  \\"errors\\": [
+    {
+      \\"error_message\\": \\"Syntax error.\\",
+      \\"start_location\\": {
+        \\"file\\": \\"/Users/laptop3/ZilliqaNameService/contracts/lib/example_contracts/invalid.scilla\\",
+        \\"line\\": 1,
+        \\"column\\": 8
+      },
+      \\"end_location\\": {
+        \\"file\\": \\"\\",
+        \\"line\\": 0,
+        \\"column\\": 0
+      }
+    }
+  ],
+  \\"warnings\\": []
+}"
+`;
+
+exports[`should throw on warning if in 'strict mode' scilla file 1`] = `
+"{
+  \\"warnings\\": [
+    {
+      \\"warning_message\\": \\"Unable to validate that send arguments is null or single message\\",
+      \\"start_location\\": {
+        \\"file\\": \\"/Users/laptop3/ZilliqaNameService/contracts/lib/example_contracts/hello.scilla\\",
+        \\"line\\": 54,
+        \\"column\\": 3
+      },
+      \\"end_location\\": {
+        \\"file\\": \\"\\",
+        \\"line\\": 0,
+        \\"column\\": 0
+      },
+      \\"warning_id\\": 1
+    }
+  ]
+}"
+`;
