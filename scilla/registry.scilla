@@ -66,40 +66,45 @@ let calc_ok_sender =
     let is_sender_admin = orb is_sender_global_admin is_sender_node_admin in
       orb is_sender_admin is_sender_owner
 
-let event_NewGlobalAdmin =
+let eNewGlobalAdmin =
   fun(admin: ByStr20) =>
     {_eventname: "NewGlobalAdmin"; admin: admin}
 
-let event_RemoveGlobalAdmin =
+let eRemoveGlobalAdmin =
   fun(admin: ByStr20) =>
     {_eventname: "RemoveGlobalAdmin"; admin: admin}
 
-let event_NewAdmin =
+let eNewAdmin =
   fun(node: ByStr32) =>
   fun(admin: ByStr20) =>
     {_eventname: "NewAdmin"; node: node; admin: admin}
 
-let event_RemoveAdmin =
+let eRemoveAdmin =
   fun(node: ByStr32) =>
   fun(admin: ByStr20) =>
     {_eventname: "RemoveAdmin"; node: node; admin: admin}
 
-let event_NewDomain =
+let eNewDomain =
   fun(label: String) =>
   fun(parent: ByStr32) =>
     {_eventname: "NewDomain"; label: label; parent: parent}
 
-let event_Configure =
+let eConfigure =
   fun(node: ByStr32) =>
   fun(owner: ByStr20) =>
   fun(resolver: ByStr20) =>
     {_eventname: "Configure"; node: node; owner: owner; 
      resolver: resolver}
 
-let event_Transfer =
+let eTransfer =
   fun(node: ByStr32) =>
   fun(owner: ByStr20) =>
     {_eventname: "Transfer"; node: node; owner: owner}
+
+let eError =
+  fun (msg: String) =>
+  fun (errorCode: Uint32) =>
+      {_eventname: "Error"; msg: msg; code: errorCode }
 
 contract ZNS(
   initial_owner: ByStr20
@@ -149,7 +154,7 @@ transition addAdmin(node: ByStr32, admin: ByStr20)
       end
     end;
     admins[node] := new_admins;
-    e = event_NewAdmin node admin;
+    e = eNewAdmin node admin;
     event e
   | False =>
   end
@@ -182,7 +187,7 @@ transition removeAdmin(node: ByStr32, admin: ByStr20)
       nil_bystr20
     end;
     admins[node] := new_admins;
-    e = event_RemoveAdmin node admin;
+    e = eRemoveAdmin node admin;
     event e
   | False =>
   end
@@ -194,7 +199,7 @@ transition assign(parent: ByStr32, label: String, owner: ByStr20)
   record_exists <- exists records[node];
   match record_exists with
   | False =>
-    e = event_NewDomain label parent;
+    e = eNewDomain label parent;
     event e
   | _ => 
   end;
@@ -211,7 +216,7 @@ transition assign(parent: ByStr32, label: String, owner: ByStr20)
     new_record = Record owner bystr20_zero;
     records[node] := new_record;
 
-    e = event_Transfer node owner;
+    e = eTransfer node owner;
     event e
   | False =>
   end
@@ -236,7 +241,7 @@ transition configure(
   | True =>
     new_record = Record owner resolver;
     records[node] := new_record;
-    e = event_Configure node owner resolver;
+    e = eConfigure node owner resolver;
     event e
   | False =>
   end
@@ -258,7 +263,7 @@ transition transfer(node: ByStr32, owner: ByStr20)
     admins[node] := nil_bystr20;
     new_record = Record owner bystr20_zero;
     records[node] := new_record;
-    e = event_Transfer node owner;
+    e = eTransfer node owner;
     event e
   | False =>
   end
@@ -269,6 +274,7 @@ transition sendZNSRecordTo(recipient: ByStr20, parent: ByStr32, label: String)
 
   node = parent_label_to_node parent label;
   mem_record <- records[node];
+
 
   msg = match mem_record with
   | None =>

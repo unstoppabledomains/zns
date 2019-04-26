@@ -171,9 +171,94 @@ function makeBaseSim() {
 }
 
 describe('users', () => {
-  it.todo('should be able to configure node')
-  it.todo('should be able to transfer node')
-  it.todo('should be able to assign subnode')
+  it('should be able to configure node', () => {
+    const {sim, registry, address} = makeBaseSim()
+
+    const user = sim.CreateAccount(10 ** 15)
+
+    const {TranID} = registry.assign({
+      fromAddr: address,
+      parent: rootNode,
+      label: 'label',
+      owner: user,
+    })
+
+    const node = sim.state.events[
+      sim
+        .GetTransaction(TranID)
+        .meta.events.find(
+          key => sim.state.events[key]._eventname === 'Transfer',
+        )
+    ].params.find(param => param.vname === 'node').value
+
+    registry.configure({
+      fromAddr: user,
+      owner: sim.CreateAccount(0),
+      node,
+      resolver: sim.randomAddress(),
+    })
+
+    expect(sim.GetSnapShot(true)).toMatchSnapshot()
+  })
+
+  it('should be able to transfer node', () => {
+    const {sim, registry, address} = makeBaseSim()
+
+    const user = sim.CreateAccount(10 ** 15)
+
+    const {TranID} = registry.assign({
+      fromAddr: address,
+      parent: rootNode,
+      label: 'label',
+      owner: user,
+    })
+
+    const node = sim.state.events[
+      sim
+        .GetTransaction(TranID)
+        .meta.events.find(
+          key => sim.state.events[key]._eventname === 'Transfer',
+        )
+    ].params.find(param => param.vname === 'node').value
+
+    registry.transfer({
+      fromAddr: user,
+      owner: sim.CreateAccount(0),
+      node,
+    })
+
+    expect(sim.GetSnapShot(true)).toMatchSnapshot()
+  })
+
+  it('should be able to assign subnode', () => {
+    const {sim, registry, address} = makeBaseSim()
+
+    const user = sim.CreateAccount(10 ** 15)
+
+    const {TranID} = registry.assign({
+      fromAddr: address,
+      parent: rootNode,
+      label: 'label',
+      owner: user,
+    })
+
+    const node = sim.state.events[
+      sim
+        .GetTransaction(TranID)
+        .meta.events.find(
+          key => sim.state.events[key]._eventname === 'Transfer',
+        )
+    ].params.find(param => param.vname === 'node').value
+
+    registry.assign({
+      fromAddr: user,
+      owner: sim.CreateAccount(0),
+      parent: node,
+      label: 'subnode',
+    })
+
+    expect(sim.GetSnapShot(true)).toMatchSnapshot()
+  })
 })
 
 const rootNode =

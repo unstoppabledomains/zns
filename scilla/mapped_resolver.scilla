@@ -1,0 +1,11 @@
+scilla_version 0
+
+import BoolUtils IntUtils ListUtils NatUtils PairUtils
+
+contract Resolver()
+
+field records: Map ByStr20 (Map String String) = Emp ByStr20 (Map String String)
+
+transition set(key: String, value: String) 
+  records[_sender][key] := value
+end
