@@ -2,293 +2,414 @@ scilla_version 0
 
 import BoolUtils ListUtils
 
-library ZNSLib
+library AORegistryLib
 
-let one_msg =
-  fun(msg: Message) =>
-    let nil_msg = Nil {Message} in
-    Cons {Message} msg nil_msg
+(* START: PsudoStandardLib *)
+(* The PsudoStandardLib is a standard list of values that we have defined for *)
+(* all scilla contracts see scilla/psuedo_standard.scilla for all the details *)
 
-let uint64_zero = Uint64 0
-let bystr20_zero = 0x0000000000000000000000000000000000000000
-let bystr32_zero = 
+let zeroUint64 = Uint64 0
+let zeroByStr20 = 0x0000000000000000000000000000000000000000
+let zeroByStr32 = 
   0x0000000000000000000000000000000000000000000000000000000000000000
-let nil_bystr20 = Nil {ByStr20}
+let nilByStr20 = Nil {ByStr20}
+let nilMessage = Nil {Message}
 
-let is_eq_bystr20 =
-  fun(b1: ByStr20) =>
-  fun(b2: ByStr20) =>
-    builtin eq b1 b2
+let oneMsg =
+  fun(msg: Message) =>
+    Cons {Message} msg nilMessage
 
-let list_mem_bystr20 = @list_mem ByStr20
-let list_mem_bystr32 = @list_mem ByStr32
-let list_filter_bystr20 = @list_filter ByStr20
+let eqByStr20 =
+  fun(bs1: ByStr20) =>
+  fun(bs2: ByStr20) =>
+    builtin eq bs1 bs2
 
-type Record =
-| Record of ByStr20 ByStr20
-(* of owner resolver *)
+let listByStr20Contains = 
+  fun(list: List ByStr20) =>
+  fun(bs: ByStr20) =>
+    let listMemByStr20 = @list_mem ByStr20 in
+      listMemByStr20 eqByStr20 bs list
 
-let parent_label_to_node = 
-  fun(parent: ByStr32) =>
-  fun(label: String) =>
-    let label_hash = builtin sha256hash label in
-    let node_input = builtin concat parent label_hash in
-      builtin sha256hash node_input
+let listByStr20Excludes =
+  fun(list: List ByStr20) =>
+  fun(bs: ByStr20) =>
+    let b = listByStr20Contains list bs in negb b
 
-let record_mem_owner =
-  fun(maybe_record: Option Record) =>
-    match maybe_record with
-    | None =>
-      bystr20_zero
-    | Some record =>
-      match record with
-      | Record owner resolver => 
-        owner
+let listByStr20FilterOut = 
+  fun(list: List ByStr20) =>
+  fun(bs: ByStr20) =>
+    let listByStr20Filter = @list_filter ByStr20 in
+    let fn = fun(v: ByStr20) => builtin eq v bs in
+      listByStr20Filter fn list
+
+let sameb =
+  fun(b1: Bool) =>
+  fun(b2: Bool) =>
+    match b1 with
+    | True =>
+      match b2 with
+      | True => True
+      | False => False
+      end
+    | False =>
+      match b2 with
+      | True => False
+      | False => True
       end
     end
+(* END: PsudoStandardLib *)
 
-let calc_ok_sender =
-  fun(sender: ByStr20) =>
-  fun(record_owner: ByStr20) =>
-  fun(mabye_root_admins: Option (List ByStr20)) =>
-  fun(maybe_node_admins: Option (List ByStr20)) =>
-    let is_sender_owner = builtin eq sender record_owner in
-    let is_sender_global_admin = 
-      match mabye_root_admins with
-      | None => False
-      | Some root_admins => list_mem_bystr20 is_eq_bystr20 sender root_admins
-      end in
-    let is_sender_node_admin = 
-      match maybe_node_admins with
-      | None => False
-      | Some node_admins => list_mem_bystr20 is_eq_bystr20 sender node_admins
-      end in
-    let is_sender_admin = orb is_sender_global_admin is_sender_node_admin in
-      orb is_sender_admin is_sender_owner
+(* START: Events *)
+(* Events defines a the "constructors" for all the types of events used *)
+(* inside ZNS *)
+let eAdminSet =
+  fun(address: ByStr20) =>
+  fun(isApproved: Bool) =>
+    {_eventname: "AdminSet"; address: address; isApproved: isApproved}
 
-let eNewGlobalAdmin =
-  fun(admin: ByStr20) =>
-    {_eventname: "NewGlobalAdmin"; admin: admin}
+let eApprovedFor =
+  fun(user: ByStr20) =>
+  fun(operator: ByStr20) =>
+  fun(isApproved: Bool) =>
+    {_eventname: "ApprovedFor"; user: user; operator: operator; isApproved: isApproved}
 
-let eRemoveGlobalAdmin =
-  fun(admin: ByStr20) =>
-    {_eventname: "RemoveGlobalAdmin"; admin: admin}
+let eApproved =
+  fun(address: ByStr20) =>
+    {_eventname: "Approved"; address: address}
 
-let eNewAdmin =
-  fun(node: ByStr32) =>
-  fun(admin: ByStr20) =>
-    {_eventname: "NewAdmin"; node: node; admin: admin}
-
-let eRemoveAdmin =
-  fun(node: ByStr32) =>
-  fun(admin: ByStr20) =>
-    {_eventname: "RemoveAdmin"; node: node; admin: admin}
-
-let eNewDomain =
-  fun(label: String) =>
+let eNewDomain = 
   fun(parent: ByStr32) =>
-    {_eventname: "NewDomain"; label: label; parent: parent}
+  fun(label: String) =>
+    {_eventname: "NewDomain"; parent: parent; label: label}
 
-let eConfigure =
+let eTransfered = 
+  fun(node: ByStr32) =>
+  fun(owner: ByStr20) =>
+    {_eventname: "Transfered"; node: node; owner: owner}
+
+let eConfigured = 
   fun(node: ByStr32) =>
   fun(owner: ByStr20) =>
   fun(resolver: ByStr20) =>
-    {_eventname: "Configure"; node: node; owner: owner; 
-     resolver: resolver}
-
-let eTransfer =
-  fun(node: ByStr32) =>
-  fun(owner: ByStr20) =>
-    {_eventname: "Transfer"; node: node; owner: owner}
+    {_eventname: "Configured"; owner: owner; resolver: resolver}
+(* We use the Error event to alert the caller if something went wrong because *)
+(* Scilla doesn't support throwing *)
+let codeSuccess = Uint32 0
+let eCodeFailure = Uint32 1
+let eCodeFailureIAM = Uint32 2
+let eCodeFailureNoRecord = Uint32 3
 
 let eError =
-  fun (msg: String) =>
-  fun (errorCode: Uint32) =>
+  fun(msg: String) =>
+  fun(errorCode: Uint32) =>
       {_eventname: "Error"; msg: msg; code: errorCode }
+(* END: Events *)
 
-contract ZNS(
-  initial_owner: ByStr20
-)
+(* START: Messages *)
+let mOnZNSRecordReceived =
+  fun(recipient: ByStr20) =>
+  fun(origin: ByStr20) =>
+  fun(amount: Uint128) =>
+  fun(node: String) =>
+  fun(parent: Uint32) =>
+  fun(label: Uint32) =>
+  fun(owner: Uint32) =>
+  fun(resolver: Uint32) =>
+    {_tag: "onZNSRecordReceived"; _amount: amount; _recipient: recipient; 
+     origin: origin; node: node; parent: parent; label: label; 
+     owner: owner; resolver: resolver}
 
-field admins: Map ByStr32 (List ByStr20) =
-  let empty_admins = Emp ByStr32 (List ByStr20) in 
-  let root_admins = Cons {ByStr20} initial_owner nil_bystr20 in
-    builtin put empty_admins bystr32_zero root_admins
+let mBlank =
+  fun(recipient: ByStr20) =>
+  fun(amount: Uint128) =>
+    {_tag: ""; _amount: amount; _recipient: recipient}
+(* END: Messages *)
 
-field records: Map ByStr32 Record = 
-  let empty_records = Emp ByStr32 Record in 
-  let root_record = Record initial_owner bystr20_zero in
-    builtin put empty_records bystr32_zero root_record
+(* START: User Defined ADTs (Algebraic DataType) *)
 
-(**********)
-(* Admins *)
-(**********)
+(* Record represents an entry in the ZNS Tree *)
+type Record = 
+| Record of ByStr20 ByStr20
 
-transition addAdmin(node: ByStr32, admin: ByStr20)
-  mem_record <- records[node];
-  record_owner = record_mem_owner mem_record;
-  is_ok_sender = builtin eq record_owner _sender;
-
-  mem_node_admins <- admins[node];
-  is_ok_admin = match mem_node_admins with
-  | None =>
-    True
-  | Some node_admins =>
-    let is_admin_in_admins = list_mem_bystr20 is_eq_bystr20 admin node_admins in
-      negb is_admin_in_admins
-  end;
-
-  is_ok = andb is_ok_sender is_ok_admin;
-
-  match is_ok with
-  | True =>
-    new_admins = match mem_record with
-    | None =>
-      Cons {ByStr20} admin nil_bystr20
-    | _ =>
-      match mem_node_admins with
-      | Some node_admins => 
-        Cons {ByStr20} admin node_admins
-      | _ => 
-        nil_bystr20
+let recordMemberOwner =
+  fun(maybeRecord: Option Record) =>
+    match maybeRecord with
+    | None => zeroByStr20
+    | Some record =>
+      match record with
+      | Record owner resolver => owner
       end
-    end;
-    admins[node] := new_admins;
-    e = eNewAdmin node admin;
-    event e
-  | False =>
-  end
-end
+    end
+(* END: User Defined ADTs *)
 
-transition removeAdmin(node: ByStr32, admin: ByStr20)
-  mem_record <- records[node];
-  record_owner = record_mem_owner mem_record;
-  is_ok_sender = builtin eq record_owner _sender;
+(* START: Miscilanious Functions *)
 
-  mem_node_admins <- admins[node];
-  is_ok_admin = match mem_node_admins with
-  | None =>
-    False
-  | Some node_admins =>
-    list_mem_bystr20 is_eq_bystr20 admin node_admins
-  end;
+let parentLabelToNode = 
+  fun(parent: ByStr32) =>
+  fun(label: String) =>
+    let labelHash = builtin sha256hash label in
+    let nodeInput = builtin concat parent labelHash in
+      builtin sha256hash nodeInput
 
-  is_ok = andb is_ok_sender is_ok_admin;
+let getIsOwner = 
+  fun(sender: ByStr20) =>
+  fun(maybeRecord: Option Record) =>
+    match maybeRecord with
+    | None => False
+    | Some record =>
+      match record with | Record owner _ => builtin eq sender owner end
+    end
 
-  match is_ok with
+let getIsApproved = 
+  fun(sender: ByStr20) =>
+  fun(maybeApproved: Option ByStr20) =>
+    match maybeApproved with
+    | None => False
+    | Some approved => builtin eq sender approved
+    end
+
+let getIsOperator = 
+  fun(sender: ByStr20) =>
+  fun(maybeOperators: Option (List ByStr20)) =>
+    match maybeOperators with
+    | None => False
+    | Some operators => listByStr20Contains operators sender
+    end
+
+let getIsOAO =
+  fun(sender: ByStr20) =>
+  fun(maybeRecord: Option Record) =>
+  fun(maybeApproved: Option ByStr20) =>
+  fun(maybeOperators: Option (List ByStr20)) =>
+    let isOwner = getIsOwner sender maybeRecord in
+    let isApproved = getIsApproved sender maybeApproved in
+    let isOperator = getIsOperator sender maybeOperators in
+    let b1 = orb isOwner isApproved in orb b1 isOperator
+
+(* END: Miscilanious Functions *)
+
+(* The 'contract' pragma tells scilla that the contract body starts *)
+contract AORegistry 
+
+(* START: Initial Parameters *)
+(* Initial Parameters are specified on deploy, in the init.json and cannot be *)
+(* changed throughout the life of the contract *)
+
+(* initialOwner specifies the owner of the ZNS Root. See records field below. *)
+(initialOwner: ByStr20)
+
+(* END: Initial Parameters *)
+
+(* START: Mutable Fields *)
+(* Mutable Fields represent the persistant state of a scilla contract and can *)
+(* use the Initial Parameters durring contract instantiation *)
+
+(* records is the representation of the ZNS record tree as a mapping of a *)
+(* Node IDs (ByStr32) to ZNS records (Record) *)
+(* We initialize the field, so the contracts' initialOwner owns the ZNS root *)
+field records: Map ByStr32 Record = 
+(* Emp ByStr32 Record *)
+  let empty = Emp ByStr32 Record in 
+  let rootRecord = Record initialOwner zeroByStr20 in
+    builtin put empty zeroByStr32 rootRecord
+
+(* approvals and operators are the internal representation of the erc721 like *)
+(* IAM system that ZNS uses *)
+field approvals: Map ByStr32 ByStr20 = Emp ByStr32 ByStr20
+field operators: Map ByStr20 (List ByStr20) = Emp ByStr20 (List ByStr20)
+
+(*  *)
+field admins: List ByStr20 = nilByStr20
+
+(* END: Mutable Fields *)
+
+(* START: Admin Transitions *)
+transition setAdmin(address: ByStr20, isApproved: Bool)
+  maybeRootRecord <- records[zeroByStr32];
+
+  isSenderRootNodeOwner = getIsOwner _sender maybeRootRecord;
+
+  match isSenderRootNodeOwner with
   | True =>
-    filter =
-      fun(b: ByStr20) =>
-        builtin eq b admin;
-    new_admins = match mem_node_admins with
-    | Some node_admins =>
-      list_filter_bystr20 filter node_admins
-    | _ =>
-      nil_bystr20
-    end;
-    admins[node] := new_admins;
-    e = eRemoveAdmin node admin;
+    admins <- admins;
+
+    needsToChange = 
+      let b = listByStr20Excludes admins address in sameb b isApproved;
+
+    match needsToChange with
+    | True =>
+      newAdmins = match isApproved with
+        | True => Cons {ByStr20} address admins
+        | False => listByStr20FilterOut admins address
+        end;
+
+      admins := newAdmins;
+
+      e = eAdminSet address isApproved;
+      event e
+    | _ => (* Q?: Should I put an event here *)
+    end
+  | False => 
+    e = let m = "Sender not root node owner" in eError m eCodeFailureIAM;
     event e
-  | False =>
   end
 end
+
+transition approve(node: ByStr32, address: ByStr20) 
+  maybeRecord <- records[node];
+
+  isSenderNodeOwner = getIsOwner _sender maybeRecord;
+
+  match isSenderNodeOwner with
+  | True =>
+    maybeApproved <- approvals[node];
+
+    currentlyApproved = match maybeApproved with
+      | None => zeroByStr20
+      | Some approved => approved
+      end;
+
+    needsToChange = let b = builtin eq currentlyApproved address in negb b;
+
+    match needsToChange with
+    | True =>
+      approvals[node] := address;
+
+      e = eApproved address;
+      event e
+    | _ => (* Q?: Should I put an event here *)
+    end
+  | False => 
+    e = let m = "Sender not node owner" in eError m eCodeFailureIAM;
+    event e
+  end
+end
+
+transition approveFor(address: ByStr20, isApproved: Bool)
+  maybeOperators <- operators[_sender];
+
+  currentOperators = match maybeOperators with
+    | None => nilByStr20
+    | Some operators => operators
+    end;
+
+  needsToChange = let b = listByStr20Excludes currentOperators address in 
+    sameb b isApproved;
+
+  match needsToChange with
+  | True =>
+    newOperators = match isApproved with 
+      | True => Cons {ByStr20} address currentOperators
+      | False => listByStr20FilterOut currentOperators address
+      end;
+
+    operators[_sender] := newOperators;
+
+    e = eApprovedFor _sender address isApproved;
+    event e
+  | _ => (* Q?: Should I put an event here *)
+  end
+end
+(* END: Admin Transitions *)
+
+(* START: Name Transitions *)
+transition transfer(node: ByStr32, owner: ByStr20)
+  maybeRecord <- records[node];
+  maybeApproved <- approvals[node];
+  maybeOperators <- operators[_sender];
+
+  isSenderOAO = getIsOAO _sender maybeRecord maybeApproved maybeOperators;
+
+  match isSenderOAO with
+  | True =>
+    approvals[node] := zeroByStr20;
+    newRecord = Record owner zeroByStr20;
+    records[node] := newRecord;
+
+    e = eConfigured node owner zeroByStr20;
+    event e
+  | False =>
+    e = let m = "Sender not node owner, approved or operator" in eError m eCodeFailureIAM;
+    event e
+  end
+end
+
 
 transition assign(parent: ByStr32, label: String, owner: ByStr20)
-  node = parent_label_to_node parent label;
+  maybeParentRecord <- records[parent];
+  maybeParentApproved <- approvals[parent];
+  maybeOperators <- operators[_sender];
 
-  record_exists <- exists records[node];
-  match record_exists with
-  | False =>
-    e = eNewDomain label parent;
-    event e
-  | _ => 
-  end;
+  isSenderOAO = getIsOAO _sender maybeParentRecord maybeParentApproved maybeOperators;
 
-  mem_parent <- records[parent];
-  parent_owner = record_mem_owner mem_parent;
-  mem_root_admins <- admins[bystr32_zero];
-  mem_parent_admins <- admins[parent];
-  is_ok_sender = 
-    calc_ok_sender _sender parent_owner mem_root_admins mem_parent_admins;
-
-  match is_ok_sender with
+  match isSenderOAO with
   | True =>
-    new_record = Record owner bystr20_zero;
-    records[node] := new_record;
+    node = parentLabelToNode parent label;
 
-    e = eTransfer node owner;
+    recordExists <- exists records[node];
+    match recordExists with
+    | False =>
+      e = eNewDomain parent label;
+      event e
+    | _ => 
+    end;
+
+    newRecord = Record owner zeroByStr20;
+    records[node] := newRecord;
+
+    e = eTransfered node owner;
     event e
   | False =>
+    e = let m = "Sender not parent owner, approved or operator" in eError m eCodeFailureIAM;
+    event e
   end
 end
 
-transition configure(
-  node: ByStr32, 
-  owner: ByStr20, 
-  resolver: ByStr20
-)
-  mem_record <- records[node];
-  record_owner = record_mem_owner mem_record;
-  mem_root_admins <- admins[bystr32_zero];
-  mem_node_admins <- admins[node];
-  is_ok_sender = 
-    calc_ok_sender _sender record_owner mem_root_admins mem_node_admins;
 
-  record_exists <- exists records[node];
-  is_ok = andb is_ok_sender record_exists;
+transition configure(node: ByStr32, owner: ByStr20, resolver: ByStr20) 
+  maybeRecord <- records[node];
+  maybeApproved <- approvals[node];
+  maybeOperators <- operators[_sender];
 
-  match is_ok with
+  isSenderOAO = getIsOAO _sender maybeRecord maybeApproved maybeOperators;
+
+  match isSenderOAO with
   | True =>
-    new_record = Record owner resolver;
-    records[node] := new_record;
-    e = eConfigure node owner resolver;
+    newRecord = Record owner resolver;
+    records[node] := newRecord;
+
+    e = eConfigured node owner resolver;
     event e
   | False =>
-  end
-end
-
-transition transfer(node: ByStr32, owner: ByStr20)
-  mem_record <- records[node];
-  record_owner = record_mem_owner mem_record;
-  mem_root_admins <- admins[bystr32_zero];
-  mem_node_admins <- admins[node];
-  is_ok_sender = 
-    calc_ok_sender _sender record_owner mem_root_admins mem_node_admins;
-
-  record_exists <- exists records[node];
-  is_ok = andb is_ok_sender record_exists;
-
-  match is_ok with
-  | True =>
-    admins[node] := nil_bystr20;
-    new_record = Record owner bystr20_zero;
-    records[node] := new_record;
-    e = eTransfer node owner;
+    e = let m = "Sender not node owner, approved or operator" in eError m eCodeFailureIAM;
     event e
-  | False =>
   end
 end
 
 transition sendZNSRecordTo(recipient: ByStr20, parent: ByStr32, label: String)
   accept;
 
-  node = parent_label_to_node parent label;
-  mem_record <- records[node];
+  node = parentLabelToNode parent label;
+  maybeRecord <- records[node];
 
+  msgs = 
+    let msg = 
+      match maybeRecord with
+      | None =>
+        {_tag: "onZNSRecordReceived"; _amount: _amount; _recipient: recipient; 
+         origin: _sender; node: node; parent: parent; label: label; 
+         owner: zeroByStr20; resolver: zeroByStr20}
+      | Some record =>
+        match record with
+        | Record owner resolver =>
+          {_tag: "onZNSRecordReceived"; _amount: _amount; _recipient: recipient; 
+           origin: _sender; node: node; parent: parent; label: label; 
+           owner: owner; resolver: resolver}        
+        end
+      end in 
+      oneMsg msg;
 
-  msg = match mem_record with
-  | None =>
-    {_tag: "onZNSRecordReceived"; _amount: _amount; _recipient: recipient; 
-     origin: _sender; node: node; parent: parent; label: label; 
-     owner: bystr20_zero; resolver: bystr20_zero}
-  | Some record => 
-    match record with
-    | Record owner resolver =>
-      {_tag: "onZNSRecordReceived"; _amount: _amount; _recipient: recipient; 
-       origin: _sender; node: node; parent: parent; label: label; 
-       owner: owner; resolver: resolver}
-    end
-  end;
-  msgs = one_msg msg;
   send msgs
 end
+(* END: Name Transitions *)
+

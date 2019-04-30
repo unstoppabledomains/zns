@@ -4,58 +4,60 @@ import BoolUtils IntUtils ListUtils NatUtils PairUtils
 
 library AuctionRegistrarLib
 
-let one_msg =
+let oneMsg =
   fun(msg: Message) =>
-    let nil_msg = Nil {Message} in
-    Cons {Message} msg nil_msg
+    let nilMsg = Nil {Message} in
+    Cons {Message} msg nilMsg
 
 type Auction = 
 | Auction of ByStr20 Uint128 BNum String
-(* Leader, Current Bid, Ending Block Label *)
+(* Leader, Current Bid, Ending Block, Label *)
 
-let calc_minimum_bid = 
+let calcMinimumBid = 
   fun(increment: Uint128) => 
   fun(scale: Uint128) => 
-  fun(current_bid: Uint128) =>
+  fun(currentBid: Uint128) =>
     let f1 = builtin add increment scale in
-    let f2 = builtin div current_bid scale in
+    let f2 = builtin div currentBid scale in
       builtin mul f1 f2
 
-let calc_ending_blk =
-  fun(minimum_auction_length: Uint64) => 
+let calcEndingBlk =
+  fun(minimumAuctionLength: Uint64) => 
   fun(blk: BNum) => 
-  fun(ending_blk: BNum) =>
-    let min_auction_ending = builtin badd blk minimum_auction_length in
-    let is_current_ending_blk_too_short = 
-      builtin blt ending_blk min_auction_ending in
-      match is_current_ending_blk_too_short with
-      | True => 
-        min_auction_ending
-      | False => 
-        ending_blk
+  fun(endingBlk: BNum) =>
+    let minAuctionEnding = builtin badd blk minimumAuctionLength in
+    let isCurrentEndingBlkTooShort = 
+      builtin blt endingBlk minAuctionEnding in
+      match isCurrentEndingBlkTooShort with
+      | True => minAuctionEnding
+      | False => endingBlk
       end
 
 (**********)
 (* Events *)
 (**********)
 
-let event_Start =
+let eRunningSet =
+  fun(running: Bool) =>
+    {_eventname: "RunningSet"; running: running}
+
+let eStart =
   fun(node: ByStr32) =>
   fun(bidder: ByStr20) =>
   fun(bid: Uint128) =>
-  fun(ending_blk: BNum) =>
+  fun(endingBlk: BNum) =>
     {_eventname: "Start"; node: node; bidder: bidder; bid: bid; 
-     ending_blk: ending_blk}
+     endingBlk: endingBlk}
 
-let event_Bid =
+let eBid =
   fun(node: ByStr32) =>
   fun(bidder: ByStr20) =>
   fun(bid: Uint128) =>
-  fun(ending_blk: BNum) =>
+  fun(endingBlk: BNum) =>
     {_eventname: "Bid"; node: node; bidder: bidder; bid: bid; 
-     ending_blk: ending_blk}
+     endingBlk: endingBlk}
 
-let event_Close =
+let eClose =
   fun(node: ByStr32) =>
   fun(bidder: ByStr20) =>
   fun(bid: Uint128) =>
@@ -65,11 +67,11 @@ contract AuctionRegistrar(
   owner: ByStr20,
   registry: ByStr20,
   increment: Uint128,
-  owned_node: ByStr32,
+  ownedNode: ByStr32,
   scale: Uint128,
-  minimum_bid: Uint128,
-  minimum_auction_length: Uint64,
-  initial_auction_length: Uint64
+  minimumBid: Uint128,
+  minimumAuctionLength: Uint64,
+  initialAuctionLength: Uint64
 )
 
 field running: Bool = False
@@ -85,65 +87,75 @@ transition onZNSRecordReceived(
 )
   accept;
 
-  auction_exists <- exists auctions[node];
+  auctionExists <- exists auctions[node];
 
-  match auction_exists with
+  match auctionExists with
   | True =>
-    is_ok_amount = builtin lt minimum_bid _amount;
-    
-    is_running <- running;
-    is_ok = andb is_running is_ok_amount;
+    isRunning <- running;
 
-    match is_ok with
+    isOk = 
+      let isOkAmount = builtin lt minimumBid _amount in
+        andb isRunning isOkAmount;
+
+    match isOk with
     | True =>
         blk <- & BLOCKNUMBER;
-        ending_blk = builtin badd blk initial_auction_length;
-        new_auction = Auction origin _amount ending_blk label;
-        auctions[node] := new_auction;
+        newAuction = 
+          let endingBlk = builtin badd blk initialAuctionLength in 
+            Auction origin _amount endingBlk label;
 
-        e = event_Start node origin _amount ending_blk;
+        auctions[node] := newAuction;
+
+        e = eStart node origin _amount endingBlk;
         event e
     | False =>
-      msg = {_tag: ""; _recipient: origin; _amount: _amount};
-      msgs = one_msg msg;
+      msgs = 
+        let msg = {_tag: ""; _recipient: origin; _amount: _amount} in
+          oneMsg msg;
       send msgs
     end
   | False =>
-    msg = {_tag: ""; _recipient: origin; _amount: _amount};
-    msgs = one_msg msg;
+    msgs = 
+      let msg = {_tag: ""; _recipient: origin; _amount: _amount} in
+        oneMsg msg;
+
     send msgs
   end
 end
 
 transition bid(node: ByStr32)
-  mem_auction <- auctions[node];
+  maybeAuction <- auctions[node];
 
-  match mem_auction with
+  match maybeAuction with
   | None =>
   | Some auction =>
     match auction with
-    | Auction highest_bidder current_bid ending_blk label =>
-      min_bid = calc_minimum_bid increment scale current_bid;
-      is_ok_amount = builtin lt min_bid _amount;
-
+    | Auction highestBidder currentBid endingBlk label =>
       blk <- & BLOCKNUMBER;
-      is_ok_blk = builtin blt blk ending_blk;
 
-      is_ok = andb is_ok_amount is_ok_blk;
+      isOk = 
+        let minBid = calcMinimumBid increment scale currentBid in
+        let isOkAmount = builtin lt minBid _amount in
+        let isOkBlk = builtin blt blk endingBlk in
+          andb isOkAmount isOkBlk;
 
-      match is_ok with
+      match isOk with
       | True =>
-        new_ending_blk = calc_ending_blk minimum_auction_length blk ending_blk;
-        new_auction = Auction _sender _amount new_ending_blk label;
-        auctions[node]:= new_auction;
+        newAuction = 
+          let newEndingBlk = calcEndingBlk minimumAuctionLength blk endingBlk in
+            Auction _sender _amount newEndingBlk label;
+
+        auctions[node]:= newAuction;
 
         accept;
 
-        e = event_Bid node _sender _amount new_ending_blk;
+        e = eBid node _sender _amount newEndingBlk;
         event e;
 
-        msg = {_tag: ""; _recipient: highest_bidder; _amount: current_bid};
-        msgs = one_msg msg;
+        msgs = 
+          let msg = {_tag: ""; _recipient: highestBidder; _amount: currentBid} in
+            oneMsg msg;
+
         send msgs
       | _ =>
       end
@@ -152,24 +164,24 @@ transition bid(node: ByStr32)
 end
 
 transition close(node: ByStr32)
-  mem_auction <- auctions[node];
+  maybeAuction <- auctions[node];
 
-  match mem_auction with
+  match maybeAuction with
   | None =>
   | Some auction => 
     match auction with
-    | Auction highest_bidder current_bid ending_blk label => 
+    | Auction highestBidder currentBid endingBlk label => 
       blk <- & BLOCKNUMBER;
-      is_ok_blk = builtin blt ending_blk blk;
+      isOkBlk = builtin blt endingBlk blk;
 
-      match is_ok_blk with
+      match isOkBlk with
       | True =>
         delete auctions[node];
-        e = event_Close node highest_bidder current_bid;
+        e = eClose node highestBidder currentBid;
 
         msg = {_tag: "assign"; _recipient: registry; _amount: Uint128 0; 
-              parent: owned_node; label: label; owner: highest_bidder};
-        msgs = one_msg msg;
+              parent: ownedNode; label: label; owner: highestBidder};
+        msgs = oneMsg msg;
         send msgs
       | _ => 
       end
@@ -177,23 +189,25 @@ transition close(node: ByStr32)
   end
 end
 
-transition setRunning(new_running: Bool)
-  is_ok_sender = builtin eq _sender owner;
+transition setRunning(newRunning: Bool)
+  isOkSender = builtin eq _sender owner;
 
-  match is_ok_sender with
+  match isOkSender with
   | True => 
-    running := new_running
+    running := newRunning;
+    e = eRunningSet newRunning;
+    event e
   | _ =>
   end
 end
 
 transition withdraw(recipient: ByStr20, amount: Uint128)
-  is_ok_sender = builtin eq _sender owner;
+  isOkSender = builtin eq _sender owner;
 
-  match is_ok_sender with
+  match isOkSender with
   | True =>
     msg = {_tag: ""; _recipient: recipient; _amount: amount};
-    msgs = one_msg msg;
+    msgs = oneMsg msg;
     send msgs
   | _ =>
   end

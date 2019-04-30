@@ -2,6 +2,11 @@ const Simulator = require('../lib/simulater/Simulator')
 const fs = require('fs')
 
 class Registry {
+  addAdmin() {}
+  removeAdmin() {}
+}
+
+class Registry {
   constructor({sim, fromAddr}) {
     this.sim = sim
     const {TranID} = this.sim.CreateTransaction({

@@ -1,24 +1,24 @@
-scilla_version 0
+scillaVersion 0
 
 import BoolUtils IntUtils ListUtils NatUtils PairUtils
 
 library SimpleRegistrarLib
 
-let one_msg =
+let oneMsg =
   fun(msg: Message) =>
-    let nil_msg = Nil {Message} in
-    Cons {Message} msg nil_msg
+    let nilMsg = Nil {Message} in
+    Cons {Message} msg nilMsg
 
-let bystr20_zero = 0x0000000000000000000000000000000000000000
+let zeroByStr20 = 0x0000000000000000000000000000000000000000
 
-let event_Register =
+let eRegister =
   fun(node: ByStr32) =>
   fun(owner: ByStr20) =>
-    {_eventname: "Register"; node: node; owner: owner}
+    {Eventname: "Register"; node: node; owner: owner}
 
 contract SimpleRegistrar(
   registry: ByStr20,
-  owned_node: ByStr32,
+  ownedNode: ByStr32,
   owner: ByStr20,
   price: Uint128
 )
@@ -31,38 +31,36 @@ transition onZNSRecordReceived(
   owner: ByStr20,
   resolver: ByStr20
 )
-  is_ok_parent = builtin eq owned_node parent;
+  isOk = 
+    let isOkParent = builtin eq ownedNode parent in
+    let isOkRecordOwner = builtin eq zeroByStr20 owner in
+    let isOkZns = andb isOkRecordOwner isOkParent in
+    let isOkSender = builtin eq registry _sender in
+      andb isOkZns isOkSender;
 
-  is_ok_record_owner = builtin eq bystr20_zero owner;
-
-  is_ok_zns = andb is_ok_record_owner is_ok_parent;
-
-  is_ok_sender = builtin eq registry _sender;
-
-  is_ok = andb is_ok_zns is_ok_sender;
-
-  match is_ok with
+  match isOk with
   | True => 
-    e = event_Register node origin;
+    e = eRegister node origin;
 
-    msg = {_tag: "assign"; _recipient: registry; _amount: Uint128 0; 
-           parent: node; label: label; owner: origin};
-    msgs = one_msg msg;
+    msgs = 
+      let msg = {_tag: "assign"; _recipient: registry; _amount: Uint128 0; 
+                 parent: node; label: label; owner: origin} in
+        oneMsg msg;
     send msgs
   | False =>
-    msg = {_tag: ""; _recipient: origin; _amount: _amount};
-    msgs = one_msg msg;
+    msgs = let msg = {_tag: ""; _recipient: origin; _amount: _amount} in 
+      oneMsg msg;
     send msgs
   end
 end
 
 transition withdraw(recipient: ByStr20, amount: Uint128)
-  is_ok_sender = builtin eq _sender owner;
+  isOkSender = builtin eq _sender owner;
 
-  match is_ok_sender with
+  match isOkSender with
   | True =>
-    msg = {_tag: ""; _recipient: recipient; _amount: amount};
-    msgs = one_msg msg;
+    msgs = let msg = {_tag: ""; _recipient: origin; _amount: _amount} in 
+      oneMsg msg;
     send msgs
   | _ =>
   end

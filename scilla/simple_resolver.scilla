@@ -1,0 +1,27 @@
+scilla_version 0
+
+import BoolUtils IntUtils ListUtils NatUtils PairUtils
+
+library ResolverLib
+
+let eSetRecord =
+  fun(key: String) =>
+  fun(value: String) =>
+    {_eventname: "SetRecord": key: key; value: value}
+
+contract Resolver(
+  owner: ByStr20
+)
+
+field records: Map String String = Emp String String
+
+transition set(key: String, value: String)
+  isOkSender = builtin eq owner _sender;
+  match isOkSender with
+  | True =>
+    records[key] := value;
+    e = eSetRecord key value;
+    event e
+  | _ =>
+  end
+end

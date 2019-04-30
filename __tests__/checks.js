@@ -1,7 +1,7 @@
 const {checker} = require('../lib/scilla')
 
 it('should pass registry.scilla', () => {
-  checker({input: './scilla/registry.scilla'})
+  checker({input: './scilla/ao_registry.scilla'})
 })
 
 it('should pass auction_registrar.scilla', () => {
