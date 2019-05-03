@@ -16,6 +16,10 @@ let eRegister =
   fun(owner: ByStr20) =>
     {_eventname: "Register"; node: node; owner: owner}
 
+let ePriceSet =
+  fun(price: Uint128) =>
+    {_eventname: "PriceSet"; price: price}
+
 let eError =
   fun(message: String) =>
     {_eventname: "Error"; message: message}
@@ -24,8 +28,25 @@ contract SimpleRegistrar(
   registry: ByStr20,
   ownedNode: ByStr32,
   owner: ByStr20,
-  price: Uint128
+  initialPrice: Uint128
 )
+
+field price Uint128 = initialPrice
+
+transition setPrice(price: Uint128)
+  isOkSender = builtin eq _sender owner;
+
+  match isOkSender with
+  | True =>
+    e = ePriceSet price;
+    event e;
+
+    msgs = let msg = {_tag: ""; _recipient: address; _amount: _amount} in 
+      oneMsg msg;
+    send msgs
+  | _ =>
+  end
+end
 
 transition onZNSRecordReceived(
   origin: ByStr20, 
@@ -36,6 +57,8 @@ transition onZNSRecordReceived(
   resolver: ByStr20
 )
   accept;
+
+  price <- price;
 
   isOk = 
     let isOkParent = builtin eq ownedNode parent in

@@ -91,7 +91,7 @@ crypto.XLM=G5CHCGSNFHEJMRZOX3Z6YVXM3XGCEZWKCA5VLDNRLN3RPROJMDS674JZ
 crypto.XLM_X=random@email.com*bittrex.com
 ```
 
-Take a look at the **TODO:**
+**TODO:** Take a look at the
 [full list of crypto keys that we support](./crypto_tickers.csv).
 
 ### `ttl`
@@ -121,12 +121,12 @@ The `img.*` records link to various images to be used in GUIs.
 
 The `img.icon` record provides a URL to a small image used to identify a user.
 Optionally you can supply smaller sizes inside the keys. The plain `img.icon`
-record is assumed to be the largest image provided.
+record, if provided, is assumed to be the largest image.
 
 ```
-img.icon_32x32=https://someurl.com/icon-32x-32
-img.icon_192x192=https://someurl.com/icon-192x-192
-img.icon=https://someurl.com/icon-512x-512
+img.icon_32x32=https://someurl.com/icon-32x32
+img.icon_192x192=https://someurl.com/icon-192x192
+img.icon=https://someurl.com/icon-512x512
 ```
 
 ### `dns.*`
@@ -136,6 +136,7 @@ supported by the RFCs are supported. And all records that can support multiple
 entries are arrays. i.e. `A`, `AAAA`.
 
 ```
+dns.PTR=somdomain.com
 dns.A[0]=1.2.3.4
 dns.A[1]=5.6.7.8
 ```
@@ -143,8 +144,8 @@ dns.A[1]=5.6.7.8
 ### `allowed_nodes[]`
 
 The `allowed_nodes[]` records specify what ZNS nodes are allowed to resolve to a
-name in the client. If left blank all names can validly point their resolver
-address to the resolver.
+name in the client. If left blank all names can point their resolver address
+validly to the resolver.
 
 ```
 allowed_nodes[0]=0xaa66da5bca1d0fc6475c2f88ae7b7591df79abcb92923bac79e41ccc44a89efc
@@ -188,3 +189,32 @@ An DNS based website with a `website.type` of `dns`
 website.type=dns
 dns.A[0]=1.2.3.4
 ```
+
+## Record Ideas
+
+### `prefix`
+
+The `prefix` record specifies a prefix to be added on to each key.
+
+```
+app.twitter.user=Maisie_Williams
+app.twitter.verification_signature=0x029a4ec1b7901e74b5214a37f17caf4e518e0cf9e2ecc6a6d66a3479fe07dd12
+```
+
+Is equivalent to
+
+```
+prefix=app.twitter
+user=Maisie_Williams
+verification_signature=0x029a4ec1b7901e74b5214a37f17caf4e518e0cf9e2ecc6a6d66a3479fe07dd12
+```
+
+If you have an application that you only want to publish certain data you could
+make a resolver that hardcodes a prefix for you to only allow certain types of
+data to be read off of some subdomain. This is probably most useful inside an
+application specific context.
+
+### `invalid.*`
+
+The `invalid.*` records are all invalid. To be used in conjunction with `prefix`
+to disable resolver.

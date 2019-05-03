@@ -18,10 +18,10 @@ function makeBaseSim() {
     {
       owner: address,
       registry: registry.address,
-      scale: '100',
-      increment: '2',
       ownedNode: rootNode,
-      minimumBid: '1',
+      bidIncrementNumerator: '2',
+      bidIncrementDenominator: '100',
+      initialMinimumBid: '1',
       minimumAuctionLength: '2',
       initialAuctionLength: '3',
     },

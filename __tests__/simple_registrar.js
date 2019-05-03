@@ -19,7 +19,7 @@ function makeBaseSim() {
       owner: address,
       registry: registry.address,
       ownedNode: rootNode,
-      price: '1',
+      initialPrice: '1',
     },
   )
 
