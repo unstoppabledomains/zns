@@ -1,21 +1,12 @@
 const {checker} = require('../lib/scilla')
+const path = require('path')
+const fs = require('fs')
 
-it('should pass registry.scilla', () => {
-  checker({input: './scilla/ao_registry.scilla'})
-})
-
-it('should pass auction_registrar.scilla', () => {
-  checker({input: './scilla/auction_registrar.scilla'})
-})
-
-it('should pass simple_registrar.scilla', () => {
-  checker({input: './scilla/simple_registrar.scilla'})
-})
-
-xit('should pass renewals.scilla', () => {
-  checker({input: './scilla/renewals.scilla'})
-})
-
-xit('should pass resolver.scilla', () => {
-  checker({input: './scilla/resolver.scilla'})
-})
+for (const input of fs
+  .readdirSync(path.join(__dirname, '../scilla'))
+  .map(v => path.join(__dirname, '../scilla', v))
+  .filter(v => v.endsWith('.scilla'))) {
+  it(`should successfully type-check ${path.basename(input)}`, () => {
+    checker({input})
+  })
+}

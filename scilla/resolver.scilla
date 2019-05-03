@@ -1,0 +1,58 @@
+scilla_version 0
+
+import BoolUtils
+
+library ResolverLib
+
+let eRecordSet =
+  fun(key: String) =>
+  fun(value: ByStr) =>
+    {_eventname: "RecordSet"; key: key; value: value}
+
+let eRecordUnset =
+  fun(key: String) =>
+    {_eventname: "RecordUnset"; key: key}
+
+let eCodeIAM = Uint64 1
+
+let eError =
+  fun(code: Uint64) =>
+  fun(message: String) =>
+    {_eventname: "Error"; code: code; message: message}
+
+contract Resolver(
+  owner: ByStr20
+)
+
+field records: Map String ByStr = Emp String ByStr
+
+transition set(key: String, value: ByStr)
+  isOkSender = builtin eq owner _sender;
+  match isOkSender with
+  | True =>
+    records[key] := value;
+    e = eRecordSet key value;
+    event e
+  | _ =>
+    e = let m = "Sender not owner" in eError eCodeIAM m;
+    event e
+  end
+end
+
+transition unset(key: String)
+  keyExists <- exists records[key];
+  isOk = 
+    let isOkSender = builtin eq owner _sender in
+      andb isOkSender keyExists;
+  match isOk with
+  | True =>
+    delete records[key];
+    e = eRecordUnset key;
+    event e
+  | _ =>
+    e = let m = "Sender not owner or key does not exist" in 
+      eError eCodeIAM m;
+    event e
+  end
+end
+

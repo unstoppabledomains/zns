@@ -42,7 +42,7 @@ let listByStr20FilterOut =
     let fn = fun(v: ByStr20) => builtin eq v bs in
       listByStr20Filter fn list
 
-let sameb =
+let xandb =
   fun(b1: Bool) =>
   fun(b2: Bool) =>
     match b1 with
@@ -234,7 +234,7 @@ transition setAdmin(address: ByStr20, isApproved: Bool)
     admins <- admins;
 
     needsToChange = 
-      let b = listByStr20Excludes admins address in sameb b isApproved;
+      let b = listByStr20Excludes admins address in xandb b isApproved;
 
     match needsToChange with
     | True =>
@@ -294,7 +294,7 @@ transition approveFor(address: ByStr20, isApproved: Bool)
     end;
 
   needsToChange = let b = listByStr20Excludes currentOperators address in 
-    sameb b isApproved;
+    xandb b isApproved;
 
   match needsToChange with
   | True =>
@@ -385,8 +385,11 @@ transition configure(node: ByStr32, owner: ByStr20, resolver: ByStr20)
     event e
   end
 end
+(* END: Name Transitions *)
 
-transition sendZNSRecordTo(recipient: ByStr20, parent: ByStr32, label: String)
+(* START: Reciever Transitions *)
+
+transition sendZNSRecordTo(address: ByStr20, parent: ByStr32, label: String)
   accept;
 
   node = parentLabelToNode parent label;
@@ -396,13 +399,13 @@ transition sendZNSRecordTo(recipient: ByStr20, parent: ByStr32, label: String)
     let msg = 
       match maybeRecord with
       | None =>
-        {_tag: "onZNSRecordReceived"; _amount: _amount; _recipient: recipient; 
+        {_tag: "onZNSRecordReceived"; _amount: _amount; _recipient: address; 
          origin: _sender; node: node; parent: parent; label: label; 
          owner: zeroByStr20; resolver: zeroByStr20}
       | Some record =>
         match record with
         | Record owner resolver =>
-          {_tag: "onZNSRecordReceived"; _amount: _amount; _recipient: recipient; 
+          {_tag: "onZNSRecordReceived"; _amount: _amount; _recipient: address; 
            origin: _sender; node: node; parent: parent; label: label; 
            owner: owner; resolver: resolver}        
         end
@@ -411,5 +414,5 @@ transition sendZNSRecordTo(recipient: ByStr20, parent: ByStr32, label: String)
 
   send msgs
 end
-(* END: Name Transitions *)
+
 

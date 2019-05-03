@@ -1,4 +1,4 @@
-scillaVersion 0
+scilla_version 0
 
 import BoolUtils IntUtils ListUtils NatUtils PairUtils
 
@@ -14,7 +14,11 @@ let zeroByStr20 = 0x0000000000000000000000000000000000000000
 let eRegister =
   fun(node: ByStr32) =>
   fun(owner: ByStr20) =>
-    {Eventname: "Register"; node: node; owner: owner}
+    {_eventname: "Register"; node: node; owner: owner}
+
+let eError =
+  fun(message: String) =>
+    {_eventname: "Error"; message: message}
 
 contract SimpleRegistrar(
   registry: ByStr20,
@@ -31,12 +35,16 @@ transition onZNSRecordReceived(
   owner: ByStr20,
   resolver: ByStr20
 )
+  accept;
+
   isOk = 
     let isOkParent = builtin eq ownedNode parent in
     let isOkRecordOwner = builtin eq zeroByStr20 owner in
     let isOkZns = andb isOkRecordOwner isOkParent in
     let isOkSender = builtin eq registry _sender in
-      andb isOkZns isOkSender;
+    let isOkAmount = builtin eq price _amount in
+    let isOkRequest = andb isOkSender isOkAmount in
+      andb isOkZns isOkRequest;
 
   match isOk with
   | True => 
@@ -44,22 +52,25 @@ transition onZNSRecordReceived(
 
     msgs = 
       let msg = {_tag: "assign"; _recipient: registry; _amount: Uint128 0; 
-                 parent: node; label: label; owner: origin} in
+                 parent: parent; label: label; owner: origin} in
         oneMsg msg;
     send msgs
   | False =>
+    e = let m = "Not valid parent, record owner, amount or sender" in eError m;
+    event e;
+
     msgs = let msg = {_tag: ""; _recipient: origin; _amount: _amount} in 
       oneMsg msg;
     send msgs
   end
 end
 
-transition withdraw(recipient: ByStr20, amount: Uint128)
+transition withdraw(address: ByStr20, amount: Uint128)
   isOkSender = builtin eq _sender owner;
 
   match isOkSender with
   | True =>
-    msgs = let msg = {_tag: ""; _recipient: origin; _amount: _amount} in 
+    msgs = let msg = {_tag: ""; _recipient: address; _amount: _amount} in 
       oneMsg msg;
     send msgs
   | _ =>

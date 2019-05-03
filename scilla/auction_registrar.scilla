@@ -63,6 +63,10 @@ let eClose =
   fun(bid: Uint128) =>
     {_eventname: "Close"; node: node; bidder: bidder; bid: bid}
 
+let eError =
+  fun(message: String) =>
+    {_eventname: "Error"; message: message}
+
 contract AuctionRegistrar(
   owner: ByStr20,
   registry: ByStr20,
@@ -90,31 +94,38 @@ transition onZNSRecordReceived(
   auctionExists <- exists auctions[node];
 
   match auctionExists with
-  | True =>
+  | False =>
     isRunning <- running;
 
     isOk = 
+      let isOkSender = builtin eq _sender registry in
       let isOkAmount = builtin lt minimumBid _amount in
-        andb isRunning isOkAmount;
+      let isOkRequest = andb isOkSender isOkAmount in
+        andb isOkRequest isRunning;
 
     match isOk with
     | True =>
         blk <- & BLOCKNUMBER;
-        newAuction = 
-          let endingBlk = builtin badd blk initialAuctionLength in 
-            Auction origin _amount endingBlk label;
+        endingBlk = builtin badd blk initialAuctionLength;
+        newAuction = Auction origin _amount endingBlk label;
 
         auctions[node] := newAuction;
 
         e = eStart node origin _amount endingBlk;
         event e
     | False =>
+      e = let m = "Auctions are not running or invalid amount sent" in eError m;
+      event e;
+ 
       msgs = 
         let msg = {_tag: ""; _recipient: origin; _amount: _amount} in
           oneMsg msg;
       send msgs
     end
-  | False =>
+  | True =>
+    e = let m = "Auction already exists" in eError m;
+    event e;
+ 
     msgs = 
       let msg = {_tag: ""; _recipient: origin; _amount: _amount} in
         oneMsg msg;
@@ -141,9 +152,8 @@ transition bid(node: ByStr32)
 
       match isOk with
       | True =>
-        newAuction = 
-          let newEndingBlk = calcEndingBlk minimumAuctionLength blk endingBlk in
-            Auction _sender _amount newEndingBlk label;
+        newEndingBlk = calcEndingBlk minimumAuctionLength blk endingBlk;
+        newAuction = Auction _sender _amount newEndingBlk label;
 
         auctions[node]:= newAuction;
 
@@ -201,12 +211,12 @@ transition setRunning(newRunning: Bool)
   end
 end
 
-transition withdraw(recipient: ByStr20, amount: Uint128)
+transition withdraw(address: ByStr20, amount: Uint128)
   isOkSender = builtin eq _sender owner;
 
   match isOkSender with
   | True =>
-    msg = {_tag: ""; _recipient: recipient; _amount: amount};
+    msg = {_tag: ""; _recipient: address; _amount: amount};
     msgs = oneMsg msg;
     send msgs
   | _ =>

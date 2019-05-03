@@ -1,0 +1,38 @@
+scilla_version 0
+
+contract C()
+
+transition part1()
+  e = {_eventname: "Part1"};
+  event e;
+  msgs = 
+    let msg = {_tag: "part2"; _recipient: _this_address; _amount: Uint128 0} in 
+    let nil = Nil {Message} in 
+      Cons {Message} msg nil;
+  send msgs
+end
+
+transition part2()
+  e = {_eventname: "Part2"};
+  event e;
+  msgs = 
+    let msg = {_tag: "part3"; _recipient: _this_address; _amount: Uint128 0} in 
+    let nil = Nil {Message} in 
+      Cons {Message} msg nil;
+  send msgs
+end
+
+transition part3()
+  e = {_eventname: "Part3"};
+  event e;
+  msgs = 
+    let msg = {_tag: "part4"; _recipient: _this_address; _amount: Uint128 0} in 
+    let nil = Nil {Message} in 
+      Cons {Message} msg nil;
+  send msgs
+end
+
+transition part4()
+  e = {_eventname: "Part4"};
+  event e
+end
