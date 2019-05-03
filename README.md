@@ -22,12 +22,12 @@ yarn install
 SCILLA_PROJECT_DIR=/path/to/scilla/ yarn test
 ```
 
-For more on development look at the [Testing Guide](./TESTING.md)
+For more on development look at the [Testing Guide](./TESTING.md).
 
 ## Contracts
 
 For an introduction to Zilliqa and Scilla and some of the design considerations
-look at the [Zilliqa Reference](./Zilliqa.md).
+look at the [Zilliqa Reference](./ZILLIQA.md).
 
 There are 3 ZNS contract variants.
 
