@@ -5,7 +5,7 @@ Object {
   "accounts": Object {
     "0x111b38d3a1ba5fd8917dddfe1a993a4b87e498c0": Object {
       "address": "0x111b38d3a1ba5fd8917dddfe1a993a4b87e498c0",
-      "balance": -738070n,
+      "balance": -736382n,
       "code": undefined,
       "init": Array [
         Object {
@@ -26,7 +26,7 @@ Object {
         Object {
           "type": "Uint128",
           "value": "1",
-          "vname": "price",
+          "vname": "initialPrice",
         },
         Object {
           "type": "BNum",
@@ -51,11 +51,16 @@ Object {
           "value": "1",
           "vname": "_balance",
         },
+        Object {
+          "type": "Uint128",
+          "value": "1",
+          "vname": "price",
+        },
       ],
     },
     "0x47e7a20867f04c007c2b76e96ec49bf8d9398bd8": Object {
       "address": "0x47e7a20867f04c007c2b76e96ec49bf8d9398bd8",
-      "balance": -892756n,
+      "balance": -892973n,
       "code": undefined,
       "init": Array [
         Object {
@@ -90,7 +95,7 @@ Object {
           "type": "Map (ByStr32) (Record)",
           "value": Array [
             Object {
-              "key": "0x75d7fb79d628a67a623235349c36992c89624fd6ec37ef5e1f3b9ba2bce1052d",
+              "key": "0x0000000000000000000000000000000000000000000000000000000000000000",
               "val": Object {
                 "argtypes": Array [],
                 "arguments": Array [
@@ -101,7 +106,7 @@ Object {
               },
             },
             Object {
-              "key": "0x0000000000000000000000000000000000000000000000000000000000000000",
+              "key": "0x75d7fb79d628a67a623235349c36992c89624fd6ec37ef5e1f3b9ba2bce1052d",
               "val": Object {
                 "argtypes": Array [],
                 "arguments": Array [
@@ -138,7 +143,7 @@ Object {
     },
     "0xa56193e39780d268b02bf5d9387179cc7ac9884b": Object {
       "address": "0xa56193e39780d268b02bf5d9387179cc7ac9884b",
-      "balance": 999999979094763n,
+      "balance": 999999979094134n,
       "smartContracts": Array [
         "0x47e7a20867f04c007c2b76e96ec49bf8d9398bd8",
         "0x111b38d3a1ba5fd8917dddfe1a993a4b87e498c0",
@@ -216,7 +221,7 @@ Object {
       },
       "nonce": "2",
       "receipt": Object {
-        "cumulative_gas": "9902853",
+        "cumulative_gas": "9903203",
         "epoch_num": "1",
         "success": true,
       },
@@ -237,7 +242,7 @@ Object {
       },
       "nonce": "4",
       "receipt": Object {
-        "cumulative_gas": "3671",
+        "cumulative_gas": "3683",
         "epoch_num": "3",
         "success": true,
       },
@@ -255,7 +260,7 @@ Object {
       },
       "nonce": "1",
       "receipt": Object {
-        "cumulative_gas": "9911759",
+        "cumulative_gas": "9912042",
         "epoch_num": "0",
         "success": true,
       },
@@ -275,7 +280,7 @@ Object {
       },
       "nonce": "3",
       "receipt": Object {
-        "cumulative_gas": "626",
+        "cumulative_gas": "624",
         "epoch_num": "2",
         "success": true,
       },
@@ -312,7 +317,7 @@ Object {
         Object {
           "type": "Uint128",
           "value": "1",
-          "vname": "price",
+          "vname": "initialPrice",
         },
         Object {
           "type": "BNum",
@@ -337,11 +342,16 @@ Object {
           "value": "0",
           "vname": "_balance",
         },
+        Object {
+          "type": "Uint128",
+          "value": "1",
+          "vname": "price",
+        },
       ],
     },
     "0x47e7a20867f04c007c2b76e96ec49bf8d9398bd8": Object {
       "address": "0x47e7a20867f04c007c2b76e96ec49bf8d9398bd8",
-      "balance": -888769n,
+      "balance": -888986n,
       "code": undefined,
       "init": Array [
         Object {
@@ -376,7 +386,7 @@ Object {
           "type": "Map (ByStr32) (Record)",
           "value": Array [
             Object {
-              "key": "0x75d7fb79d628a67a623235349c36992c89624fd6ec37ef5e1f3b9ba2bce1052d",
+              "key": "0x0000000000000000000000000000000000000000000000000000000000000000",
               "val": Object {
                 "argtypes": Array [],
                 "arguments": Array [
@@ -387,7 +397,7 @@ Object {
               },
             },
             Object {
-              "key": "0x0000000000000000000000000000000000000000000000000000000000000000",
+              "key": "0x75d7fb79d628a67a623235349c36992c89624fd6ec37ef5e1f3b9ba2bce1052d",
               "val": Object {
                 "argtypes": Array [],
                 "arguments": Array [
@@ -424,7 +434,7 @@ Object {
     },
     "0xa56193e39780d268b02bf5d9387179cc7ac9884b": Object {
       "address": "0xa56193e39780d268b02bf5d9387179cc7ac9884b",
-      "balance": 999999978103669n,
+      "balance": 999999978103045n,
       "smartContracts": Array [
         "0x47e7a20867f04c007c2b76e96ec49bf8d9398bd8",
         "0x111b38d3a1ba5fd8917dddfe1a993a4b87e498c0",
@@ -517,7 +527,7 @@ Object {
       },
       "nonce": "5",
       "receipt": Object {
-        "cumulative_gas": "2569",
+        "cumulative_gas": "2586",
         "epoch_num": "4",
         "success": true,
       },
@@ -535,7 +545,7 @@ Object {
       },
       "nonce": "2",
       "receipt": Object {
-        "cumulative_gas": "9902853",
+        "cumulative_gas": "9903203",
         "epoch_num": "1",
         "success": true,
       },
@@ -556,7 +566,7 @@ Object {
       },
       "nonce": "4",
       "receipt": Object {
-        "cumulative_gas": "1055",
+        "cumulative_gas": "1050",
         "epoch_num": "3",
         "success": true,
       },
@@ -574,7 +584,7 @@ Object {
       },
       "nonce": "1",
       "receipt": Object {
-        "cumulative_gas": "9911759",
+        "cumulative_gas": "9912042",
         "epoch_num": "0",
         "success": true,
       },
@@ -594,7 +604,7 @@ Object {
       },
       "nonce": "3",
       "receipt": Object {
-        "cumulative_gas": "626",
+        "cumulative_gas": "624",
         "epoch_num": "2",
         "success": true,
       },
@@ -631,7 +641,7 @@ Object {
         Object {
           "type": "Uint128",
           "value": "1",
-          "vname": "price",
+          "vname": "initialPrice",
         },
         Object {
           "type": "BNum",
@@ -656,11 +666,16 @@ Object {
           "value": "0",
           "vname": "_balance",
         },
+        Object {
+          "type": "Uint128",
+          "value": "1",
+          "vname": "price",
+        },
       ],
     },
     "0x47e7a20867f04c007c2b76e96ec49bf8d9398bd8": Object {
       "address": "0x47e7a20867f04c007c2b76e96ec49bf8d9398bd8",
-      "balance": -892733n,
+      "balance": -892950n,
       "code": undefined,
       "init": Array [
         Object {
@@ -732,7 +747,7 @@ Object {
     },
     "0xa56193e39780d268b02bf5d9387179cc7ac9884b": Object {
       "address": "0xa56193e39780d268b02bf5d9387179cc7ac9884b",
-      "balance": 999999979094764n,
+      "balance": 999999979094135n,
       "smartContracts": Array [
         "0x47e7a20867f04c007c2b76e96ec49bf8d9398bd8",
         "0x111b38d3a1ba5fd8917dddfe1a993a4b87e498c0",
@@ -789,7 +804,7 @@ Object {
       },
       "nonce": "2",
       "receipt": Object {
-        "cumulative_gas": "9902853",
+        "cumulative_gas": "9903203",
         "epoch_num": "1",
         "success": true,
       },
@@ -809,7 +824,7 @@ Object {
       },
       "nonce": "4",
       "receipt": Object {
-        "cumulative_gas": "2533",
+        "cumulative_gas": "2550",
         "epoch_num": "3",
         "success": true,
       },
@@ -827,7 +842,7 @@ Object {
       },
       "nonce": "1",
       "receipt": Object {
-        "cumulative_gas": "9911759",
+        "cumulative_gas": "9912042",
         "epoch_num": "0",
         "success": true,
       },
@@ -847,7 +862,7 @@ Object {
       },
       "nonce": "3",
       "receipt": Object {
-        "cumulative_gas": "626",
+        "cumulative_gas": "624",
         "epoch_num": "2",
         "success": true,
       },
@@ -884,7 +899,7 @@ Object {
         Object {
           "type": "Uint128",
           "value": "1",
-          "vname": "price",
+          "vname": "initialPrice",
         },
         Object {
           "type": "BNum",
@@ -908,6 +923,11 @@ Object {
           "type": "Uint128",
           "value": "0",
           "vname": "_balance",
+        },
+        Object {
+          "type": "Uint128",
+          "value": "1",
+          "vname": "price",
         },
       ],
     },
@@ -985,7 +1005,7 @@ Object {
     },
     "0xa56193e39780d268b02bf5d9387179cc7ac9884b": Object {
       "address": "0xa56193e39780d268b02bf5d9387179cc7ac9884b",
-      "balance": 999999979094286n,
+      "balance": 999999979093636n,
       "smartContracts": Array [
         "0x47e7a20867f04c007c2b76e96ec49bf8d9398bd8",
         "0x111b38d3a1ba5fd8917dddfe1a993a4b87e498c0",
@@ -1042,7 +1062,7 @@ Object {
       },
       "nonce": "2",
       "receipt": Object {
-        "cumulative_gas": "9902853",
+        "cumulative_gas": "9903203",
         "epoch_num": "1",
         "success": true,
       },
@@ -1062,7 +1082,7 @@ Object {
       },
       "nonce": "4",
       "receipt": Object {
-        "cumulative_gas": "1475",
+        "cumulative_gas": "1494",
         "epoch_num": "3",
         "success": true,
       },
@@ -1080,7 +1100,7 @@ Object {
       },
       "nonce": "1",
       "receipt": Object {
-        "cumulative_gas": "9911759",
+        "cumulative_gas": "9912042",
         "epoch_num": "0",
         "success": true,
       },
@@ -1100,7 +1120,7 @@ Object {
       },
       "nonce": "3",
       "receipt": Object {
-        "cumulative_gas": "626",
+        "cumulative_gas": "624",
         "epoch_num": "2",
         "success": true,
       },

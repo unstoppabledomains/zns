@@ -157,33 +157,47 @@ let getIsOwner =
     match maybeRecord with
     | None => False
     | Some record =>
-      match record with | Record owner _ => builtin eq sender owner end
+      match record with 
+      | Record owner _ =>
+        builtin eq sender owner
+      end
     end
-
-let getIsApproved = 
+let getIsOA = 
   fun(sender: ByStr20) =>
+  fun(maybeRecord: Option Record) =>
   fun(maybeApproved: Option ByStr20) =>
-    match maybeApproved with
+    match maybeRecord with
     | None => False
-    | Some approved => builtin eq sender approved
-    end
-
-let getIsOperator = 
-  fun(sender: ByStr20) =>
-  fun(maybeOperators: Option (List ByStr20)) =>
-    match maybeOperators with
-    | None => False
-    | Some operators => listByStr20Contains operators sender
+    | Some record =>
+      match record with 
+      | Record owner _ =>
+        let isOkO = builtin eq sender owner in 
+        let isOkA = 
+          match maybeApproved with
+          | None => False
+          | Some approved => builtin eq sender approved
+          end in 
+          andb isOkO isOkA
+      end
     end
 
 let getIsOAO =
   fun(sender: ByStr20) =>
   fun(maybeRecord: Option Record) =>
   fun(maybeApproved: Option ByStr20) =>
-  fun(maybeOperators: Option (List ByStr20)) =>
-    let isOwner = getIsOwner sender maybeRecord in
-    let isApproved = getIsApproved sender maybeApproved in
-    let isOperator = getIsOperator sender maybeOperators in
+  fun(operators: Map ByStr20 (List ByStr20)) =>
+    let recordOwner = recordMemberOwner maybeRecord in
+    let isOwner = builtin eq sender recordOwner in
+    let isApproved = 
+      match maybeApproved with
+      | None => False
+      | Some approved => builtin eq sender approved
+      end in
+    let maybeOperators = builtin get operators recordOwner in
+    let isOperator = match maybeOperators with
+    | None => False
+    | Some operators => listByStr20Contains operators sender
+    end in
     let b1 = orb isOwner isApproved in orb b1 isOperator
 
 (* END: Miscilanious Functions *)
@@ -314,9 +328,9 @@ end
 transition transfer(node: ByStr32, owner: ByStr20)
   maybeRecord <- records[node];
   maybeApproved <- approvals[node];
-  maybeOperators <- operators[_sender];
+  operators <- operators;
 
-  isSenderOAO = getIsOAO _sender maybeRecord maybeApproved maybeOperators;
+  isSenderOAO = getIsOAO _sender maybeRecord maybeApproved operators;
 
   match isSenderOAO with
   | True =>
@@ -334,11 +348,11 @@ end
 
 
 transition assign(parent: ByStr32, label: String, owner: ByStr20)
-  maybeParentRecord <- records[parent];
-  maybeParentApproved <- approvals[parent];
-  maybeOperators <- operators[_sender];
+  maybeRecord <- records[parent];
+  maybeApproved <- approvals[parent];
+  operators <- operators;
 
-  isSenderOAO = getIsOAO _sender maybeParentRecord maybeParentApproved maybeOperators;
+  isSenderOAO = getIsOAO _sender maybeRecord maybeApproved operators;
 
   match isSenderOAO with
   | True =>
@@ -367,9 +381,9 @@ end
 transition configure(node: ByStr32, owner: ByStr20, resolver: ByStr20) 
   maybeRecord <- records[node];
   maybeApproved <- approvals[node];
-  maybeOperators <- operators[_sender];
+  operators <- operators;
 
-  isSenderOAO = getIsOAO _sender maybeRecord maybeApproved maybeOperators;
+  isSenderOAO = getIsOAO _sender maybeRecord maybeApproved operators;
 
   match isSenderOAO with
   | True =>

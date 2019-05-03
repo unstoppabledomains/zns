@@ -50,7 +50,7 @@ Object {
     },
     "0xa56193e39780d268b02bf5d9387179cc7ac9884b": Object {
       "address": "0xa56193e39780d268b02bf5d9387179cc7ac9884b",
-      "balance": 999999998018193n,
+      "balance": 999999998018197n,
       "smartContracts": Array [
         "0x47e7a20867f04c007c2b76e96ec49bf8d9398bd8",
       ],
@@ -98,7 +98,7 @@ Object {
       },
       "nonce": "2",
       "receipt": Object {
-        "cumulative_gas": "350",
+        "cumulative_gas": "346",
         "epoch_num": "1",
         "success": true,
       },
@@ -172,7 +172,7 @@ Object {
     },
     "0xa56193e39780d268b02bf5d9387179cc7ac9884b": Object {
       "address": "0xa56193e39780d268b02bf5d9387179cc7ac9884b",
-      "balance": 999999997027910n,
+      "balance": 999999997027914n,
       "smartContracts": Array [
         "0x47e7a20867f04c007c2b76e96ec49bf8d9398bd8",
       ],
@@ -233,7 +233,7 @@ Object {
       },
       "nonce": "2",
       "receipt": Object {
-        "cumulative_gas": "350",
+        "cumulative_gas": "346",
         "epoch_num": "1",
         "success": true,
       },
@@ -583,7 +583,7 @@ Object {
     },
     "0xa56193e39780d268b02bf5d9387179cc7ac9884b": Object {
       "address": "0xa56193e39780d268b02bf5d9387179cc7ac9884b",
-      "balance": 999999998018193n,
+      "balance": 999999998018197n,
       "smartContracts": Array [
         "0x47e7a20867f04c007c2b76e96ec49bf8d9398bd8",
       ],
@@ -676,7 +676,7 @@ Object {
       },
       "nonce": "2",
       "receipt": Object {
-        "cumulative_gas": "350",
+        "cumulative_gas": "346",
         "epoch_num": "1",
         "success": true,
       },
