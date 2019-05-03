@@ -59,4 +59,7 @@ These are some shallow wrappers around the ZNS contracts. They all extend the
 
 ### `__tests__/`
 
-Here is where all the tests are.
+Here is where all the tests are. We use `jest` on it's default settings.
+
+We rely on [snapshot testing](https://jestjs.io/docs/en/snapshot-testing)
+heavily.
