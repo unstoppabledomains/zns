@@ -21,7 +21,6 @@ function makeBaseSim() {
       scale: '100',
       increment: '2',
       ownedNode: rootNode,
-
       minimumBid: '1',
       minimumAuctionLength: '2',
       initialAuctionLength: '3',

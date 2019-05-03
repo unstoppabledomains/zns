@@ -18,35 +18,33 @@ data, as well as traditional dns records.
 
 ```sh
 yarn install
-```
 
-```sh
-yarn test
+SCILLA_PROJECT_DIR=/path/to/scilla/ yarn test
 ```
 
 ## Contracts
 
+For an introduction to scilla and some of the design considerations look at the
+[Scilla Reference](./SCILLA.md)
+
 There are 3 ZNS contract variants.
 
-- Registry – This contract where the ZNS names are stored. The Registry provides
-  two functions, managing name ownership (similar to DNS Zone-like management)
-  and directing names to their resolver contracts (where name data is stored).
-  Registry mechanics are explained in detail in the
-  [Registry Reference](./REGISTRY.md).
+- Registry – This contract where the ZNS names are stored. Registry mechanics
+  are explained in detail in the [Registry Reference](./REGISTRY.md).
 
-- Resolvers – In order to keep the size of the main ZNS contract low the actual
-  data resolved when you look up a name is stored inside separate contracts
-  called **resolvers**. Resolvers just store a map of strings to bytes.
-  Resolvers mechanics are explained in detail in the
+- Resolvers – In order to keep the size of the main ZNS contract low, the data
+  resolved when you look up a name is stored in separate contracts called
+  Resolvers. Resolvers mechanics are explained in detail in the
   [Resolvers Reference](./RESOLVERS.md).
 
 - Registrars – These contracts manage the distribution of ZNS names. ZNS has 2
   of them. An auction registrar, which implements open, ascending price,
   variable length auction. And a simple registrar listing all names for a fixed
-  price for after the initial auction period. Registrar mechanics are explained
-  in detail in the [Registrar Reference](./REGISTRAR.md).
+  price designed to be put in place after the initial auction period. Registrar
+  mechanics are explained in detail in the
+  [Registrar Reference](./REGISTRAR.md).
 
-For more on general contract structure look at the [./SCILLA.md](./SCILLA.md)
+For more thoughts on ZNS look at our [List of Concerns](./CONCERNS.md).
 
 ## License
 

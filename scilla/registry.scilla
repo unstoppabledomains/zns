@@ -217,8 +217,6 @@ field records: Map ByStr32 Record =
 (* IAM system that ZNS uses *)
 field approvals: Map ByStr32 ByStr20 = Emp ByStr32 ByStr20
 field operators: Map ByStr20 (List ByStr20) = Emp ByStr20 (List ByStr20)
-
-(*  *)
 field admins: List ByStr20 = nilByStr20
 
 (* END: Mutable Fields *)
