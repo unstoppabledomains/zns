@@ -325,6 +325,26 @@ end
 (* END: Admin Transitions *)
 
 (* START: Name Transitions *)
+transition configure(node: ByStr32, owner: ByStr20, resolver: ByStr20) 
+  maybeRecord <- records[node];
+  maybeApproved <- approvals[node];
+  operators <- operators;
+
+  isSenderOAO = getIsOAO _sender maybeRecord maybeApproved operators;
+
+  match isSenderOAO with
+  | True =>
+    newRecord = Record owner resolver;
+    records[node] := newRecord;
+
+    e = eConfigured node owner resolver;
+    event e
+  | False =>
+    e = let m = "Sender not node owner, approved or operator" in eError m eCodeFailureIAM;
+    event e
+  end
+end
+
 transition transfer(node: ByStr32, owner: ByStr20)
   maybeRecord <- records[node];
   maybeApproved <- approvals[node];
@@ -345,7 +365,6 @@ transition transfer(node: ByStr32, owner: ByStr20)
     event e
   end
 end
-
 
 transition assign(parent: ByStr32, label: String, owner: ByStr20)
   maybeRecord <- records[parent];
@@ -376,31 +395,42 @@ transition assign(parent: ByStr32, label: String, owner: ByStr20)
     event e
   end
 end
+(* END: Name Transitions *)
 
+(* START: Admin Transitions *)
+transition bestow(parent: ByStr32, label: String, owner: ByStr20, resolver: ByStr20)
+  admins <- admins;
+  node = parentLabelToNode parent label;
+  recordExists <- exists records[node];
+  
+  isOk = 
+    let isSenderAdmin = listByStr20Contains admins _sender in
+    let recordIsEmpty = negb recordExists in
+      andb isSenderAdmin recordIsEmpty;
+    
 
-transition configure(node: ByStr32, owner: ByStr20, resolver: ByStr20) 
-  maybeRecord <- records[node];
-  maybeApproved <- approvals[node];
-  operators <- operators;
-
-  isSenderOAO = getIsOAO _sender maybeRecord maybeApproved operators;
-
-  match isSenderOAO with
+  match isOk with
   | True =>
+    match recordExists with
+    | False =>
+      e = eNewDomain parent label;
+      event e
+    | _ => 
+    end;
+
     newRecord = Record owner resolver;
     records[node] := newRecord;
 
-    e = eConfigured node owner resolver;
+    e = eTransfered node owner;
     event e
   | False =>
-    e = let m = "Sender not node owner, approved or operator" in eError m eCodeFailureIAM;
+    e = let m = "Sender admin" in eError m eCodeFailureIAM;
     event e
   end
 end
-(* END: Name Transitions *)
+(* START: Admin Transitions *)
 
 (* START: Reciever Transitions *)
-
 transition sendZNSRecordTo(address: ByStr20, parent: ByStr32, label: String)
   accept;
 
