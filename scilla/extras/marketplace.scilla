@@ -1,0 +1,102 @@
+scilla_version 0
+
+import BoolUtils IntUtils ListUtils NatUtils PairUtils
+
+library MarketplaceLib
+
+let Purchase =
+  fun(node: ByStr32) =>
+  fun(amount: ByStr32) =>
+  fun(owner: ByStr32) =>
+    {_eventname: "Purchase"; node: node; amount: amount; owner: owner}
+
+let Error =
+  {_eventname: "Error"}
+
+let Withdraw =
+  fun(depositee: ByStr20) =>
+  fun(amount: Uint128) =>
+  fun(address: ByStr20) =>
+    {_eventname: "Withdraw"; depositee: depositee; amount: amount; 
+     address: address}
+
+let Listed =
+  fun(sender: ByStr32) =>
+  fun(node: ByStr32) =>
+  fun(amount: ByStr32) =>
+    {_eventname: "Listed"; sender: sender; node: node; amount: amount}
+
+contract Marketplace(
+  registry: ByStr20
+)
+
+field listings: Map ByStr20 (Map ByStr32 Uint128) = Emp ByStr20 (Map ByStr32 Uint128)
+field deposits: Map ByStr20 Uint128 = Emp ByStr20 Uint128
+
+transition onZNSRecordReceived(
+  origin: ByStr20, 
+  node: ByStr32, 
+  parent: ByStr32, 
+  label: String, 
+  owner: ByStr20, 
+  resolver: ByStr20
+)
+  accept;
+
+  maybeListing <- listings[origin][node];
+
+  isOk = 
+    let isOkSender = builtin eq _sender registry in
+    let isThisOwner = builtin eq _this_address owner in
+    let isOkListingAndAmount = 
+      match maybeListing with
+      | None => False
+      | Some listing => builtin eq listing _amount
+      end in
+    let isOkAddresses = andb isOkSender isThisOwner in
+      andb isOkListingAndAmount isOkAddresses;
+
+  match isOk with
+  | True =>
+    maybeDeposit <- deposits[origin];
+    newDeposit = 
+      match maybeDeposit with
+      | None => _amount
+      | Some deposit => builtin add _amount deposit
+      end;
+    deposits[origin] := newDeposit;
+
+    e = Purchase node _amount origin;
+    event e;
+
+    msgs = let m = {_tag: "transfer", _recipient: registry; _amount: Uint128 0; node: node; owner: origin};
+    send msgs
+  | False =>
+    event Error;
+    msgs = let m = {_tag: "", _recipient: registry; _amount: _amount};
+    send msgs
+  end
+end
+
+transition list(node: Uint32, price: Uint128)
+  listings[_sender][node] := price;
+
+  e = Listed _sender node price;
+  event e;
+end
+
+transition withdraw(address: ByStr20)
+  maybeDeposit <- deposits[_sender];
+  match maybeDeposit with
+  | Some deposit =>
+    delete deposits[_sender];
+
+    e = Withdraw _sender amount address;
+    event e;
+
+    msgs = let m = {_tag: "", _recipient: address; _amount: deposit};
+    send msgs
+  | None =>
+    event Error
+  end
+end

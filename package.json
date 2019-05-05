@@ -3,20 +3,28 @@
   "version": "0.0.0",
   "devDependencies": {
     "@types/jest": "^24.0.11",
+    "bs58": "^4.0.1",
+    "elliptic": "^6.4.1",
     "jest": "^24.7.1",
     "prettier": "^1.17.0",
     "rimraf": "^2.6.3",
+    "ripemd160": "^2.0.2",
     "uuid": "^3.3.2"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@zilliqa-js/util": "^0.5.0",
+    "@zilliqa-js/zilliqa": "^0.5.4",
+    "base32": "^0.0.6",
+    "commander": "^2.20.0",
+    "tslib": "^1.9.3",
+    "utf8": "^3.0.0",
+    "whatwg-fetch": "^3.0.0"
+  },
   "jest": {
     "verbose": true
   },
   "scripts": {
     "test": "jest --detectOpenHandles --ci",
     "update-snapshot": "jest -u -t"
-  },
-  "engines": {
-    "node": "^10"
   }
 }

@@ -162,6 +162,7 @@ let getIsOwner =
         builtin eq sender owner
       end
     end
+
 let getIsOA = 
   fun(sender: ByStr20) =>
   fun(maybeRecord: Option Record) =>

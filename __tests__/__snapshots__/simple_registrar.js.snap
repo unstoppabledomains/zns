@@ -143,7 +143,7 @@ Object {
     },
     "0xa56193e39780d268b02bf5d9387179cc7ac9884b": Object {
       "address": "0xa56193e39780d268b02bf5d9387179cc7ac9884b",
-      "balance": 999999979094134n,
+      "balance": 999999979093366n,
       "smartContracts": Array [
         "0x47e7a20867f04c007c2b76e96ec49bf8d9398bd8",
         "0x111b38d3a1ba5fd8917dddfe1a993a4b87e498c0",
@@ -260,7 +260,7 @@ Object {
       },
       "nonce": "1",
       "receipt": Object {
-        "cumulative_gas": "9912042",
+        "cumulative_gas": "9912810",
         "epoch_num": "0",
         "success": true,
       },
@@ -434,7 +434,7 @@ Object {
     },
     "0xa56193e39780d268b02bf5d9387179cc7ac9884b": Object {
       "address": "0xa56193e39780d268b02bf5d9387179cc7ac9884b",
-      "balance": 999999978103045n,
+      "balance": 999999978102277n,
       "smartContracts": Array [
         "0x47e7a20867f04c007c2b76e96ec49bf8d9398bd8",
         "0x111b38d3a1ba5fd8917dddfe1a993a4b87e498c0",
@@ -584,7 +584,7 @@ Object {
       },
       "nonce": "1",
       "receipt": Object {
-        "cumulative_gas": "9912042",
+        "cumulative_gas": "9912810",
         "epoch_num": "0",
         "success": true,
       },
@@ -747,7 +747,7 @@ Object {
     },
     "0xa56193e39780d268b02bf5d9387179cc7ac9884b": Object {
       "address": "0xa56193e39780d268b02bf5d9387179cc7ac9884b",
-      "balance": 999999979094135n,
+      "balance": 999999979093367n,
       "smartContracts": Array [
         "0x47e7a20867f04c007c2b76e96ec49bf8d9398bd8",
         "0x111b38d3a1ba5fd8917dddfe1a993a4b87e498c0",
@@ -842,7 +842,7 @@ Object {
       },
       "nonce": "1",
       "receipt": Object {
-        "cumulative_gas": "9912042",
+        "cumulative_gas": "9912810",
         "epoch_num": "0",
         "success": true,
       },
@@ -1005,7 +1005,7 @@ Object {
     },
     "0xa56193e39780d268b02bf5d9387179cc7ac9884b": Object {
       "address": "0xa56193e39780d268b02bf5d9387179cc7ac9884b",
-      "balance": 999999979093636n,
+      "balance": 999999979092868n,
       "smartContracts": Array [
         "0x47e7a20867f04c007c2b76e96ec49bf8d9398bd8",
         "0x111b38d3a1ba5fd8917dddfe1a993a4b87e498c0",
@@ -1100,7 +1100,7 @@ Object {
       },
       "nonce": "1",
       "receipt": Object {
-        "cumulative_gas": "9912042",
+        "cumulative_gas": "9912810",
         "epoch_num": "0",
         "success": true,
       },
