@@ -4,26 +4,32 @@ import BoolUtils IntUtils ListUtils NatUtils PairUtils
 
 library MarketplaceLib
 
-let Purchase =
+let nilMessage = Nil {Message}
+
+let oneMsg =
+  fun(msg: Message) =>
+    Cons {Message} msg nilMessage
+
+let ePurchase =
   fun(node: ByStr32) =>
-  fun(amount: ByStr32) =>
-  fun(owner: ByStr32) =>
+  fun(amount: Uint128) =>
+  fun(owner: ByStr20) =>
     {_eventname: "Purchase"; node: node; amount: amount; owner: owner}
 
-let Error =
+let eError =
   {_eventname: "Error"}
 
-let Withdraw =
+let eWithdraw =
   fun(depositee: ByStr20) =>
   fun(amount: Uint128) =>
   fun(address: ByStr20) =>
     {_eventname: "Withdraw"; depositee: depositee; amount: amount; 
      address: address}
 
-let Listed =
-  fun(sender: ByStr32) =>
+let eListed =
+  fun(sender: ByStr20) =>
   fun(node: ByStr32) =>
-  fun(amount: ByStr32) =>
+  fun(amount: Uint128) =>
     {_eventname: "Listed"; sender: sender; node: node; amount: amount}
 
 contract Marketplace(
@@ -66,23 +72,26 @@ transition onZNSRecordReceived(
       end;
     deposits[origin] := newDeposit;
 
-    e = Purchase node _amount origin;
+    e = ePurchase node _amount origin;
     event e;
 
-    msgs = let m = {_tag: "transfer", _recipient: registry; _amount: Uint128 0; node: node; owner: origin};
+    msgs = let m = {_tag: "transfer"; _recipient: registry; _amount: Uint128 0; 
+                    node: node; owner: origin} in 
+      oneMsg m;
     send msgs
   | False =>
-    event Error;
-    msgs = let m = {_tag: "", _recipient: registry; _amount: _amount};
+    event eError;
+    msgs = let m = {_tag: ""; _recipient: registry; _amount: _amount} in 
+      oneMsg m;
     send msgs
   end
 end
 
-transition list(node: Uint32, price: Uint128)
+transition list(node: ByStr32, price: Uint128)
   listings[_sender][node] := price;
 
-  e = Listed _sender node price;
-  event e;
+  e = eListed _sender node price;
+  event e
 end
 
 transition withdraw(address: ByStr20)
@@ -91,12 +100,13 @@ transition withdraw(address: ByStr20)
   | Some deposit =>
     delete deposits[_sender];
 
-    e = Withdraw _sender amount address;
+    e = eWithdraw _sender _amount address;
     event e;
 
-    msgs = let m = {_tag: "", _recipient: address; _amount: deposit};
+    msgs = let m = {_tag: ""; _recipient: address; _amount: deposit} in 
+      oneMsg m;
     send msgs
   | None =>
-    event Error
+    event eError
   end
 end

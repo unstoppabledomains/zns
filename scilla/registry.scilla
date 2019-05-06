@@ -232,17 +232,17 @@ field records: Map ByStr32 Record =
 (* IAM system that ZNS uses *)
 field approvals: Map ByStr32 ByStr20 = Emp ByStr32 ByStr20
 field operators: Map ByStr20 (List ByStr20) = Emp ByStr20 (List ByStr20)
-field admins: List ByStr20 = nilByStr20
+field admins: List ByStr20 = Cons {ByStr20} initialOwner nilByStr20
 
 (* END: Mutable Fields *)
 
 (* START: Admin Transitions *)
 transition setAdmin(address: ByStr20, isApproved: Bool)
-  maybeRootRecord <- records[zeroByStr32];
+  admins <- admins;
 
-  isSenderRootNodeOwner = getIsOwner _sender maybeRootRecord;
+  isSenderAdmin = listByStr20Contains admins _sender;
 
-  match isSenderRootNodeOwner with
+  match isSenderAdmin with
   | True =>
     admins <- admins;
 
@@ -403,12 +403,13 @@ transition bestow(parent: ByStr32, label: String, owner: ByStr20, resolver: BySt
   admins <- admins;
   node = parentLabelToNode parent label;
   recordExists <- exists records[node];
-  
+  maybeRecord <- records[node];
+
   isOk = 
     let isSenderAdmin = listByStr20Contains admins _sender in
-    let recordIsEmpty = negb recordExists in
-      andb isSenderAdmin recordIsEmpty;
-    
+    let recordOwner = recordMemberOwner maybeRecord in
+    let recordIsUnowned = builtin eq recordOwner zeroByStr20 in
+      andb isSenderAdmin recordIsUnowned;
 
   match isOk with
   | True =>
@@ -429,7 +430,7 @@ transition bestow(parent: ByStr32, label: String, owner: ByStr20, resolver: BySt
     event e
   end
 end
-(* START: Admin Transitions *)
+(* END: Admin Transitions *)
 
 (* START: Reciever Transitions *)
 transition sendZNSRecordTo(address: ByStr20, parent: ByStr32, label: String)
@@ -457,5 +458,4 @@ transition sendZNSRecordTo(address: ByStr20, parent: ByStr32, label: String)
 
   send msgs
 end
-
-
+(* END: Reciever Transitions *)

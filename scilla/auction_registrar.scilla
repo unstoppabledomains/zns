@@ -189,7 +189,7 @@ transition close(node: ByStr32)
         delete auctions[node];
         e = eClose node highestBidder currentBid;
 
-        msg = {_tag: "assign"; _recipient: registry; _amount: Uint128 0; 
+        msg = {_tag: "bestow"; _recipient: registry; _amount: Uint128 0; 
               parent: ownedNode; label: label; owner: highestBidder};
         msgs = oneMsg msg;
         send msgs

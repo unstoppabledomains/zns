@@ -72,7 +72,7 @@ transition onZNSRecordReceived(
     e = eRegister node origin;
 
     msgs = 
-      let msg = {_tag: "assign"; _recipient: registry; _amount: Uint128 0; 
+      let msg = {_tag: "bestow"; _recipient: registry; _amount: Uint128 0; 
                  parent: parent; label: label; owner: origin} in
         oneMsg msg;
     send msgs

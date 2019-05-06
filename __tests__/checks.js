@@ -10,3 +10,12 @@ for (const input of fs
     checker({input})
   })
 }
+
+for (const input of fs
+  .readdirSync(path.join(__dirname, '../scilla/extras'))
+  .map(v => path.join(__dirname, '../scilla/extras', v))
+  .filter(v => v.endsWith('.scilla'))) {
+  it(`should successfully type-check ${path.basename(input)}`, () => {
+    checker({input})
+  })
+}
