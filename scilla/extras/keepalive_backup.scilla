@@ -1,0 +1,67 @@
+scilla_version 0
+
+import BoolUtils IntUtils ListUtils NatUtils PairUtils
+
+library KeepAliveBackupLib
+
+let NewTOD = 
+  fun(tod: BNum) => 
+    {_eventname: "Error"; tod: tod}
+
+let Backup = 
+  fun(node: ByStr32) => 
+    {_eventname: "Error"; node: node}
+
+let Error =
+  {_eventname: "Error"}
+
+contract KeepAliveBackup(
+  backup: ByStr20,
+  owner: ByStr20,
+  registry: ByStr20
+)
+
+field tod BNum = BNum 0
+
+transition heartbeat(time: Uint64)
+  isOkOwner = builtin eq owner _sender;
+
+  match isOkOwner with
+  | True => 
+    blk <- & BLOCKNUMBER;
+    newTOD = badd blk time;
+    tod := newTOD;
+
+    e = NewTOD newTOD;
+    event e
+  | False =>
+  end
+end
+
+transition backup(node: ByStr32)
+  tod <- tod;
+
+  isInitialized = let bn = BNum 0 in builtin eq tod bn;
+
+  match isInitialized with 
+  | True => 
+    blk <- & BLOCKNUMBER;
+
+    isOk = 
+      let isOkBlk = builtin blt blk tod in 
+      let isOkOwner = builtin eq owner _sender in
+        andb isOkBlk isOkOwner;
+
+    match isOk with
+    | True =>
+      e = Backup node;
+      event e;
+
+      msgs = let m = {_tag: "transfer", _recipient: registry; 
+                      _amount: Uint128 0; node: node; owner: backup};
+      send msgs
+    | False => event Error
+    end
+  | False => event Error
+  end
+end

@@ -31,7 +31,7 @@ contract SimpleRegistrar(
   initialPrice: Uint128
 )
 
-field price Uint128 = initialPrice
+field price: Uint128 = initialPrice
 
 transition setPrice(price: Uint128)
   isOkSender = builtin eq _sender owner;
@@ -41,9 +41,7 @@ transition setPrice(price: Uint128)
     e = ePriceSet price;
     event e;
 
-    msgs = let msg = {_tag: ""; _recipient: address; _amount: _amount} in 
-      oneMsg msg;
-    send msgs
+    price := price
   | _ =>
   end
 end

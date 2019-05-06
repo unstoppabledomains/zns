@@ -59,7 +59,7 @@ also global admins. ZNS provides the following functions for these purposes
 
 ### Management
 
-All node owners, admins, approved accounts and operators can call each of these
+All node owners, approved accounts and operators can call each of these
 functions.
 
 - `configure(node: ByStr32, owner: ByStr20, resolver: ByStr20)` - Configure an
@@ -91,3 +91,11 @@ node's records and funds to an account.
     account.
   - All transactions should verify that they can manage either `node` or
     `parent`.
+
+### Admin
+
+Admins can give out names.
+
+- `bestow(parent: ByStr32, label: String, owner: ByStr20, resolver: ByStr20)` -
+  Can only be called by an `admin` and allows for Unstoppable domains to
+  pre-configure names at the beginning. As well as accept CCs later.
