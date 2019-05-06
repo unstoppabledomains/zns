@@ -44,7 +44,7 @@ There are 3 ZNS contract variants.
   variable length auction. And a simple registrar listing all names for a fixed
   price designed to be put in place after the initial auction period. Registrar
   mechanics are explained in detail in the
-  [Registrar Reference](./REGISTRAR.md).
+  [Registrar Reference](./REGISTRAR.md). Bla bla bla
 
 For more thoughts on ZNS look at the [List of Concerns](./CONCERNS.md).
 
