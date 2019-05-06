@@ -4,15 +4,20 @@ import BoolUtils IntUtils ListUtils NatUtils PairUtils
 
 library KeepAliveBackupLib
 
-let NewTOD = 
+let oneMsg =
+  fun(msg: Message) =>
+    let nilMsg = Nil {Message} in
+    Cons {Message} msg nilMsg
+
+let eNewTOD = 
   fun(tod: BNum) => 
-    {_eventname: "Error"; tod: tod}
+    {_eventname: "NewTOD"; tod: tod}
 
-let Backup = 
+let eBackup = 
   fun(node: ByStr32) => 
-    {_eventname: "Error"; node: node}
+    {_eventname: "Backup"; node: node}
 
-let Error =
+let eError =
   {_eventname: "Error"}
 
 contract KeepAliveBackup(
@@ -21,7 +26,7 @@ contract KeepAliveBackup(
   registry: ByStr20
 )
 
-field tod BNum = BNum 0
+field tod: BNum = BNum 0
 
 transition heartbeat(time: Uint64)
   isOkOwner = builtin eq owner _sender;
@@ -29,39 +34,42 @@ transition heartbeat(time: Uint64)
   match isOkOwner with
   | True => 
     blk <- & BLOCKNUMBER;
-    newTOD = badd blk time;
+    newTOD = builtin badd blk time;
     tod := newTOD;
 
-    e = NewTOD newTOD;
+    e = eNewTOD newTOD;
     event e
   | False =>
   end
 end
 
 transition backup(node: ByStr32)
-  tod <- tod;
+  currentTOD <- tod;
 
-  isInitialized = let bn = BNum 0 in builtin eq tod bn;
+  isInitialized = let bn = BNum 0 in builtin eq currentTOD bn;
 
   match isInitialized with 
   | True => 
     blk <- & BLOCKNUMBER;
 
     isOk = 
-      let isOkBlk = builtin blt blk tod in 
+      let isOkBlk = builtin blt blk currentTOD in 
       let isOkOwner = builtin eq owner _sender in
         andb isOkBlk isOkOwner;
 
     match isOk with
     | True =>
-      e = Backup node;
+      e = eBackup node;
       event e;
 
-      msgs = let m = {_tag: "transfer", _recipient: registry; 
-                      _amount: Uint128 0; node: node; owner: backup};
+      msgs = let m = {_tag: "transfer"; _recipient: registry; 
+                      _amount: Uint128 0; node: node; owner: backup} in
+        oneMsg m;
       send msgs
-    | False => event Error
+    | False => 
+      event eError
     end
-  | False => event Error
+  | False => 
+    event eError
   end
 end
