@@ -33,10 +33,6 @@ let calcEndingBlk =
       | False => endingBlk
       end
 
-(**********)
-(* Events *)
-(**********)
-
 let eRunningSet =
   fun(running: Bool) =>
     {_eventname: "RunningSet"; running: running}
@@ -105,14 +101,19 @@ transition onZNSRecordReceived(
 
     match isOk with
     | True =>
-        blk <- & BLOCKNUMBER;
-        endingBlk = builtin badd blk initialAuctionLength;
-        newAuction = Auction origin _amount endingBlk label;
+      blk <- & BLOCKNUMBER;
+      endingBlk = builtin badd blk initialAuctionLength;
+      newAuction = Auction origin _amount endingBlk label;
 
-        auctions[node] := newAuction;
+      auctions[node] := newAuction;
 
-        e = eStart node origin _amount endingBlk;
-        event e
+      e = eStart node origin _amount endingBlk;
+      event e
+
+      msg = {_tag: "bestow"; _recipient: registry; _amount: Uint128 0; 
+             parent: ownedNode; label: label; owner: _this_address};
+      msgs = oneMsg msg;
+      send msgs
     | False =>
       e = let m = "Auctions are not running or invalid amount sent" in eError m;
       event e;
@@ -189,7 +190,7 @@ transition close(node: ByStr32)
         delete auctions[node];
         e = eClose node highestBidder currentBid;
 
-        msg = {_tag: "bestow"; _recipient: registry; _amount: Uint128 0; 
+        msg = {_tag: "assign"; _recipient: registry; _amount: Uint128 0; 
               parent: ownedNode; label: label; owner: highestBidder};
         msgs = oneMsg msg;
         send msgs
