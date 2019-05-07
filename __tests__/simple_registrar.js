@@ -23,11 +23,10 @@ function makeBaseSim() {
     },
   )
 
-  registry.f.approve(
+  registry.f.setAdmin(
     {fromAddr: address, gasLimit: 1000},
-    rootNode,
     registrar.address,
-    // 'True',
+    'True',
   )
 
   return {
@@ -64,6 +63,7 @@ describe('simple registrar users', () => {
 
     expect(sim.GetSnapShot(true)).toMatchSnapshot()
   })
+
   it('should fail to register a name if already owned', () => {
     const {sim, registrar, registry, address} = makeBaseSim()
 

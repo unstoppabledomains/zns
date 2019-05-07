@@ -52,7 +52,8 @@ transition onZNSRecordReceived(
   parent: ByStr32,
   label: String,
   owner: ByStr20,
-  resolver: ByStr20
+  resolver: ByStr20,
+  approved: ByStr20
 )
   accept;
 
@@ -73,7 +74,8 @@ transition onZNSRecordReceived(
 
     msgs = 
       let msg = {_tag: "bestow"; _recipient: registry; _amount: Uint128 0; 
-                 parent: parent; label: label; owner: origin} in
+                 parent: parent; label: label; owner: origin; 
+                 resolver: zeroByStr20} in
         oneMsg msg;
     send msgs
   | False =>

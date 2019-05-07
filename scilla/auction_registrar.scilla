@@ -4,6 +4,8 @@ import BoolUtils IntUtils ListUtils NatUtils PairUtils
 
 library AuctionRegistrarLib
 
+let zeroByStr20 = 0x0000000000000000000000000000000000000000
+
 let oneMsg =
   fun(msg: Message) =>
     let nilMsg = Nil {Message} in
@@ -32,10 +34,6 @@ let calcEndingBlk =
       | True => minAuctionEnding
       | False => endingBlk
       end
-
-(**********)
-(* Events *)
-(**********)
 
 let eRunningSet =
   fun(running: Bool) =>
@@ -87,7 +85,8 @@ transition onZNSRecordReceived(
   parent: ByStr32, 
   label: String, 
   owner: ByStr20, 
-  resolver: ByStr20
+  resolver: ByStr20,
+  approved: ByStr20
 )
   accept;
 
@@ -98,28 +97,39 @@ transition onZNSRecordReceived(
     isRunning <- running;
 
     isOk = 
-      let isOkSender = builtin eq _sender registry in
+      let isOkParent = builtin eq ownedNode parent in
+      let isOkRecordOwner = builtin eq zeroByStr20 owner in
+      let isOkSender = builtin eq registry _sender in
       let isOkAmount = builtin lt initialMinimumBid _amount in
+      let isOkZns = andb isOkRecordOwner isOkParent in
       let isOkRequest = andb isOkSender isOkAmount in
-        andb isOkRequest isRunning;
+      let isOk = andb isOkZns isOkRequest in
+        andb isOk isRunning;
 
     match isOk with
     | True =>
-        blk <- & BLOCKNUMBER;
-        endingBlk = builtin badd blk initialAuctionLength;
-        newAuction = Auction origin _amount endingBlk label;
+      blk <- & BLOCKNUMBER;
+      endingBlk = builtin badd blk initialAuctionLength;
+      newAuction = Auction origin _amount endingBlk label;
 
-        auctions[node] := newAuction;
+      auctions[node] := newAuction;
 
-        e = eStart node origin _amount endingBlk;
-        event e
+      e = eStart node origin _amount endingBlk;
+      event e;
+
+      msgs = 
+        let m = {_tag: "bestow"; _recipient: registry; _amount: Uint128 0; 
+                 parent: ownedNode; label: label; owner: _this_address; 
+                 resolver: zeroByStr20} in
+        oneMsg m;
+      send msgs
     | False =>
       e = let m = "Auctions are not running or invalid amount sent" in eError m;
       event e;
  
       msgs = 
-        let msg = {_tag: ""; _recipient: origin; _amount: _amount} in
-          oneMsg msg;
+        let m = {_tag: ""; _recipient: origin; _amount: _amount} in
+          oneMsg m;
       send msgs
     end
   | True =>
@@ -127,8 +137,8 @@ transition onZNSRecordReceived(
     event e;
  
     msgs = 
-      let msg = {_tag: ""; _recipient: origin; _amount: _amount} in
-        oneMsg msg;
+      let m = {_tag: ""; _recipient: origin; _amount: _amount} in
+        oneMsg m;
 
     send msgs
   end
@@ -189,7 +199,7 @@ transition close(node: ByStr32)
         delete auctions[node];
         e = eClose node highestBidder currentBid;
 
-        msg = {_tag: "bestow"; _recipient: registry; _amount: Uint128 0; 
+        msg = {_tag: "assign"; _recipient: registry; _amount: Uint128 0; 
               parent: ownedNode; label: label; owner: highestBidder};
         msgs = oneMsg msg;
         send msgs

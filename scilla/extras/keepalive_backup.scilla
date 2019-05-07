@@ -52,7 +52,7 @@ transition backup(node: ByStr32)
   | True => 
     blk <- & BLOCKNUMBER;
 
-    isOk = 
+    isOk =
       let isOkBlk = builtin blt blk currentTOD in 
       let isOkOwner = builtin eq owner _sender in
         andb isOkBlk isOkOwner;
