@@ -94,10 +94,14 @@ transition onZNSRecordReceived(
     isRunning <- running;
 
     isOk = 
-      let isOkSender = builtin eq _sender registry in
+      let isOkParent = builtin eq ownedNode parent in
+      let isOkRecordOwner = builtin eq zeroByStr20 owner in
+      let isOkSender = builtin eq registry _sender in
       let isOkAmount = builtin lt initialMinimumBid _amount in
+      let isOkZns = andb isOkRecordOwner isOkParent in
       let isOkRequest = andb isOkSender isOkAmount in
-        andb isOkRequest isRunning;
+      let isOk = andb isOkZns isOkRequest in
+        andb isOk isRunning;
 
     match isOk with
     | True =>
@@ -111,7 +115,8 @@ transition onZNSRecordReceived(
       event e
 
       msg = {_tag: "bestow"; _recipient: registry; _amount: Uint128 0; 
-             parent: ownedNode; label: label; owner: _this_address};
+             parent: ownedNode; label: label; owner: _this_address; 
+             resolver: zeroByStr20};
       msgs = oneMsg msg;
       send msgs
     | False =>

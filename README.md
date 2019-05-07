@@ -48,6 +48,40 @@ There are 3 ZNS contract variants.
 
 For more thoughts on ZNS look at the [List of Concerns](./CONCERNS.md).
 
+## Example Flow
+
+1. **Pre-order**
+
+   - `new registry(initialOwner)`
+   - `registry.setAdmin(...pre_configuration_admins, true)`
+   - `registry.bestow(...pre_orders)`
+   - `registry.bestow(rootNode, zil, burn)`
+   - `registry.transfer(rootNode, burn)`
+
+2. **Auctions**
+
+   - `new auction_registrar(registry, zil, auction_stats)`
+   - `registry.setAdmin(auction_registrar, true)`
+   - `registry.sendZNSRecordTo(auction_registrar, zilNode, myname)`
+     - `auction_registrar.onZNSRecordReceived(...) - Starts auction`
+     - `registry.bestow(zilNode, myname, auction_registrar, burn)`
+   - `auction_registrar.bid(mynameNode)`
+   - `auction_registrar.close(mynameNode)`
+
+3. **Fixed price**
+
+   - `new simple_registrar(registry, zil, price)`
+   - `auction_registrar.setRunning(false) - No more starting auctions`
+   - `registry.setAdmin(simple_registrar, true)`
+   - `registry.sendZNSRecordTo(simple_registrar, zilNode, myname)`
+     - `simple_registrar.onZNSRecordReceived(...) - Purchases name`
+     - `registry.bestow(zilNode, myname, origin, burn)`
+
+4. **CC Purchases**
+
+   - `registry.setAdmin(cc_registration_account, true)`
+   - `registry.bestow(zilNode, myname, cc_purchaser, resolver)`
+
 ## License
 
 ZNS is [MIT licensed](./LICENSE).
