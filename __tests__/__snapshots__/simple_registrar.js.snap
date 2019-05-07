@@ -5,7 +5,7 @@ Object {
   "accounts": Object {
     "0x111b38d3a1ba5fd8917dddfe1a993a4b87e498c0": Object {
       "address": "0x111b38d3a1ba5fd8917dddfe1a993a4b87e498c0",
-      "balance": -736382n,
+      "balance": -732554n,
       "code": undefined,
       "init": Array [
         Object {
@@ -60,7 +60,7 @@ Object {
     },
     "0x47e7a20867f04c007c2b76e96ec49bf8d9398bd8": Object {
       "address": "0x47e7a20867f04c007c2b76e96ec49bf8d9398bd8",
-      "balance": -892973n,
+      "balance": -893013n,
       "code": undefined,
       "init": Array [
         Object {
@@ -92,6 +92,14 @@ Object {
           "vname": "_balance",
         },
         Object {
+          "type": "List (ByStr20)",
+          "value": Array [
+            "0x111b38d3a1ba5fd8917dddfe1a993a4b87e498c0",
+            "0xa56193e39780d268b02bf5d9387179cc7ac9884b",
+          ],
+          "vname": "admins",
+        },
+        Object {
           "type": "Map (ByStr32) (Record)",
           "value": Array [
             Object {
@@ -121,12 +129,7 @@ Object {
         },
         Object {
           "type": "Map (ByStr32) (ByStr20)",
-          "value": Array [
-            Object {
-              "key": "0x0000000000000000000000000000000000000000000000000000000000000000",
-              "val": "0x111b38d3a1ba5fd8917dddfe1a993a4b87e498c0",
-            },
-          ],
+          "value": Array [],
           "vname": "approvals",
         },
         Object {
@@ -134,16 +137,11 @@ Object {
           "value": Array [],
           "vname": "operators",
         },
-        Object {
-          "type": "List (ByStr20)",
-          "value": Array [],
-          "vname": "admins",
-        },
       ],
     },
     "0xa56193e39780d268b02bf5d9387179cc7ac9884b": Object {
       "address": "0xa56193e39780d268b02bf5d9387179cc7ac9884b",
-      "balance": 999999979093366n,
+      "balance": 999999979093064n,
       "smartContracts": Array [
         "0x47e7a20867f04c007c2b76e96ec49bf8d9398bd8",
         "0x111b38d3a1ba5fd8917dddfe1a993a4b87e498c0",
@@ -198,13 +196,22 @@ Object {
       ],
     },
     "0xe28330792789071f66770eb479dd457eaf7e2911f6d2ca94cbe02d6e9a445029": Object {
-      "_eventname": "Approved",
+      "_eventname": "AdminSet",
       "address": "0x47e7a20867f04c007c2b76e96ec49bf8d9398bd8",
       "params": Array [
         Object {
           "type": "ByStr20",
           "value": "0x111b38d3a1ba5fd8917dddfe1a993a4b87e498c0",
           "vname": "address",
+        },
+        Object {
+          "type": "Bool",
+          "value": Object {
+            "argtypes": Array [],
+            "arguments": Array [],
+            "constructor": "True",
+          },
+          "vname": "isApproved",
         },
       ],
     },
@@ -221,7 +228,7 @@ Object {
       },
       "nonce": "2",
       "receipt": Object {
-        "cumulative_gas": "9903203",
+        "cumulative_gas": "9903244",
         "epoch_num": "1",
         "success": true,
       },
@@ -242,7 +249,7 @@ Object {
       },
       "nonce": "4",
       "receipt": Object {
-        "cumulative_gas": "3683",
+        "cumulative_gas": "3855",
         "epoch_num": "3",
         "success": true,
       },
@@ -260,7 +267,7 @@ Object {
       },
       "nonce": "1",
       "receipt": Object {
-        "cumulative_gas": "9912810",
+        "cumulative_gas": "9912928",
         "epoch_num": "0",
         "success": true,
       },
@@ -280,7 +287,7 @@ Object {
       },
       "nonce": "3",
       "receipt": Object {
-        "cumulative_gas": "624",
+        "cumulative_gas": "767",
         "epoch_num": "2",
         "success": true,
       },
@@ -383,6 +390,14 @@ Object {
           "vname": "_balance",
         },
         Object {
+          "type": "List (ByStr20)",
+          "value": Array [
+            "0x111b38d3a1ba5fd8917dddfe1a993a4b87e498c0",
+            "0xa56193e39780d268b02bf5d9387179cc7ac9884b",
+          ],
+          "vname": "admins",
+        },
+        Object {
           "type": "Map (ByStr32) (Record)",
           "value": Array [
             Object {
@@ -412,12 +427,7 @@ Object {
         },
         Object {
           "type": "Map (ByStr32) (ByStr20)",
-          "value": Array [
-            Object {
-              "key": "0x0000000000000000000000000000000000000000000000000000000000000000",
-              "val": "0x111b38d3a1ba5fd8917dddfe1a993a4b87e498c0",
-            },
-          ],
+          "value": Array [],
           "vname": "approvals",
         },
         Object {
@@ -425,16 +435,11 @@ Object {
           "value": Array [],
           "vname": "operators",
         },
-        Object {
-          "type": "List (ByStr20)",
-          "value": Array [],
-          "vname": "admins",
-        },
       ],
     },
     "0xa56193e39780d268b02bf5d9387179cc7ac9884b": Object {
       "address": "0xa56193e39780d268b02bf5d9387179cc7ac9884b",
-      "balance": 999999978102277n,
+      "balance": 999999978102013n,
       "smartContracts": Array [
         "0x47e7a20867f04c007c2b76e96ec49bf8d9398bd8",
         "0x111b38d3a1ba5fd8917dddfe1a993a4b87e498c0",
@@ -502,13 +507,22 @@ Object {
       ],
     },
     "0xe28330792789071f66770eb479dd457eaf7e2911f6d2ca94cbe02d6e9a445029": Object {
-      "_eventname": "Approved",
+      "_eventname": "AdminSet",
       "address": "0x47e7a20867f04c007c2b76e96ec49bf8d9398bd8",
       "params": Array [
         Object {
           "type": "ByStr20",
           "value": "0x111b38d3a1ba5fd8917dddfe1a993a4b87e498c0",
           "vname": "address",
+        },
+        Object {
+          "type": "Bool",
+          "value": Object {
+            "argtypes": Array [],
+            "arguments": Array [],
+            "constructor": "True",
+          },
+          "vname": "isApproved",
         },
       ],
     },
@@ -545,7 +559,7 @@ Object {
       },
       "nonce": "2",
       "receipt": Object {
-        "cumulative_gas": "9903203",
+        "cumulative_gas": "9903244",
         "epoch_num": "1",
         "success": true,
       },
@@ -566,7 +580,7 @@ Object {
       },
       "nonce": "4",
       "receipt": Object {
-        "cumulative_gas": "1050",
+        "cumulative_gas": "1012",
         "epoch_num": "3",
         "success": true,
       },
@@ -584,7 +598,7 @@ Object {
       },
       "nonce": "1",
       "receipt": Object {
-        "cumulative_gas": "9912810",
+        "cumulative_gas": "9912928",
         "epoch_num": "0",
         "success": true,
       },
@@ -604,7 +618,7 @@ Object {
       },
       "nonce": "3",
       "receipt": Object {
-        "cumulative_gas": "624",
+        "cumulative_gas": "767",
         "epoch_num": "2",
         "success": true,
       },
@@ -707,6 +721,14 @@ Object {
           "vname": "_balance",
         },
         Object {
+          "type": "List (ByStr20)",
+          "value": Array [
+            "0x111b38d3a1ba5fd8917dddfe1a993a4b87e498c0",
+            "0xa56193e39780d268b02bf5d9387179cc7ac9884b",
+          ],
+          "vname": "admins",
+        },
+        Object {
           "type": "Map (ByStr32) (Record)",
           "value": Array [
             Object {
@@ -725,12 +747,7 @@ Object {
         },
         Object {
           "type": "Map (ByStr32) (ByStr20)",
-          "value": Array [
-            Object {
-              "key": "0x0000000000000000000000000000000000000000000000000000000000000000",
-              "val": "0x111b38d3a1ba5fd8917dddfe1a993a4b87e498c0",
-            },
-          ],
+          "value": Array [],
           "vname": "approvals",
         },
         Object {
@@ -738,16 +755,11 @@ Object {
           "value": Array [],
           "vname": "operators",
         },
-        Object {
-          "type": "List (ByStr20)",
-          "value": Array [],
-          "vname": "admins",
-        },
       ],
     },
     "0xa56193e39780d268b02bf5d9387179cc7ac9884b": Object {
       "address": "0xa56193e39780d268b02bf5d9387179cc7ac9884b",
-      "balance": 999999979093367n,
+      "balance": 999999979093065n,
       "smartContracts": Array [
         "0x47e7a20867f04c007c2b76e96ec49bf8d9398bd8",
         "0x111b38d3a1ba5fd8917dddfe1a993a4b87e498c0",
@@ -781,13 +793,22 @@ Object {
       ],
     },
     "0xe28330792789071f66770eb479dd457eaf7e2911f6d2ca94cbe02d6e9a445029": Object {
-      "_eventname": "Approved",
+      "_eventname": "AdminSet",
       "address": "0x47e7a20867f04c007c2b76e96ec49bf8d9398bd8",
       "params": Array [
         Object {
           "type": "ByStr20",
           "value": "0x111b38d3a1ba5fd8917dddfe1a993a4b87e498c0",
           "vname": "address",
+        },
+        Object {
+          "type": "Bool",
+          "value": Object {
+            "argtypes": Array [],
+            "arguments": Array [],
+            "constructor": "True",
+          },
+          "vname": "isApproved",
         },
       ],
     },
@@ -804,7 +825,7 @@ Object {
       },
       "nonce": "2",
       "receipt": Object {
-        "cumulative_gas": "9903203",
+        "cumulative_gas": "9903244",
         "epoch_num": "1",
         "success": true,
       },
@@ -842,7 +863,7 @@ Object {
       },
       "nonce": "1",
       "receipt": Object {
-        "cumulative_gas": "9912810",
+        "cumulative_gas": "9912928",
         "epoch_num": "0",
         "success": true,
       },
@@ -862,7 +883,7 @@ Object {
       },
       "nonce": "3",
       "receipt": Object {
-        "cumulative_gas": "624",
+        "cumulative_gas": "767",
         "epoch_num": "2",
         "success": true,
       },
@@ -965,6 +986,14 @@ Object {
           "vname": "_balance",
         },
         Object {
+          "type": "List (ByStr20)",
+          "value": Array [
+            "0x111b38d3a1ba5fd8917dddfe1a993a4b87e498c0",
+            "0xa56193e39780d268b02bf5d9387179cc7ac9884b",
+          ],
+          "vname": "admins",
+        },
+        Object {
           "type": "Map (ByStr32) (Record)",
           "value": Array [
             Object {
@@ -983,12 +1012,7 @@ Object {
         },
         Object {
           "type": "Map (ByStr32) (ByStr20)",
-          "value": Array [
-            Object {
-              "key": "0x0000000000000000000000000000000000000000000000000000000000000000",
-              "val": "0x111b38d3a1ba5fd8917dddfe1a993a4b87e498c0",
-            },
-          ],
+          "value": Array [],
           "vname": "approvals",
         },
         Object {
@@ -996,16 +1020,11 @@ Object {
           "value": Array [],
           "vname": "operators",
         },
-        Object {
-          "type": "List (ByStr20)",
-          "value": Array [],
-          "vname": "admins",
-        },
       ],
     },
     "0xa56193e39780d268b02bf5d9387179cc7ac9884b": Object {
       "address": "0xa56193e39780d268b02bf5d9387179cc7ac9884b",
-      "balance": 999999979092868n,
+      "balance": 999999979092566n,
       "smartContracts": Array [
         "0x47e7a20867f04c007c2b76e96ec49bf8d9398bd8",
         "0x111b38d3a1ba5fd8917dddfe1a993a4b87e498c0",
@@ -1039,13 +1058,22 @@ Object {
       ],
     },
     "0xe28330792789071f66770eb479dd457eaf7e2911f6d2ca94cbe02d6e9a445029": Object {
-      "_eventname": "Approved",
+      "_eventname": "AdminSet",
       "address": "0x47e7a20867f04c007c2b76e96ec49bf8d9398bd8",
       "params": Array [
         Object {
           "type": "ByStr20",
           "value": "0x111b38d3a1ba5fd8917dddfe1a993a4b87e498c0",
           "vname": "address",
+        },
+        Object {
+          "type": "Bool",
+          "value": Object {
+            "argtypes": Array [],
+            "arguments": Array [],
+            "constructor": "True",
+          },
+          "vname": "isApproved",
         },
       ],
     },
@@ -1062,7 +1090,7 @@ Object {
       },
       "nonce": "2",
       "receipt": Object {
-        "cumulative_gas": "9903203",
+        "cumulative_gas": "9903244",
         "epoch_num": "1",
         "success": true,
       },
@@ -1100,7 +1128,7 @@ Object {
       },
       "nonce": "1",
       "receipt": Object {
-        "cumulative_gas": "9912810",
+        "cumulative_gas": "9912928",
         "epoch_num": "0",
         "success": true,
       },
@@ -1120,7 +1148,7 @@ Object {
       },
       "nonce": "3",
       "receipt": Object {
-        "cumulative_gas": "624",
+        "cumulative_gas": "767",
         "epoch_num": "2",
         "success": true,
       },

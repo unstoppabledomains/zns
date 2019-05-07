@@ -45,21 +45,22 @@ transition onZNSRecordReceived(
   parent: ByStr32, 
   label: String, 
   owner: ByStr20, 
-  resolver: ByStr20
+  resolver: ByStr20,
+  approved: ByStr20
 )
   accept;
 
-  maybeListing <- listings[origin][node];
+  maybeListing <- listings[owner][node];
 
   isOk = 
     let isOkSender = builtin eq _sender registry in
-    let isThisOwner = builtin eq _this_address owner in
+    let isThisApproved = builtin eq _this_address apporved in
     let isOkListingAndAmount = 
       match maybeListing with
       | None => False
       | Some listing => builtin eq listing _amount
       end in
-    let isOkAddresses = andb isOkSender isThisOwner in
+    let isOkAddresses = andb isOkSender isThisApproved in
       andb isOkListingAndAmount isOkAddresses;
 
   match isOk with

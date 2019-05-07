@@ -52,7 +52,8 @@ transition onZNSRecordReceived(
   parent: ByStr32,
   label: String,
   owner: ByStr20,
-  resolver: ByStr20
+  resolver: ByStr20,
+  approved: ByStr20
 )
   accept;
 

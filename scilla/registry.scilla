@@ -420,6 +420,7 @@ transition bestow(parent: ByStr32, label: String, owner: ByStr20, resolver: BySt
     | _ => 
     end;
 
+    approvals[node] := zeroByStr20;
     newRecord = Record owner resolver;
     records[node] := newRecord;
 
@@ -438,6 +439,12 @@ transition sendZNSRecordTo(address: ByStr20, parent: ByStr32, label: String)
 
   node = parentLabelToNode parent label;
   maybeRecord <- records[node];
+  maybeApproved <- approvals[node];
+  approved =
+    match maybeApproved with
+    | None => zeroByStr20
+    | Some approved => approved
+    end;
 
   msgs = 
     let msg = 
@@ -445,13 +452,13 @@ transition sendZNSRecordTo(address: ByStr20, parent: ByStr32, label: String)
       | None =>
         {_tag: "onZNSRecordReceived"; _amount: _amount; _recipient: address; 
          origin: _sender; node: node; parent: parent; label: label; 
-         owner: zeroByStr20; resolver: zeroByStr20}
+         owner: zeroByStr20; resolver: zeroByStr20; approved: approved}
       | Some record =>
         match record with
         | Record owner resolver =>
           {_tag: "onZNSRecordReceived"; _amount: _amount; _recipient: address; 
            origin: _sender; node: node; parent: parent; label: label; 
-           owner: owner; resolver: resolver}        
+           owner: owner; resolver: resolver; approved: approved}        
         end
       end in 
       oneMsg msg;
