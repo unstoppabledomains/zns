@@ -292,7 +292,7 @@ transition approve(node: ByStr32, address: ByStr20)
       event e
     | _ => (* Q?: Should I put an event here *)
     end
-  | False => 
+  | False =>
     e = let m = "Sender not node owner" in eError m eCodeFailureIAM;
     event e
   end
@@ -386,6 +386,7 @@ transition assign(parent: ByStr32, label: String, owner: ByStr20)
     | _ => 
     end;
 
+    approvals[node] := zeroByStr20;
     newRecord = Record owner zeroByStr20;
     records[node] := newRecord;
 
