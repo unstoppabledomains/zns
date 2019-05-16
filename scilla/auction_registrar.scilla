@@ -13,7 +13,7 @@ let oneMsg =
 
 type Auction = 
 | Auction of ByStr20 Uint128 BNum String
-(* Leader, Current Bid, Ending Block, Label *)
+(* Bidder, Current Bid, Ending Block, Label *)
 
 let calcMinimumBid = 
   fun(bidIncrementNumerator: Uint128) => 
@@ -61,6 +61,12 @@ let eClose =
   fun(bid: Uint128) =>
     {_eventname: "Close"; node: node; bidder: bidder; bid: bid}
 
+let eSetMinimumInitialBid =
+  fun(node: ByStr32) =>
+  fun(minimumInitialBid: Uint128) =>
+    {_eventname: "SetMinimumInitialBid"; node: node; 
+     minimumInitialBid: minimumInitialBid}
+
 let eError =
   fun(message: String) =>
     {_eventname: "Error"; message: message}
@@ -71,13 +77,14 @@ contract AuctionRegistrar(
   ownedNode: ByStr32,
   bidIncrementNumerator: Uint128,
   bidIncrementDenominator: Uint128,
-  initialMinimumBid: Uint128,
+  defaultInitialMinimumBid: Uint128,
   minimumAuctionLength: Uint64,
   initialAuctionLength: Uint64
 )
 
 field running: Bool = False
 field auctions: Map ByStr32 Auction = Emp ByStr32 Auction 
+field minimumInitialBids: Map ByStr32 Uint128 = Emp ByStr32 Uint128 
 
 transition onZNSRecordReceived(
   origin: ByStr20, 
@@ -95,12 +102,18 @@ transition onZNSRecordReceived(
   match auctionExists with
   | False =>
     isRunning <- running;
+    maybeMinimumBid <- minimumInitialBids[node];
 
     isOk = 
       let isOkParent = builtin eq ownedNode parent in
       let isOkRecordOwner = builtin eq zeroByStr20 owner in
       let isOkSender = builtin eq registry _sender in
-      let isOkAmount = builtin lt initialMinimumBid _amount in
+      let minimumBid = 
+        match maybeMinimumBid with
+        | None => defaultInitialMinimumBid
+        | Some amount => amount
+        end in
+      let isOkAmount = builtin lt minimumBid _amount in
       let isOkZns = andb isOkRecordOwner isOkParent in
       let isOkRequest = andb isOkSender isOkAmount in
       let isOk = andb isOkZns isOkRequest in
@@ -198,6 +211,7 @@ transition close(node: ByStr32)
       | True =>
         delete auctions[node];
         e = eClose node highestBidder currentBid;
+        event e;
 
         msg = {_tag: "assign"; _recipient: registry; _amount: Uint128 0; 
               parent: ownedNode; label: label; owner: highestBidder};
@@ -216,6 +230,18 @@ transition setRunning(newRunning: Bool)
   | True => 
     running := newRunning;
     e = eRunningSet newRunning;
+    event e
+  | _ =>
+  end
+end
+
+transition setMinimumBid(node: ByStr32, minimumInitialBid: Uint128)
+  isOkSender = builtin eq _sender owner;
+
+  match isOkSender with
+  | True =>
+    minimumInitialBids[node] := minimumInitialBid;
+    e = eSetMinimumInitialBid node minimumInitialBid;
     event e
   | _ =>
   end
