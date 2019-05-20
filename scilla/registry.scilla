@@ -286,7 +286,7 @@ end
 (* END: Admin Transitions *)
 
 (* START: Name Transitions *)
-transition configure(node: ByStr32, owner: ByStr20, resolver: ByStr20) 
+transition configureNode(node: ByStr32, owner: ByStr20, resolver: ByStr20) 
   maybeRecord <- records[node];
   maybeApproved <- approvals[node];
   recordOwner = recordMemberOwner maybeRecord;
@@ -306,6 +306,27 @@ transition configure(node: ByStr32, owner: ByStr20, resolver: ByStr20)
                     _amount: Uint128 0; _recipient: owner} 
       in oneMsg m;
     send msgs
+  | False =>
+    e = let m = "Sender not node owner, approved or operator" in eError m eCodeFailureIAM;
+    event e
+  end
+end
+
+transition configureResolver(node: ByStr32, resolver: ByStr20) 
+  maybeRecord <- records[node];
+  maybeApproved <- approvals[node];
+  recordOwner = recordMemberOwner maybeRecord;
+  maybeOperators <- operators[recordOwner];
+
+  isSenderOAO = getIsOAO _sender recordOwner maybeApproved maybeOperators;
+
+  match isSenderOAO with
+  | True =>
+    newRecord = Record recordOwner resolver;
+    records[node] := newRecord;
+
+    e = eConfigured node recordOwner resolver;
+    event e
   | False =>
     e = let m = "Sender not node owner, approved or operator" in eError m eCodeFailureIAM;
     event e
