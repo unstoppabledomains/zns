@@ -322,28 +322,6 @@ transition transfer(node: ByStr32, owner: ByStr20)
     records[node] := newRecord;
 
     e = eConfigured node owner zeroByStr20;
-    event e
-  | False =>
-    e = let m = "Sender not node owner, approved or operator" in eError m eCodeFailureIAM;
-    event e
-  end
-end
-
-transition safeTransfer(node: ByStr32, owner: ByStr20)
-  maybeRecord <- records[node];
-  maybeApproved <- approvals[node];
-  recordOwner = recordMemberOwner maybeRecord;
-  maybeOperators <- operators[recordOwner];
-
-  isSenderOAO = getIsOAO _sender recordOwner maybeApproved maybeOperators;
-
-  match isSenderOAO with
-  | True =>
-    approvals[node] := zeroByStr20;
-    newRecord = Record owner zeroByStr20;
-    records[node] := newRecord;
-
-    e = eConfigured node owner zeroByStr20;
     event e;
 
     msgs = let m = {_tag: "onZNSTransfer"; node: node; 
