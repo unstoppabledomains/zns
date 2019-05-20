@@ -286,7 +286,7 @@ end
 (* END: Admin Transitions *)
 
 (* START: Name Transitions *)
-transition configure(node: ByStr32, owner: ByStr20, resolver: ByStr20) 
+transition configureNode(node: ByStr32, owner: ByStr20, resolver: ByStr20) 
   maybeRecord <- records[node];
   maybeApproved <- approvals[node];
   recordOwner = recordMemberOwner maybeRecord;
@@ -300,14 +300,19 @@ transition configure(node: ByStr32, owner: ByStr20, resolver: ByStr20)
     records[node] := newRecord;
 
     e = eConfigured node owner resolver;
-    event e
+    event e;
+
+    msgs = let m = {_tag: "onZNSTransfer"; node: node; 
+                    _amount: Uint128 0; _recipient: owner} 
+      in oneMsg m;
+    send msgs
   | False =>
     e = let m = "Sender not node owner, approved or operator" in eError m eCodeFailureIAM;
     event e
   end
 end
 
-transition transfer(node: ByStr32, owner: ByStr20)
+transition configureResolver(node: ByStr32, resolver: ByStr20) 
   maybeRecord <- records[node];
   maybeApproved <- approvals[node];
   recordOwner = recordMemberOwner maybeRecord;
@@ -317,11 +322,10 @@ transition transfer(node: ByStr32, owner: ByStr20)
 
   match isSenderOAO with
   | True =>
-    approvals[node] := zeroByStr20;
-    newRecord = Record owner zeroByStr20;
+    newRecord = Record recordOwner resolver;
     records[node] := newRecord;
 
-    e = eConfigured node owner zeroByStr20;
+    e = eConfigured node recordOwner resolver;
     event e
   | False =>
     e = let m = "Sender not node owner, approved or operator" in eError m eCodeFailureIAM;
@@ -329,7 +333,7 @@ transition transfer(node: ByStr32, owner: ByStr20)
   end
 end
 
-transition safeTransfer(node: ByStr32, owner: ByStr20)
+transition transfer(node: ByStr32, owner: ByStr20)
   maybeRecord <- records[node];
   maybeApproved <- approvals[node];
   recordOwner = recordMemberOwner maybeRecord;
@@ -380,8 +384,13 @@ transition assign(parent: ByStr32, label: String, owner: ByStr20)
     newRecord = Record owner zeroByStr20;
     records[node] := newRecord;
 
-    e = eTransfered node owner;
-    event e
+    e = eConfigured node owner zeroByStr20;
+    event e;
+
+    msgs = let m = {_tag: "onZNSTransfer"; node: node; 
+                    _amount: Uint128 0; _recipient: owner} 
+      in oneMsg m;
+    send msgs
   | False =>
     e = let m = "Sender not parent owner, approved or operator" in eError m eCodeFailureIAM;
     event e
@@ -418,8 +427,13 @@ transition bestow(parent: ByStr32, label: String, owner: ByStr20, resolver: BySt
     newRecord = Record owner resolver;
     records[node] := newRecord;
 
-    e = eTransfered node owner;
-    event e
+    e = eConfigured node owner zeroByStr20;
+    event e;
+
+    msgs = let m = {_tag: "onZNSTransfer"; node: node; 
+                  _amount: Uint128 0; _recipient: owner} 
+      in oneMsg m;
+    send msgs
   | False =>
     e = let m = "Sender admin" in eError m eCodeFailureIAM;
     event e
