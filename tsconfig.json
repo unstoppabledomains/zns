@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "allowSyntheticDefaultImports": true,
+    "allowUnreachableCode": true,
+    "lib": ["esnext", "dom"],
+    // "outDir": "build",
+    "moduleResolution": "node",
+    "resolveJsonModule": true
+  }
+  // "include": ["src", "src/._index.test.ts"]
+}

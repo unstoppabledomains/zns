@@ -71,7 +71,6 @@ For more thoughts on ZNS look at the [List of Concerns](./CONCERNS.md).
 3. **Fixed price**
 
    - `new simple_registrar(registry, zil, price)`
-   - `auction_registrar.setRunning(false) - No more starting auctions`
    - `registry.setAdmin(simple_registrar, true)`
    - `registry.sendZNSRecordTo(simple_registrar, zilNode, myname)`
      - `simple_registrar.onZNSRecordReceived(...) - Purchases name`

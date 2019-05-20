@@ -45,7 +45,7 @@
 
 - No throwing. We use `Error` events instead.
 
-- No event filtering for now. Viewblock is working on an API.
+- No event filtering for now. Viewblock has an API though.
 
 - No specific state lookups. The only way to get contract state is getting the
   entire state at once see `GetSmartContractState`.

@@ -86,14 +86,11 @@ field running: Bool = False
 field auctions: Map ByStr32 Auction = Emp ByStr32 Auction 
 field minimumInitialBids: Map ByStr32 Uint128 = Emp ByStr32 Uint128 
 
-transition onZNSRecordReceived(
+transition register(
   origin: ByStr20, 
   node: ByStr32, 
-  parent: ByStr32, 
-  label: String, 
-  owner: ByStr20, 
-  resolver: ByStr20,
-  approved: ByStr20
+  parent: ByStr32,
+  label: String
 )
   accept;
 
@@ -106,7 +103,6 @@ transition onZNSRecordReceived(
 
     isOk = 
       let isOkParent = builtin eq ownedNode parent in
-      let isOkRecordOwner = builtin eq zeroByStr20 owner in
       let isOkSender = builtin eq registry _sender in
       let minimumBid = 
         match maybeMinimumBid with
@@ -114,9 +110,8 @@ transition onZNSRecordReceived(
         | Some amount => amount
         end in
       let isOkAmount = builtin lt minimumBid _amount in
-      let isOkZns = andb isOkRecordOwner isOkParent in
       let isOkRequest = andb isOkSender isOkAmount in
-      let isOk = andb isOkZns isOkRequest in
+      let isOk = andb isOkParent isOkRequest in
         andb isOk isRunning;
 
     match isOk with
