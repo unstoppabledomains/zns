@@ -20,9 +20,7 @@ let eError =
   fun(message: String) =>
     {_eventname: "Error"; code: code; message: message}
 
-contract Resolver(
-  owner: ByStr20
-)
+contract Resolver(owner: ByStr20)
 
 field records: Map String ByStr = Emp String ByStr
 
@@ -55,4 +53,3 @@ transition unset(key: String)
     event e
   end
 end
-

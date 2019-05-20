@@ -33,40 +33,35 @@ contract SimpleRegistrar(
 
 field price: Uint128 = initialPrice
 
-transition setPrice(price: Uint128)
+transition setPrice(newPrice: Uint128)
   isOkSender = builtin eq _sender owner;
 
   match isOkSender with
   | True =>
-    e = ePriceSet price;
+    e = ePriceSet newPrice;
     event e;
 
-    price := price
+    price := newPrice
   | _ =>
   end
 end
 
-transition onZNSRecordReceived(
+transition register(
   origin: ByStr20, 
   node: ByStr32, 
   parent: ByStr32,
-  label: String,
-  owner: ByStr20,
-  resolver: ByStr20,
-  approved: ByStr20
+  label: String
 )
   accept;
 
-  price <- price;
+  currentPrice <- price;
 
   isOk = 
     let isOkParent = builtin eq ownedNode parent in
-    let isOkRecordOwner = builtin eq zeroByStr20 owner in
-    let isOkZns = andb isOkRecordOwner isOkParent in
     let isOkSender = builtin eq registry _sender in
-    let isOkAmount = builtin eq price _amount in
+    let isOkAmount = builtin eq currentPrice _amount in
     let isOkRequest = andb isOkSender isOkAmount in
-      andb isOkZns isOkRequest;
+      andb isOkParent isOkRequest;
 
   match isOk with
   | True => 
