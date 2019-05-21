@@ -104,12 +104,30 @@ contract AuctionRegistrar(
 field running: Bool = False
 field auctions: Map ByStr32 Auction = Emp ByStr32 Auction 
 
+(* Defines a currency conversion between USD and Li (a subunit of ZIL) *)
 field liPerUSD: Uint128 = initialPricePerLi
+(* Defines a default initial price for all domains in USD *)
 field defaultPriceUSD: Uint128 = initialDefaultPrice
+(* Defines a custom initial price in USD for all domains with specific length *)
+(* Prices defined by this field have higher priority than defaultPriceUSD )
+(* e.g {2 => 10, 3 => 15} would define that all two-symbol domains will be sold for 10 USD *)
+(* and three-symbol domains for 15 USD *)
+(* a key is used to specify the number of symbols in domain name *)
+(* a value defines a price for the given length *)
 field lengthPricesUSD: Map Uint32 Uint128 = Emp Uint32 Uint128
+(* Defines a custom initial price a custom premium domain *)
+(* Prices defined by this field have higher priority than any other definition field *)
+(* a key is a name of the domain *)
+(* a value defines a price for the given name *)
 field customPricesUSD: Map ByStr32 Uint128 = Emp ByStr32 Uint128
+(* Defines the maximum price of the domain *)
+(* No bid can be made above this price *)
 field maxPriceUSD: Uint128 = initialMaxPriceUSD
 
+(* Sets liPerUSD field *)
+(* @ensures sender is an owner of the contract *)
+(* @param newPrice a new value for the field *)
+(* @emits LiPricePerUSDSet if the field was updated successfully *)
 transition setLiPricePerUSD(newPrice: Uint128)
   isOkSender = builtin eq _sender owner;
 
@@ -123,6 +141,10 @@ transition setLiPricePerUSD(newPrice: Uint128)
   end
 end
 
+(* Sets defaultPriceUSD field *)
+(* @ensures sender is an owner of the contract *)
+(* @param newPrice a new value for the field *)
+(* @emits DefaultPriceUSDSet if the field was updated successfully *)
 transition setDefaultPriceUSD(newPrice: Uint128)
   isOkSender = builtin eq _sender owner;
 
@@ -136,6 +158,10 @@ transition setDefaultPriceUSD(newPrice: Uint128)
   end
 end
 
+(* Sets maxPriceUSD field *)
+(* @ensures sender is an owner of the contract *)
+(* @param newPrice a new value for the field *)
+(* @emits MaxPriceUSDSet if the field was updated successfully *)
 transition setMaxPriceUSD(newPrice: Uint128)
   isOkSender = builtin eq _sender owner;
 
@@ -149,6 +175,11 @@ transition setMaxPriceUSD(newPrice: Uint128)
   end
 end
 
+(* Sets a price for domains with given length *)
+(* @ensures sender is an owner of the contract *)
+(* @param length number of symbols in the domain name *)
+(* @param newPrice a price for domains of the give length *)
+(* @emits LengthPriceUSDSet if the price was updated successfully *)
 transition setLengthPriceInUSD(length: Uint32, newPrice: Uint128)
   isOkSender = builtin eq _sender owner;
 
@@ -162,6 +193,11 @@ transition setLengthPriceInUSD(length: Uint32, newPrice: Uint128)
   end
 end
 
+(* Sets a price for the given node (domain) *)
+(* @ensures sender is an owner of the contract *)
+(* @param node domain node address *)
+(* @param newPrice a new fixed price for the domain *)
+(* @emits CustomPriceUSDSet if the price was updated successfully *)
 transition setCustomPriceInUSD(node: ByStr32, newPrice: Uint128)
   isOkSender = builtin eq _sender owner;
 
@@ -176,6 +212,19 @@ transition setCustomPriceInUSD(node: ByStr32, newPrice: Uint128)
 end
 
 
+(* Makes an auction for the domain *)
+(* @accepts sent amount all the time)
+(* @ensures sender is a ZNS registry *)
+(* @ensures sent amount is above the base price for the domain)
+(* @param node domain address *)
+(* @param origin an address that initializes the auction *)
+(* @param parent an address of the parent node *)
+(* @param label the new domain name *)
+(* @sends sent amount back to the origin if the auction can not be started *)
+(* @sends bestow with origin address to the registry contract if sent amount is more than a maximum price *)
+(* @emits Start if the auction was started successfully *)
+(* @emits Close if the domain is instantly purchased by paying the maximum amount *)
+(* @emits Error if the auction wasn't started *)
 transition register(
   origin: ByStr20, 
   node: ByStr32, 
@@ -271,6 +320,15 @@ transition register(
   end
 end
 
+(* Increases the bid amount for a domain. Can instantly assign a domain if the maximum allowed price is paid. *)
+(* @ensures an auction is started the domain)
+(* @ensures sent amount is above a minimum increment threshold *)
+(* @param node domain address *)
+(* @accepts sent amount if the new bid is made *)
+(* @sends the amount of previous highest bid to the bidder address if the new bid is made *)
+(* @sends assign to registry if the new bid amount is higher than maximum price *)
+(* @emits Bid if the new bid is made *)
+(* @emits Close if the new bid amount is higher than maximum price *)
 transition bid(node: ByStr32)
   maybeAuction <- auctions[node];
 
@@ -328,6 +386,11 @@ transition bid(node: ByStr32)
   end
 end
 
+(* Closes the auction for a node *)
+(* @ensures an auction exists for the node *)
+(* @ensures the current block number is above the auction ending block *)
+(* @emits Close if the auction is closed successfully *)
+(* @emits assign with highest bid address as the node owner *)
 transition close(node: ByStr32)
   maybeAuction <- auctions[node];
 
@@ -355,6 +418,10 @@ transition close(node: ByStr32)
   end
 end
 
+(* Starts or pauses an Auction through running field*)
+(* @ensures sender is an owner of the contract *)
+(* @param newRunning when true the auction is started, otherwise it is paused *)
+(* @emits RunningSet if the operation was successful *)
 transition setRunning(newRunning: Bool)
   isOkSender = builtin eq _sender owner;
 
@@ -367,6 +434,11 @@ transition setRunning(newRunning: Bool)
   end
 end
 
+(* Withdraws the given amount from the contract*)
+(* @ensures sender is an owner of the contract *)
+(* @param address to transfer the amount *)
+(* @param amount *)
+(* @sends amount to given address *)
 transition withdraw(address: ByStr20, amount: Uint128)
   isOkSender = builtin eq _sender owner;
 
