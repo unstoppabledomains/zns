@@ -47,11 +47,27 @@ contract SimpleRegistrar(
   initialLiPerUSD: Uint128
 )
 
+(* Defines a currency conversion between USD and Li (a subunit of ZIL) *)
 field liPerUSD: Uint128 = initialLiPerUSD
+(* Defines a default price for all domains in USD *)
 field defaultPriceUSD: Uint128 = initialDefaultPrice
+(* Defines a custom price in USD for all domains with specific length *)
+(* Prices defined by this field have higher priority than defaultPriceUSD )
+(* e.g {2 => 10, 3 => 15} would define that all two-symbol domains will be sold for 10 USD *)
+(* and three-symbol domains for 15 USD *)
+(* a key is used to specify the number of symbols in domain name *)
+(* a value defines a price for the given length *)
 field lengthPricesUSD: Map Uint32 Uint128 = Emp Uint32 Uint128
+(* Defines a custom price a custom premium domain *)
+(* Prices defined by this field have higher priority than any other definition field *)
+(* a key is a name of the domain *)
+(* a value defines a price for the given name *)
 field customPricesUSD: Map ByStr32 Uint128 = Emp ByStr32 Uint128
 
+(* Sets liPerUSD field *)
+(* @ensures sender is an owner of the contract *)
+(* @param newPrice a new value for the field *)
+(* @emits LiPricePerUSDSet if the field was updated successfully *)
 transition setLiPricePerUSD(newPrice: Uint128)
   isOkSender = builtin eq _sender owner;
 
@@ -65,6 +81,10 @@ transition setLiPricePerUSD(newPrice: Uint128)
   end
 end
 
+(* Sets defaultPriceUSD field *)
+(* @ensures sender is an owner of the contract *)
+(* @param newPrice a new value for the field *)
+(* @emits DefaultPriceUSDSet if the field was updated successfully *)
 transition setDefaultPriceUSD(newPrice: Uint128)
   isOkSender = builtin eq _sender owner;
 
@@ -78,6 +98,11 @@ transition setDefaultPriceUSD(newPrice: Uint128)
   end
 end
 
+(* Sets a price for domains with given length *)
+(* @ensures sender is an owner of the contract *)
+(* @param length number of symbols in the domain name *)
+(* @param newPrice a price for domains of the give length *)
+(* @emits LengthPriceUSDSet if the price was updated successfully *)
 transition setLengthPriceInUSD(length: Uint32, newPrice: Uint128)
   isOkSender = builtin eq _sender owner;
 
@@ -91,6 +116,11 @@ transition setLengthPriceInUSD(length: Uint32, newPrice: Uint128)
   end
 end
 
+(* Sets a price for the given node (domain) *)
+(* @ensures sender is an owner of the contract *)
+(* @param node domain node address *)
+(* @param newPrice a new fixed price for the domain *)
+(* @emits CustomPriceUSDSet if the price was updated successfully *)
 transition setCustomPriceInUSD(node: ByStr32, newPrice: Uint128)
   isOkSender = builtin eq _sender owner;
 
@@ -104,6 +134,18 @@ transition setCustomPriceInUSD(node: ByStr32, newPrice: Uint128)
   end
 end
 
+(* Purchases a domain and assigns it to the given origin *)
+(* @accepts sent amount all the time)
+(* @ensures sender is a ZNS registry *)
+(* @ensures sent amount is the right price of the domain)
+(* @param node domain node address *)
+(* @param origin a buyer and new owner of the domain *)
+(* @param parent an address of the parent node *)
+(* @param label the new domain name *)
+(* @sends money back to the origin if the price is incorrect *)
+(* @sends bestow to the registry contract if the purchase is valid *)
+(* @emits Register if the domain was purchased successfully *)
+(* @emits Error if any of the check fails *)
 transition register(
   origin: ByStr20, 
   node: ByStr32, 
@@ -157,6 +199,11 @@ transition register(
   end
 end
 
+(* Withdraws the money from the contract *)
+(* @ensures sender is an owner *)
+(* @param address to send the money *)
+(* @param amount to withdraw *)
+(* @sends money to the address *)
 transition withdraw(address: ByStr20, amount: Uint128)
   isOkSender = builtin eq _sender owner;
 
