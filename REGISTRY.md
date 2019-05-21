@@ -45,57 +45,19 @@ ZNS Nodes have a few properties:
   `0x0000000000000000000000000000000000000000000000000000000000000000` and is
   owned by a multi-sig Zilliqa account specified on deploy.
 
-### IAM
+#### Transfering to a different owner
 
-ZNS's IAM model is similar to the ERC721 approval, operator model. However, are
-also global admins. ZNS provides the following functions for these purposes
+When a node is transfered to a different owner via any of the transition, a `onZNSTransfer` event with a `node` address as the paramter is sent to the new owner to process the record in case the new owner is a contract (like a marketplace, auction).
 
-- `setAdmin(address: ByStr20, isApproved: Bool)` - Allows the root nodes' owner
-  to approve or unapprove an admin.
-- `approve(node: ByStr32, address: ByStr20)` - Allows the nodes' owner to
-  approve of one address to freely configure a node.
-- `approveFor(address: ByStr20, isApproved: Bool)` - Allows the sender account
-  to approve or unapprove an address to act on it's behalf.
 
-### Management
-
-All node owners, approved accounts and operators can call each of these
-functions.
-
-- `configure(node: ByStr32, owner: ByStr20, resolver: ByStr20)` - Configure an
-  existing `node`s' `owner` and `resolver` addresses.
-- `transfer(node: ByStr32, owner: ByStr20)` - Transfer an existing `node` to an
-  `owner`. This is a convenience function, equivalent to calling
-  `approve(node, burnAddress)` and then `configure(node, owner, burnAddress)` at
-  the same time.
-- `assign(parent: ByStr32, label: String, owner: ByStr20)` - Transfer a subnode
-  to an account. This is the only way to create a new node. `assign` uses the
-  same mechanics as `transfer`, but checks whether or not the sender has
-  permission to modify `parent`.
-
-### Forwarding
-
-Because of the one-way nature of Scilla we have a function that forwards a
-node's records and funds to an account.
-
-- `sendZNSRecordTo(address: ByStr20, parent: ByStr32, label: String)` - Forward
-  a record to a recipient `address` using the `onZNSRecordReceived` receiver
-  function.
-
-- `onZNSRecordReceived(origin: ByStr20, node: ByStr32, parent: ByStr32, label: String, owner: ByStr20, resolver: ByStr20)` -
-  The receiver function for `sendZNSRecordTo`. All `onZNSRecordReceived` should
-  probably obey a list of behaviors.
-
-  - All transactions should verify that the transaction sender is the Registry.
-  - All failed transactions that accepted ZIL should refund the `origin`
+  - All contract  should verify that the event sender is the Registry.
     account.
-  - All transactions should verify that they can manage either `node` or
-    `parent`.
+  - All conracts should verify that they can manage either `node`.
 
-### Admin
+### Admins
 
-Admins can give out names.
+Admins are special addresses that have the following rights:
 
-- `bestow(parent: ByStr32, label: String, owner: ByStr20, resolver: ByStr20)` -
-  Can only be called by an `admin` and allows for Unstoppable domains to
-  pre-configure names at the beginning. As well as accept CCs later.
+- give out names that are not owned by anyone
+- assign the registrar contract address that defines a procedure (most commonly just price) to purchase an unowned domain
+
