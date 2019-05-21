@@ -192,7 +192,7 @@ field records: Map ByStr32 Record =
 
 field registrar: ByStr20 = zeroByStr20
 
-(* approvals and operators are the internal representation of the erc721 like *)
+(* approvals and operators are the internal representation of the ERC721 like *)
 (* IAM system that ZNS uses *)
 field approvals: Map ByStr32 ByStr20 = Emp ByStr32 ByStr20
 field operators: Map ByStr20 (List ByStr20) = Emp ByStr20 (List ByStr20)
@@ -200,6 +200,13 @@ field admins: List ByStr20 = Cons {ByStr20} initialOwner nilByStr20
 (* END: Mutable Fields *)
 
 (* START: Admin Transitions *)
+
+(* Adds or removes the given address as the contract admin based on isApproved flag *)
+(* @ensures sender address is an admin *)
+(* @param address the address to be added as admin)
+(* @param isApproved when true the address is added to admins, otherwise the address removed from admins *)
+(* @emits adminSet with address and isApproved flag when the new admin was assigned or removed *)
+(* @emits Error when sender address has no permission for this operation *)
 transition setAdmin(address: ByStr20, isApproved: Bool)
   currentAdmins <- admins;
 
@@ -229,6 +236,12 @@ transition setAdmin(address: ByStr20, isApproved: Bool)
   end
 end
 
+(* Allows the nodes' owner to approve of one address to freely configure a node *)
+(* @ensures sender address is an owner of the node *)
+(* @param node *)
+(* @param address  *)
+(* @emits Approved when the new approved address is set *)
+(* @emits Error when sender address has no permission for this operation *)
 transition approve(node: ByStr32, address: ByStr20) 
   maybeRecord <- records[node];
 
@@ -259,6 +272,10 @@ transition approve(node: ByStr32, address: ByStr20)
   end
 end
 
+(* Allows the sender account to approve or unapprove an address to act on it's behalf. *)
+(* @param address  *)
+(* @param isApproved when true the address is added to the list operators otherwise removed  *)
+(* @emits ApprovedFor when the new approved address is added or removed from operators based on isApproved flag*)
 transition approveFor(address: ByStr20, isApproved: Bool)
   maybeOperators <- operators[_sender];
 
@@ -292,6 +309,15 @@ end
 (* END: Admin Transitions *)
 
 (* START: Name Transitions *)
+
+(* Configures an existing node owner and resolver *)
+(* @ensures sender address is an owner of the node or one of owner's operators or an approved address for the node *)
+(* @param node address of the node to be configured*)
+(* @param owner a new owner of the node *)
+(* @param resolver a new resolver address of the node *)
+(* @sends onZNSTransfer to the new owner when it was successfully changed *)
+(* @emits Configured the operation was successful *)
+(* @emits Error when sender address has no permission for this operation *)
 transition configureNode(node: ByStr32, owner: ByStr20, resolver: ByStr20) 
   maybeRecord <- records[node];
   maybeApproved <- approvals[node];
@@ -318,6 +344,12 @@ transition configureNode(node: ByStr32, owner: ByStr20, resolver: ByStr20)
   end
 end
 
+(* Configures an existing node resolver *)
+(* @ensures sender address is an owner of the node or one of owner's operators or an approved address for the node *)
+(* @param node address of the node to be configured *)
+(* @param resolver a new resolver address of the node *)
+(* @emits Configured if the node's resolver was changed successfully*)
+(* @emits Error when a sender address has no permission for this operation *)
 transition configureResolver(node: ByStr32, resolver: ByStr20) 
   maybeRecord <- records[node];
   maybeApproved <- approvals[node];
@@ -339,6 +371,13 @@ transition configureResolver(node: ByStr32, resolver: ByStr20)
   end
 end
 
+(* Transfer an existing node to an owner *)
+(* @ensures sender address is an owner of the node or one of node's owner operators or an approved address of this node *)
+(* @param node address of the node to be configured *)
+(* @param owner a new owner of the node *)
+(* @sends onZNSTransfer to the new owner when it was successfully changed *)
+(* @emits Configured if the node's owner was changed successfully*)
+(* @emits Error when a sender address has no permission for this operation *)
 transition transfer(node: ByStr32, owner: ByStr20)
   maybeRecord <- records[node];
   maybeApproved <- approvals[node];
@@ -366,6 +405,15 @@ transition transfer(node: ByStr32, owner: ByStr20)
   end
 end
 
+(* Transfer a subnode to an account. This is the only way to create a new node. `assign` uses the same mechanics as `transfer` *)
+(* @ensures sender address is an owner of the parent node or one of parent node's owner operators or an approved address of parent node *)
+(* @param parent parent node address *)
+(* @param label a name of the subnode (subdomain) to be assigned *)
+(* @param owner an owner address of the subnode *)
+(* @sends onZNSTransfer to the new owner of the subnode when it was successfully assign *)
+(* @emits Configured if the node's owner was changed successfully*)
+(* @emits NewDomain when the target node(domain) didn't exist before and was made *)
+(* @emits Error when a sender address has no permission for this operation *)
 transition assign(parent: ByStr32, label: String, owner: ByStr20)
   maybeRecord <- records[parent];
   maybeApproved <- approvals[parent];
@@ -405,6 +453,18 @@ end
 (* END: Name Transitions *)
 
 (* START: Admin Transitions *)
+
+
+(* Transfer an unowned subnode to an account. *)
+(* @ensures a node is not owned by anyone *)
+(* @ensures sender address is an admin or a registrar *)
+(* @param parent parent node address *)
+(* @param label a name of the subnode (subdomain) to be assigned *)
+(* @param owner a new owner address of the subnode *)
+(* @sends onZNSTransfer to the new owner of the subnode when it was successfully assigned *)
+(* @emits NewDomain when node(domain) was assigned to the new owner *)
+(* @emits Configured if the node's owner was changed successfully*)
+(* @emits Error when a sender address has no permission for this operation *)
 transition bestow(parent: ByStr32, label: String, owner: ByStr20, resolver: ByStr20)
   currentAdmins <- admins;
   node = parentLabelToNode parent label;
@@ -433,7 +493,7 @@ transition bestow(parent: ByStr32, label: String, owner: ByStr20, resolver: BySt
     newRecord = Record owner resolver;
     records[node] := newRecord;
 
-    e = eConfigured node owner zeroByStr20;
+    e = eConfigured node owner resolver;
     event e;
 
     msgs = let m = {_tag: "onZNSTransfer"; node: node; 
@@ -447,7 +507,12 @@ transition bestow(parent: ByStr32, label: String, owner: ByStr20, resolver: BySt
 end
 (* END: Admin Transitions *)
 
-(* START: Reciever Transitions *)
+(* START: Receiver Transitions *)
+
+(* Sets a new registrar for the registry *)
+(* @ensures the sender address is an admin *)
+(* @params address the new registrar address *)
+(* @emits NewRegistrar when the registrar was reassigned successfully *)
 transition setRegistrar(address: ByStr20)
   currentAdmins <- admins;
 
@@ -462,6 +527,13 @@ transition setRegistrar(address: ByStr20)
   end
 end
 
+(* Registers an new domain throw the registrar of the contract *)
+(* @param parent a parent address of the domain *)
+(* @param label the new domain name to be registered *)
+(* @ensures the new domain is not owned by anyone *)
+(* @ensures the new domain has no approved address *)
+(* @accepts the payment for the domain *)
+(* @sends register to the current registrar *)
 transition register(parent: ByStr32, label: String)
   node = parentLabelToNode parent label;
   maybeRecord <- records[node];
