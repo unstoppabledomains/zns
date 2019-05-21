@@ -533,7 +533,7 @@ end
 (* @ensures the new domain is not owned by anyone *)
 (* @ensures the new domain has no approved address *)
 (* @accepts the payment for the domain *)
-(* @sends register to the current registrar *)
+(* @sends register to the current registrar with the sent amount *)
 transition register(parent: ByStr32, label: String)
   node = parentLabelToNode parent label;
   maybeRecord <- records[node];
@@ -562,4 +562,4 @@ transition register(parent: ByStr32, label: String)
   | False =>
   end
 end
-(* END: Reciever Transitions *)
+(* END: Receiver Transitions *)
