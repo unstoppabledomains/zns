@@ -61,12 +61,29 @@ let eClose =
   fun(bid: Uint128) =>
     {_eventname: "Close"; node: node; bidder: bidder; bid: bid}
 
-let eSetMinimumInitialBid =
-  fun(node: ByStr32) =>
-  fun(minimumInitialBid: Uint128) =>
-    {_eventname: "SetMinimumInitialBid"; node: node; 
-     minimumInitialBid: minimumInitialBid}
 
+let eLiPricePerUSDSet =
+  fun(price: Uint128) =>
+    {_eventname: "LiPricePerUSDSet"; price: price}
+
+let eDefaultPriceUSDSet =
+  fun(price: Uint128) =>
+    {_eventname: "DefaultPriceUSDSet"; price: price}
+
+let eMaxPriceUSDSet =
+  fun(price: Uint128) =>
+    {_eventname: "MaxPriceUSDSet"; price: price}
+
+let eLengthPriceUSDSet =
+  fun(length: Uint32) =>
+  fun(price: Uint128) =>
+    {_eventname: "LengthPriceUSDSet"; length: length; price: price}
+
+let eCustomPriceUSDSet =
+  fun(node: ByStr32) =>
+  fun(price: Uint128) =>
+    {_eventname: "CustomPriceUSDSet"; node: node; price: price}
+  
 let eError =
   fun(message: String) =>
     {_eventname: "Error"; message: message}
@@ -75,16 +92,89 @@ contract AuctionRegistrar(
   owner: ByStr20,
   registry: ByStr20,
   ownedNode: ByStr32,
+  initialAuctionLength: Uint64,
+  minimumAuctionLength: Uint64,
+  initialDefaultPrice: Uint128,
   bidIncrementNumerator: Uint128,
   bidIncrementDenominator: Uint128,
-  defaultInitialMinimumBid: Uint128,
-  minimumAuctionLength: Uint64,
-  initialAuctionLength: Uint64
+  initialPricePerLi: Uint128,
+  initialMaxPriceUSD: Uint128
 )
 
 field running: Bool = False
 field auctions: Map ByStr32 Auction = Emp ByStr32 Auction 
-field minimumInitialBids: Map ByStr32 Uint128 = Emp ByStr32 Uint128 
+
+field liPerUSD: Uint128 = initialPricePerLi
+field defaultPriceUSD: Uint128 = initialDefaultPrice
+field lengthPricesUSD: Map Uint32 Uint128 = Emp Uint32 Uint128
+field customPricesUSD: Map ByStr32 Uint128 = Emp ByStr32 Uint128
+field maxPriceUSD: Uint128 = initialMaxPriceUSD
+
+transition setLiPricePerUSD(newPrice: Uint128)
+  isOkSender = builtin eq _sender owner;
+
+  match isOkSender with
+  | True =>
+    e = eLiPricePerUSDSet newPrice;
+    event e;
+
+    liPerUSD := newPrice
+  | _ =>
+  end
+end
+
+transition setDefaultPriceUSD(newPrice: Uint128)
+  isOkSender = builtin eq _sender owner;
+
+  match isOkSender with
+  | True =>
+    e = eDefaultPriceUSDSet newPrice;
+    event e;
+
+    defaultPriceUSD := newPrice
+  | _ =>
+  end
+end
+
+transition setMaxPriceUSD(newPrice: Uint128)
+  isOkSender = builtin eq _sender owner;
+
+  match isOkSender with
+  | True =>
+    e = eMaxPriceUSDSet newPrice;
+    event e;
+
+    maxPriceUSD := newPrice
+  | _ =>
+  end
+end
+
+transition setLengthPriceInUSD(length: Uint32, newPrice: Uint128)
+  isOkSender = builtin eq _sender owner;
+
+  match isOkSender with
+  | True =>
+    e = eLengthPriceUSDSet length newPrice;
+    event e;
+
+    lengthPricesUSD[length] := newPrice
+  | _ =>
+  end
+end
+
+transition setCustomPriceInUSD(node: ByStr32, newPrice: Uint128)
+  isOkSender = builtin eq _sender owner;
+
+  match isOkSender with
+  | True =>
+    e = eCustomPriceUSDSet node newPrice;
+    event e;
+
+    customPricesUSD[node] := newPrice
+  | _ =>
+  end
+end
+
 
 transition register(
   origin: ByStr20, 
@@ -99,42 +189,72 @@ transition register(
   match auctionExists with
   | False =>
     isRunning <- running;
-    maybeMinimumBid <- minimumInitialBids[node];
+
+    maybeCustomPriceUSD <- customPricesUSD[node];
+    labelLen = builtin strlen label;
+    maybeLengthPriceUSD <- lengthPricesUSD[labelLen];
+    currentDefaultPriceUSD <- defaultPriceUSD;
+    currentLiPerUSD <- liPerUSD;
+
+    price =
+      let priceUSD = 
+        match maybeCustomPriceUSD with
+        | Some customPriceUSD => customPriceUSD
+        | None => 
+          match maybeLengthPriceUSD with
+          | Some lenthPriceUSD => lenthPriceUSD
+          | None => currentDefaultPriceUSD
+          end
+        end in
+        builtin mul priceUSD currentLiPerUSD;
 
     isOk = 
       let isOkParent = builtin eq ownedNode parent in
       let isOkSender = builtin eq registry _sender in
-      let minimumBid = 
-        match maybeMinimumBid with
-        | None => defaultInitialMinimumBid
-        | Some amount => amount
-        end in
-      let isOkAmount = builtin lt minimumBid _amount in
+      let isOkAmount = builtin lt price _amount in
       let isOkRequest = andb isOkSender isOkAmount in
       let isOk = andb isOkParent isOkRequest in
         andb isOk isRunning;
 
     match isOk with
     | True =>
-      blk <- & BLOCKNUMBER;
-      endingBlk = builtin badd blk initialAuctionLength;
-      newAuction = Auction origin _amount endingBlk label;
+      currentMaxPriceUSD <- maxPriceUSD;
 
-      auctions[node] := newAuction;
+      maxPrice = builtin mul currentMaxPriceUSD currentLiPerUSD;
+      paidMaxPrice = builtin lt _amount maxPrice;
 
-      e = eStart node origin _amount endingBlk;
-      event e;
+      match paidMaxPrice with
+      | True =>
+        e = eClose node origin _amount;
+        event e;
 
-      msgs = 
-        let m = {_tag: "bestow"; _recipient: registry; _amount: Uint128 0; 
-                 parent: ownedNode; label: label; owner: _this_address; 
-                 resolver: zeroByStr20} in
-        oneMsg m;
-      send msgs
+        msgs = 
+          let m = {_tag: "bestow"; _recipient: registry; _amount: Uint128 0; 
+                  parent: ownedNode; label: label; owner: origin; 
+                  resolver: zeroByStr20} in
+          oneMsg m;
+        send msgs
+      | False => 
+        blk <- & BLOCKNUMBER;
+        endingBlk = builtin badd blk initialAuctionLength;
+        newAuction = Auction origin _amount endingBlk label;
+
+        auctions[node] := newAuction;
+
+        e = eStart node origin _amount endingBlk;
+        event e;
+
+        msgs = 
+          let m = {_tag: "bestow"; _recipient: registry; _amount: Uint128 0; 
+                  parent: ownedNode; label: label; owner: _this_address; 
+                  resolver: zeroByStr20} in
+          oneMsg m;
+        send msgs
+      end
     | False =>
       e = let m = "Auctions are not running or invalid amount sent" in eError m;
       event e;
- 
+
       msgs = 
         let m = {_tag: ""; _recipient: origin; _amount: _amount} in
           oneMsg m;
@@ -147,7 +267,6 @@ transition register(
     msgs = 
       let m = {_tag: ""; _recipient: origin; _amount: _amount} in
         oneMsg m;
-
     send msgs
   end
 end
@@ -170,21 +289,39 @@ transition bid(node: ByStr32)
 
       match isOk with
       | True =>
-        newEndingBlk = calcEndingBlk minimumAuctionLength blk endingBlk;
-        newAuction = Auction _sender _amount newEndingBlk label;
+        currentLiPerUSD <- liPerUSD;
+        currentMaxPriceUSD <- maxPriceUSD;
 
-        auctions[node]:= newAuction;
+        maxPrice = builtin mul currentMaxPriceUSD currentLiPerUSD;
+        paidMaxPrice = builtin lt _amount maxPrice;
 
-        accept;
+        match paidMaxPrice with
+        | True =>
+          delete auctions[node];
+          e = eClose node highestBidder currentBid;
+          event e;
 
-        e = eBid node _sender _amount newEndingBlk;
-        event e;
+          msg = {_tag: "assign"; _recipient: registry; _amount: Uint128 0; 
+                parent: ownedNode; label: label; owner: highestBidder};
+          msgs = oneMsg msg;
+          send msgs
+        | False =>
+          newEndingBlk = calcEndingBlk minimumAuctionLength blk endingBlk;
+          newAuction = Auction _sender _amount newEndingBlk label;
 
-        msgs = 
-          let msg = {_tag: ""; _recipient: highestBidder; _amount: currentBid} in
-            oneMsg msg;
+          auctions[node] := newAuction;
 
-        send msgs
+          accept;
+
+          e = eBid node _sender _amount newEndingBlk;
+          event e;
+
+          msgs = 
+            let msg = {_tag: ""; _recipient: highestBidder; _amount: currentBid} in
+              oneMsg msg;
+
+          send msgs
+        end
       | _ =>
       end
     end
@@ -225,18 +362,6 @@ transition setRunning(newRunning: Bool)
   | True => 
     running := newRunning;
     e = eRunningSet newRunning;
-    event e
-  | _ =>
-  end
-end
-
-transition setMinimumBid(node: ByStr32, minimumInitialBid: Uint128)
-  isOkSender = builtin eq _sender owner;
-
-  match isOkSender with
-  | True =>
-    minimumInitialBids[node] := minimumInitialBid;
-    e = eSetMinimumInitialBid node minimumInitialBid;
     event e
   | _ =>
   end

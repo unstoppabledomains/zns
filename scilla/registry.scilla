@@ -174,8 +174,7 @@ contract Registry
 (* changed throughout the life of the contract *)
 
 (* initialOwner specifies the owner of the ZNS Root. See records field below. *)
-(initialOwner: ByStr20,
- initialRegistrar: ByStr20)
+(initialOwner: ByStr20)
 
 (* END: Initial Parameters *)
 
@@ -191,7 +190,7 @@ field records: Map ByStr32 Record =
   let rootRecord = Record initialOwner zeroByStr20 in
     builtin put empty zeroByStr32 rootRecord
 
-field registrar: ByStr20 = initialRegistrar
+field registrar: ByStr20 = zeroByStr20
 
 (* approvals and operators are the internal representation of the erc721 like *)
 (* IAM system that ZNS uses *)
@@ -463,7 +462,7 @@ transition setRegistrar(address: ByStr20)
   end
 end
 
-transition register(address: ByStr20, parent: ByStr32, label: String)
+transition register(parent: ByStr32, label: String)
   node = parentLabelToNode parent label;
   maybeRecord <- records[node];
   maybeApproved <- approvals[node];

@@ -43,17 +43,91 @@ const defaultParams: TxParams = {
 
 function deployRegistry(
   zilliqa: Zilliqa,
-  {initialOwner, initialRegistrar, _creation_block = '0'},
+  {initialOwner, _creation_block = '0'},
   params: Partial<TxParams> = {},
 ) {
   return zilliqa.contracts
     .new(
       readFileSync('./scilla/registry.scilla', 'utf8'),
-      registryData.init({initialOwner, initialRegistrar}).concat({
+      registryData.init({initialOwner}).concat({
         vname: '_creation_block',
         type: 'BNum',
         value: _creation_block.toString(),
       }),
+    )
+    .deploy({...defaultParams, ...params})
+}
+
+function deploySimpleRegistrar(
+  zilliqa: Zilliqa,
+  {
+    registry,
+    ownedNode,
+    owner,
+    initialDefaultPrice, // = 1,
+    initialLiPerUSD, // 0.017 * 10 ** 12,
+    _creation_block = '0',
+  },
+  params: Partial<TxParams> = {},
+) {
+  return zilliqa.contracts
+    .new(
+      readFileSync('./scilla/simple_registrar.scilla', 'utf8'),
+      simpleRegistrarData
+        .init({
+          registry,
+          ownedNode,
+          owner,
+          initialDefaultPrice,
+          initialLiPerUSD,
+        })
+        .concat({
+          vname: '_creation_block',
+          type: 'BNum',
+          value: _creation_block.toString(),
+        }),
+    )
+    .deploy({...defaultParams, ...params})
+}
+
+function deployAuctionRegistrar(
+  zilliqa: Zilliqa,
+  {
+    owner,
+    registry,
+    ownedNode,
+    initialAuctionLength,
+    minimumAuctionLength,
+    initialDefaultPrice,
+    bidIncrementNumerator,
+    bidIncrementDenominator,
+    initialPricePerLi,
+    initialMaxPriceUSD,
+    _creation_block = '0',
+  },
+  params: Partial<TxParams> = {},
+) {
+  return zilliqa.contracts
+    .new(
+      readFileSync('./scilla/auction_registrar.scilla', 'utf8'),
+      auctionRegistrarData
+        .init({
+          owner,
+          registry,
+          ownedNode,
+          initialAuctionLength,
+          minimumAuctionLength,
+          initialDefaultPrice,
+          bidIncrementNumerator,
+          bidIncrementDenominator,
+          initialPricePerLi,
+          initialMaxPriceUSD,
+        })
+        .concat({
+          vname: '_creation_block',
+          type: 'BNum',
+          value: _creation_block.toString(),
+        }),
     )
     .deploy({...defaultParams, ...params})
 }
@@ -120,17 +194,20 @@ describe('checks', () => {
   }
 })
 
-describe('using kaya provider', () => {
+describe('smart contracts', () => {
   let provider
   beforeEach(() => {
     jest.resetModules()
+
+    const id = uuid()
+
     provider = new KayaProvider(
-      {dataPath: `/tmp/kaya-${uuid()}-`},
+      {dataPath: `/tmp/kaya_${id}_`},
       {
-        [address]: {privateKey, amount: '1000000000000000000', nonce: 0},
+        [address]: {privateKey, amount: '1000000000000000000000', nonce: 0},
         [address2]: {
           privateKey: privateKey2,
-          amount: '1000000000000000000',
+          amount: '1000000000000000000000',
           nonce: 0,
         },
       },
@@ -267,11 +344,11 @@ describe('using kaya provider', () => {
 
       const [registryTx, registry] = await deployRegistry(
         zilliqa,
-        {initialOwner: '0x' + address, initialRegistrar: '0x' + '0'.repeat(40)},
+        {initialOwner: '0x' + address},
         {gasLimit: Long.fromNumber(100000)},
       )
       expect(registryTx.isConfirmed()).toBeTruthy()
-      expect(await registry.getInit()).toHaveLength(5) //owner,registrar,this,cblock,version
+      expect(await registry.getInit()).toHaveLength(4)
     })
 
     it('should approve addresses and set and unset operators for addresses', async () => {
@@ -280,7 +357,7 @@ describe('using kaya provider', () => {
 
       const [, registry] = await deployRegistry(
         zilliqa,
-        {initialOwner: '0x' + address, initialRegistrar: '0x' + '0'.repeat(40)},
+        {initialOwner: '0x' + address},
         {gasLimit: Long.fromNumber(100000)},
       )
 
@@ -380,7 +457,7 @@ describe('using kaya provider', () => {
 
       const [, registry] = await deployRegistry(
         zilliqa,
-        {initialOwner: '0x' + address, initialRegistrar: '0x' + '0'.repeat(40)},
+        {initialOwner: '0x' + address},
         {gasLimit: Long.fromNumber(100000)},
       )
 
@@ -444,7 +521,7 @@ describe('using kaya provider', () => {
 
       const [, registry] = await deployRegistry(
         zilliqa,
-        {initialOwner: '0x' + address, initialRegistrar: '0x' + '0'.repeat(40)},
+        {initialOwner: '0x' + address},
         {gasLimit: Long.fromNumber(100000)},
       )
 
@@ -561,7 +638,7 @@ describe('using kaya provider', () => {
 
       const [, registry] = await deployRegistry(
         zilliqa,
-        {initialOwner: '0x' + address, initialRegistrar: '0x' + '0'.repeat(40)},
+        {initialOwner: '0x' + address},
         {gasLimit: Long.fromNumber(100000)},
       )
 
@@ -630,7 +707,7 @@ describe('using kaya provider', () => {
 
       const [, registry] = await deployRegistry(
         zilliqa,
-        {initialOwner: '0x' + address, initialRegistrar: '0x' + '0'.repeat(40)},
+        {initialOwner: '0x' + address},
         {gasLimit: Long.fromNumber(100000)},
       )
 
@@ -754,7 +831,7 @@ describe('using kaya provider', () => {
 
       const [, registry] = await deployRegistry(
         zilliqa,
-        {initialOwner: '0x' + address, initialRegistrar: '0x' + '0'.repeat(40)},
+        {initialOwner: '0x' + address},
         {gasLimit: Long.fromNumber(100000)},
       )
 
@@ -875,7 +952,7 @@ describe('using kaya provider', () => {
 
       const [, registry] = await deployRegistry(
         zilliqa,
-        {initialOwner: '0x' + address, initialRegistrar: '0x' + '0'.repeat(40)},
+        {initialOwner: '0x' + address},
         {gasLimit: Long.fromNumber(100000)},
       )
 
@@ -910,12 +987,277 @@ describe('using kaya provider', () => {
       ).toBe('0x' + address2)
     })
   })
+
+  describe('simple_registrar.scilla', () => {
+    it('should deploy', async () => {
+      const zilliqa = new Zilliqa(null, provider)
+      zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
+
+      const [registrarTx, registrar] = await deploySimpleRegistrar(
+        zilliqa,
+        {
+          registry: '0x' + '0'.repeat(40),
+          owner: '0x' + '0'.repeat(40),
+          ownedNode: rootNode,
+          initialDefaultPrice: '1',
+          initialLiPerUSD: '1',
+        },
+        {gasLimit: Long.fromNumber(100000)},
+      )
+      expect(registrarTx.isConfirmed()).toBeTruthy()
+      expect(await registrar.getInit()).toHaveLength(8)
+    })
+
+    it('should register name', async () => {
+      const zilliqa = new Zilliqa(null, provider)
+      zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
+
+      const [, registry] = await deployRegistry(
+        zilliqa,
+        {initialOwner: '0x' + address},
+        {gasLimit: Long.fromNumber(100000)},
+      )
+
+      const [, registrar] = await deploySimpleRegistrar(
+        zilliqa,
+        {
+          registry: '0x' + registry.address,
+          owner: '0x' + address,
+          ownedNode: rootNode,
+          initialDefaultPrice: '1',
+          initialLiPerUSD: '1',
+        },
+        {gasLimit: Long.fromNumber(100000)},
+      )
+
+      await registry.call(
+        'setRegistrar',
+        registryData.f.setRegistrar({address: '0x' + registrar.address}),
+        defaultParams,
+      )
+
+      //////////////////////////////////////////////////////////////////////////
+      // register name
+      //////////////////////////////////////////////////////////////////////////
+
+      await registry.call(
+        'register',
+        registryData.f.register({parent: rootNode, label: 'name'}),
+        {
+          ...defaultParams,
+          amount: new BN(1),
+        },
+      )
+
+      expect(
+        (await registry.getState()).find(v => v.vname === 'records').value,
+      ).toMatchObject([
+        {
+          key: rootNode,
+          val: {
+            constructor: 'Record',
+            argtypes: [],
+            arguments: ['0x' + address, '0x' + '0'.repeat(40)],
+          },
+        },
+        {
+          key: namehash('name'),
+          val: {
+            constructor: 'Record',
+            argtypes: [],
+            arguments: ['0x' + address, '0x' + '0'.repeat(40)],
+          },
+        },
+      ])
+
+      //////////////////////////////////////////////////////////////////////////
+      // fail to register name using bad amount
+      //////////////////////////////////////////////////////////////////////////
+
+      await registry.call(
+        'register',
+        registryData.f.register({parent: rootNode, label: 'not-enough-funds'}),
+        defaultParams,
+      )
+
+      expect(
+        (await registry.getState()).find(v => v.vname === 'records').value,
+      ).toMatchObject([
+        {
+          key: rootNode,
+          val: {
+            constructor: 'Record',
+            argtypes: [],
+            arguments: ['0x' + address, '0x' + '0'.repeat(40)],
+          },
+        },
+        {
+          key: namehash('name'),
+          val: {
+            constructor: 'Record',
+            argtypes: [],
+            arguments: ['0x' + address, '0x' + '0'.repeat(40)],
+          },
+        },
+      ])
+
+      //////////////////////////////////////////////////////////////////////////
+      // fail to register name using owned name
+      //////////////////////////////////////////////////////////////////////////
+
+      await registry.call(
+        'register',
+        registryData.f.register({parent: rootNode, label: 'name'}),
+        {
+          ...defaultParams,
+          amount: new BN(1),
+        },
+      )
+
+      expect(
+        (await registry.getState()).find(v => v.vname === 'records').value,
+      ).toMatchObject([
+        {
+          key: rootNode,
+          val: {
+            constructor: 'Record',
+            argtypes: [],
+            arguments: ['0x' + address, '0x' + '0'.repeat(40)],
+          },
+        },
+        {
+          key: namehash('name'),
+          val: {
+            constructor: 'Record',
+            argtypes: [],
+            arguments: ['0x' + address, '0x' + '0'.repeat(40)],
+          },
+        },
+      ])
+
+      //////////////////////////////////////////////////////////////////////////
+      // fail to register name using bad sender
+      //////////////////////////////////////////////////////////////////////////
+
+      await registrar.call(
+        'register',
+        simpleRegistrarData.f.register({
+          node: namehash('bad-sender'),
+          parent: rootNode,
+          label: 'bad-sender',
+          origin: '0x' + address,
+        }),
+        {
+          ...defaultParams,
+          amount: new BN(1),
+        },
+      )
+
+      expect(
+        (await registry.getState()).find(v => v.vname === 'records').value,
+      ).toMatchObject([
+        {
+          key: rootNode,
+          val: {
+            constructor: 'Record',
+            argtypes: [],
+            arguments: ['0x' + address, '0x' + '0'.repeat(40)],
+          },
+        },
+        {
+          key: namehash('name'),
+          val: {
+            constructor: 'Record',
+            argtypes: [],
+            arguments: ['0x' + address, '0x' + '0'.repeat(40)],
+          },
+        },
+      ])
+    })
+  })
+
+  describe('auction_registrar.scilla', () => {
+    it('should deploy', async () => {
+      const zilliqa = new Zilliqa(null, provider)
+      zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
+
+      const [registrarTx, registrar] = await deployAuctionRegistrar(
+        zilliqa,
+        {
+          owner: '0x' + '0'.repeat(40),
+          registry: '0x' + '0'.repeat(40),
+          ownedNode: rootNode,
+          initialAuctionLength: '1',
+          minimumAuctionLength: '1',
+          initialDefaultPrice: '1',
+          bidIncrementNumerator: '1',
+          bidIncrementDenominator: '100',
+          initialPricePerLi: '100',
+          initialMaxPriceUSD: '1000',
+        },
+        {gasLimit: Long.fromNumber(100000)},
+      )
+      expect(registrarTx.isConfirmed()).toBeTruthy()
+      expect(await registrar.getInit()).toHaveLength(13)
+    })
+
+    xit('should start, bid and end auction', async () => {
+      const zilliqa = new Zilliqa(null, provider)
+      zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
+
+      const [, registry] = await deployRegistry(
+        zilliqa,
+        {initialOwner: '0x' + address},
+        {gasLimit: Long.fromNumber(100000)},
+      )
+
+      const [, registrar] = await deployAuctionRegistrar(
+        zilliqa,
+        {
+          owner: '0x' + '0'.repeat(40),
+          registry: '0x' + '0'.repeat(40),
+          ownedNode: rootNode,
+          initialAuctionLength: '3',
+          minimumAuctionLength: '2',
+          initialDefaultPrice: '100',
+          bidIncrementNumerator: '1',
+          bidIncrementDenominator: '100',
+          initialPricePerLi: '1',
+          initialMaxPriceUSD: '1000',
+        },
+        {gasLimit: Long.fromNumber(100000)},
+      )
+
+      await registry.call(
+        'setRegistrar',
+        registryData.f.setRegistrar({address: '0x' + registrar.address}),
+        defaultParams,
+      )
+
+      //////////////////////////////////////////////////////////////////////////
+      // register name
+      //////////////////////////////////////////////////////////////////////////
+
+      const tx = await registry.call(
+        'register',
+        registryData.f.register({parent: rootNode, label: 'name'}),
+        {
+          ...defaultParams,
+          amount: new BN(100000),
+        },
+      )
+
+      console.log(tx)
+
+      console.log(
+        'registry.getState()',
+        JSON.stringify(await registry.getState(), null, 2),
+      )
+
+      console.log(
+        'registrar.getState()',
+        JSON.stringify(await registrar.getState(), null, 2),
+      )
+    })
+  })
 })
-
-// it('should', async () => {
-//   const zilliqa = new Zilliqa(null, provider)
-//   const address = zilliqa.wallet.addByPrivateKey(privateKey)
-//   zilliqa.wallet.setDefault(address)
-
-//   console.log(await zilliqa.blockchain.getBalance(address))
-// })

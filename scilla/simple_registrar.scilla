@@ -14,11 +14,26 @@ let zeroByStr20 = 0x0000000000000000000000000000000000000000
 let eRegister =
   fun(node: ByStr32) =>
   fun(owner: ByStr20) =>
-    {_eventname: "Register"; node: node; owner: owner}
-
-let ePriceSet =
   fun(price: Uint128) =>
-    {_eventname: "PriceSet"; price: price}
+    {_eventname: "Register"; node: node; owner: owner; price: price}
+
+let eLiPricePerUSDSet =
+  fun(price: Uint128) =>
+    {_eventname: "LiPricePerUSDSet"; price: price}
+
+let eDefaultPriceUSDSet =
+  fun(price: Uint128) =>
+    {_eventname: "DefaultPriceUSDSet"; price: price}
+
+let eLengthPriceUSDSet =
+  fun(length: Uint32) =>
+  fun(price: Uint128) =>
+    {_eventname: "LengthPriceUSDSet"; length: length; price: price}
+
+let eCustomPriceUSDSet =
+  fun(node: ByStr32) =>
+  fun(price: Uint128) =>
+    {_eventname: "CustomPriceUSDSet"; node: node; price: price}
 
 let eError =
   fun(message: String) =>
@@ -28,20 +43,63 @@ contract SimpleRegistrar(
   registry: ByStr20,
   ownedNode: ByStr32,
   owner: ByStr20,
-  initialPrice: Uint128
+  initialDefaultPrice: Uint128,
+  initialLiPerUSD: Uint128
 )
 
-field price: Uint128 = initialPrice
+field liPerUSD: Uint128 = initialLiPerUSD
+field defaultPriceUSD: Uint128 = initialDefaultPrice
+field lengthPricesUSD: Map Uint32 Uint128 = Emp Uint32 Uint128
+field customPricesUSD: Map ByStr32 Uint128 = Emp ByStr32 Uint128
 
-transition setPrice(newPrice: Uint128)
+transition setLiPricePerUSD(newPrice: Uint128)
   isOkSender = builtin eq _sender owner;
 
   match isOkSender with
   | True =>
-    e = ePriceSet newPrice;
+    e = eLiPricePerUSDSet newPrice;
     event e;
 
-    price := newPrice
+    liPerUSD := newPrice
+  | _ =>
+  end
+end
+
+transition setDefaultPriceUSD(newPrice: Uint128)
+  isOkSender = builtin eq _sender owner;
+
+  match isOkSender with
+  | True =>
+    e = eDefaultPriceUSDSet newPrice;
+    event e;
+
+    defaultPriceUSD := newPrice
+  | _ =>
+  end
+end
+
+transition setLengthPriceInUSD(length: Uint32, newPrice: Uint128)
+  isOkSender = builtin eq _sender owner;
+
+  match isOkSender with
+  | True =>
+    e = eLengthPriceUSDSet length newPrice;
+    event e;
+
+    lengthPricesUSD[length] := newPrice
+  | _ =>
+  end
+end
+
+transition setCustomPriceInUSD(node: ByStr32, newPrice: Uint128)
+  isOkSender = builtin eq _sender owner;
+
+  match isOkSender with
+  | True =>
+    e = eCustomPriceUSDSet node newPrice;
+    event e;
+
+    customPricesUSD[node] := newPrice
   | _ =>
   end
 end
@@ -54,18 +112,34 @@ transition register(
 )
   accept;
 
-  currentPrice <- price;
+  maybeCustomPriceUSD <- customPricesUSD[node];
+  labelLen = builtin strlen label;
+  maybeLengthPriceUSD <- lengthPricesUSD[labelLen];
+  currentDefaultPriceUSD <- defaultPriceUSD;
+  currentLiPerUSD <- liPerUSD;
+
+  price =
+    let priceUSD = 
+      match maybeCustomPriceUSD with
+      | Some customPriceUSD => customPriceUSD
+      | None => 
+        match maybeLengthPriceUSD with
+        | Some lenthPriceUSD => lenthPriceUSD
+        | None => currentDefaultPriceUSD
+        end
+      end in
+      builtin mul priceUSD currentLiPerUSD;
 
   isOk = 
     let isOkParent = builtin eq ownedNode parent in
     let isOkSender = builtin eq registry _sender in
-    let isOkAmount = builtin eq currentPrice _amount in
+    let isOkAmount = builtin eq price _amount in
     let isOkRequest = andb isOkSender isOkAmount in
       andb isOkParent isOkRequest;
 
   match isOk with
   | True => 
-    e = eRegister node origin;
+    e = eRegister node origin price;
 
     msgs = 
       let msg = {_tag: "bestow"; _recipient: registry; _amount: Uint128 0; 
