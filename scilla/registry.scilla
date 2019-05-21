@@ -511,7 +511,7 @@ end
 
 (* Sets a new registrar for the registry *)
 (* @ensures the sender address is an admin *)
-(* @params address the new registrar address *)
+(* @param address the new registrar address *)
 (* @emits NewRegistrar when the registrar was reassigned successfully *)
 transition setRegistrar(address: ByStr20)
   currentAdmins <- admins;
