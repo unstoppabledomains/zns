@@ -39,7 +39,9 @@ let listByStr20FilterOut =
   fun(list: List ByStr20) =>
   fun(bs: ByStr20) =>
     let listByStr20Filter = @list_filter ByStr20 in
-    let fn = fun(v: ByStr20) => builtin eq v bs in
+    let fn = fun(v: ByStr20) => 
+      let b = builtin eq v bs in
+       negb b in
       listByStr20Filter fn list
 
 (* XAND Gate *)
@@ -265,6 +267,11 @@ transition approveFor(address: ByStr20, isApproved: Bool)
     | None => nilByStr20
     | Some ops => ops
     end;
+
+  (* f f-contains t-isApproved *)
+  (* t f-contains f-isUnapproved *)
+  (* t t-excludes t-isApproved *)
+  (* f t-excludes f-isUnapproved *)
 
   needsToChange = let b = listByStr20Excludes currentOperators address in 
     xandb b isApproved;
