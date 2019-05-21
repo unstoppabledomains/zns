@@ -18,6 +18,7 @@
     "base32": "^0.0.6",
     "commander": "^2.20.0",
     "hash.js": "^1.1.7",
+    "kaya-cli": "unstoppabledomains/kaya",
     "ts-jest": "^24.0.2",
     "tslib": "^1.9.3",
     "typescript": "^3.4.5",

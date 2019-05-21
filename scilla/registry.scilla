@@ -39,7 +39,9 @@ let listByStr20FilterOut =
   fun(list: List ByStr20) =>
   fun(bs: ByStr20) =>
     let listByStr20Filter = @list_filter ByStr20 in
-    let fn = fun(v: ByStr20) => builtin eq v bs in
+    let fn = fun(v: ByStr20) => 
+      let b = builtin eq v bs in
+       negb b in
       listByStr20Filter fn list
 
 (* XAND Gate *)
@@ -172,8 +174,7 @@ contract Registry
 (* changed throughout the life of the contract *)
 
 (* initialOwner specifies the owner of the ZNS Root. See records field below. *)
-(initialOwner: ByStr20,
- initialRegistrar: ByStr20)
+(initialOwner: ByStr20)
 
 (* END: Initial Parameters *)
 
@@ -189,7 +190,7 @@ field records: Map ByStr32 Record =
   let rootRecord = Record initialOwner zeroByStr20 in
     builtin put empty zeroByStr32 rootRecord
 
-field registrar: ByStr20 = initialRegistrar
+field registrar: ByStr20 = zeroByStr20
 
 (* approvals and operators are the internal representation of the erc721 like *)
 (* IAM system that ZNS uses *)
@@ -265,6 +266,11 @@ transition approveFor(address: ByStr20, isApproved: Bool)
     | None => nilByStr20
     | Some ops => ops
     end;
+
+  (* f f-contains t-isApproved *)
+  (* t f-contains f-isUnapproved *)
+  (* t t-excludes t-isApproved *)
+  (* f t-excludes f-isUnapproved *)
 
   needsToChange = let b = listByStr20Excludes currentOperators address in 
     xandb b isApproved;
@@ -456,7 +462,7 @@ transition setRegistrar(address: ByStr20)
   end
 end
 
-transition register(address: ByStr20, parent: ByStr32, label: String)
+transition register(parent: ByStr32, label: String)
   node = parentLabelToNode parent label;
   maybeRecord <- records[node];
   maybeApproved <- approvals[node];
