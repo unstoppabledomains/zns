@@ -24,6 +24,12 @@ contract Resolver(owner: ByStr20)
 
 field records: Map String ByStr = Emp String ByStr
 
+(* Sets a key value pair *)
+(* @ensures a sender address is an owner of the contract *)
+(* @param key *)
+(* @param value *)
+(* @emits RecordSet if the operation was successful *)
+(* @emits Error if a sender address has no permission for the operation *)
 transition set(key: String, value: ByStr)
   isOkSender = builtin eq owner _sender;
   match isOkSender with
@@ -37,6 +43,11 @@ transition set(key: String, value: ByStr)
   end
 end
 
+(* Remove a key from records hash *)
+(* @ensures a sender address is an owner of the contract *)
+(* @param key *)
+(* @emits RecordUnset if the operation was successful *)
+(* @emits Error if a sender address has no permission for the operation *)
 transition unset(key: String)
   keyExists <- exists records[key];
   isOk = 
