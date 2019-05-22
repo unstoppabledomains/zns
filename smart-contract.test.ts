@@ -159,6 +159,9 @@ function sha256(buffer) {
 }
 
 function namehash(name) {
+  if (name.match(/^0x\d+$/)) {
+    return name
+  }
   let node = Buffer.alloc(32, 0)
 
   if (name) {
@@ -172,6 +175,47 @@ function namehash(name) {
   return '0x' + node.toString('hex')
 }
 
+const contractField = async (contract, name) => {
+  const field = (await contract.getState()).find(v => v.vname === name)
+  if (!field) {
+    throw new Error(`Unknown contract field ${name}`)
+  }
+  return field.value
+}
+
+const contractMapValue = async (contract, field, key) => {
+  const map = await contractField(contract, field)
+  const record = map.find(r => r.key == key) || null
+  return record && record.val
+}
+
+const getRegistryRecord = async (registry, domain) => {
+  const node = namehash(domain)
+  return await contractMapValue(registry, 'records', node)
+}
+
+const ownerOf = async (registry, domain) => {
+  const record = await getRegistryRecord(registry, domain)
+  return record && record.arguments[0].replace(/^0x/, '')
+}
+
+const resolverOf = async(registry, domain) => {
+  const record = await getRegistryRecord(registry, domain)
+  return record && record.arguments[1].replace(/^0x/, '')
+}
+
+const resolverRecords = async(resolver) => {
+  const records = await contractField(resolver, 'records') 
+  const result = {}
+  records.forEach(r => result[r.key] = r.val)
+  return result;
+}
+const approvalOf = async (registry, domain) => {
+  const node = namehash(domain)
+  const approval = await contractMapValue(registry, 'approvals', node)
+  return approval && approval.replace(/^0x/, '')
+}
+
 const address = 'd90f2e538ce0df89c8273cad3b63ec44a3c4ed82'
 const privateKey =
   'e53d1c3edaffc7a7bab5418eb836cf75819a82872b4a1a0f1c7fcf5c3e020b89'
@@ -180,6 +224,7 @@ const privateKey2 =
   '1234567890123456789012345678901234567890123456789012345678901234'
 
 const rootNode = '0x' + '0'.repeat(64)
+const nullAddress = '0'.repeat(40)
 
 xdescribe('checks', () => {
   for (const input of readdirSync(join(process.cwd(), 'scilla'))
@@ -239,9 +284,7 @@ describe('smart contracts', () => {
         defaultParams,
       )
 
-      expect(
-        (await resolver.getState()).find(v => v.vname === 'records').value,
-      ).toMatchObject([{key: 'test', val: '0x7357'}])
+      expect(await resolverRecords(resolver)).toEqual({'test': '0x7357' })
 
       //////////////////////////////////////////////////////////////////////////
       // unset record
@@ -253,9 +296,7 @@ describe('smart contracts', () => {
         defaultParams,
       )
 
-      expect(
-        (await resolver.getState()).find(v => v.vname === 'records').value,
-      ).toHaveLength(0)
+      expect(await resolverRecords(resolver)).toEqual({})
     })
 
     it('should fail to set and unset records if sender not owner', async () => {
@@ -276,10 +317,7 @@ describe('smart contracts', () => {
         resolverData.f.set({key: 'test', value: '0x7357'}),
         defaultParams,
       )
-
-      expect(
-        (await resolver.getState()).find(v => v.vname === 'records').value,
-      ).toHaveLength(0)
+      expect(await resolverRecords(resolver)).toEqual({})
 
       //////////////////////////////////////////////////////////////////////////
       // set record then fail to unset record using bad address
@@ -293,9 +331,7 @@ describe('smart contracts', () => {
         defaultParams,
       )
 
-      expect(
-        (await resolver.getState()).find(v => v.vname === 'records').value,
-      ).toMatchObject([{key: 'test', val: '0x7357'}])
+      expect(await resolverRecords(resolver)).toEqual({'test': '0x7357' })
 
       zilliqa.wallet.setDefault(address2)
 
@@ -304,10 +340,7 @@ describe('smart contracts', () => {
         resolverData.f.unset({key: 'test'}),
         defaultParams,
       )
-
-      expect(
-        (await resolver.getState()).find(v => v.vname === 'records').value,
-      ).toHaveLength(1)
+      expect(await resolverRecords(resolver)).toEqual({test: '0x7357'})
     })
 
     it("should gracefully fail to unset records if they don't exist", async () => {
@@ -327,9 +360,7 @@ describe('smart contracts', () => {
         defaultParams,
       )
 
-      expect(
-        (await resolver.getState()).find(v => v.vname === 'records').value,
-      ).toHaveLength(0)
+      expect(await resolverRecords(resolver)).toEqual({})
     })
   })
 
@@ -367,9 +398,7 @@ describe('smart contracts', () => {
         defaultParams,
       )
 
-      expect(
-        (await registry.getState()).find(v => v.vname === 'approvals').value,
-      ).toMatchObject([{key: rootNode, val: '0x' + address2}])
+      expect(await approvalOf(registry, rootNode)).toEqual(address2)
 
       //////////////////////////////////////////////////////////////////////////
       // approve null address
@@ -379,14 +408,11 @@ describe('smart contracts', () => {
         'approve',
         registryData.f.approve({
           node: rootNode,
-          address: '0x' + '0'.repeat(40),
+          address: '0x' + nullAddress,
         }),
         defaultParams,
       )
-
-      expect(
-        (await registry.getState()).find(v => v.vname === 'approvals').value,
-      ).toMatchObject([{key: rootNode, val: '0x' + '0'.repeat(40)}])
+      expect(await approvalOf(registry, rootNode)).toEqual(nullAddress)
 
       //////////////////////////////////////////////////////////////////////////
       // fail to approve node owned by someone else
@@ -401,9 +427,7 @@ describe('smart contracts', () => {
         defaultParams,
       )
 
-      expect(
-        (await registry.getState()).find(v => v.vname === 'approvals').value,
-      ).toMatchObject([{key: rootNode, val: '0x' + '0'.repeat(40)}])
+      expect(await approvalOf(registry, 'node-owned-by-someone-else')).toEqual(null)
 
       //////////////////////////////////////////////////////////////////////////
       // add operator
@@ -418,14 +442,7 @@ describe('smart contracts', () => {
         defaultParams,
       )
 
-      expect(
-        (await registry.getState()).find(v => v.vname === 'operators').value,
-      ).toMatchObject([
-        {
-          key: '0xd90f2e538ce0df89c8273cad3b63ec44a3c4ed82',
-          val: ['0x2f4f79ef6abfc0368f5a7e2c2df82e1afdfe7204'],
-        },
-      ])
+      expect(await contractMapValue(registry, 'operators', '0xd90f2e538ce0df89c8273cad3b63ec44a3c4ed82')).toEqual(['0x2f4f79ef6abfc0368f5a7e2c2df82e1afdfe7204'])
 
       //////////////////////////////////////////////////////////////////////////
       // remove operator
@@ -439,12 +456,7 @@ describe('smart contracts', () => {
         }),
         defaultParams,
       )
-
-      expect(
-        (await registry.getState()).find(v => v.vname === 'operators').value,
-      ).toMatchObject([
-        {key: '0xd90f2e538ce0df89c8273cad3b63ec44a3c4ed82', val: []},
-      ])
+      expect(await contractMapValue(registry, 'operators', '0xd90f2e538ce0df89c8273cad3b63ec44a3c4ed82')).toEqual([])
     })
 
     it('should add and remove admins if currently admin', async () => {
@@ -470,9 +482,7 @@ describe('smart contracts', () => {
         defaultParams,
       )
 
-      expect(
-        (await registry.getState()).find(v => v.vname === 'admins').value,
-      ).toMatchObject(['0x' + address2, '0x' + address])
+      expect(await contractField(registry, 'admins')).toEqual(['0x' + address2, '0x' + address])
 
       //////////////////////////////////////////////////////////////////////////
       // remove admin
@@ -487,9 +497,7 @@ describe('smart contracts', () => {
         defaultParams,
       )
 
-      expect(
-        (await registry.getState()).find(v => v.vname === 'admins').value,
-      ).toMatchObject(['0x' + address])
+      expect(await contractField(registry, 'admins')).toEqual(['0x' + address])
 
       //////////////////////////////////////////////////////////////////////////
       // fail to set admin using bad address
@@ -506,9 +514,7 @@ describe('smart contracts', () => {
         defaultParams,
       )
 
-      expect(
-        (await registry.getState()).find(v => v.vname === 'admins').value,
-      ).toMatchObject(['0x' + address])
+      expect(await contractField(registry, 'admins')).toEqual(['0x' + address])
     })
 
     it('should freely configure names properly', async () => {
@@ -534,18 +540,8 @@ describe('smart contracts', () => {
         defaultParams,
       )
 
-      expect(
-        (await registry.getState()).find(v => v.vname === 'records').value,
-      ).toMatchObject([
-        {
-          key: rootNode,
-          val: {
-            constructor: 'Record',
-            argtypes: [],
-            arguments: ['0x' + address, '0x' + address2],
-          },
-        },
-      ])
+      expect(await resolverOf(registry, rootNode)).toEqual(address2)
+      expect(await ownerOf(registry, rootNode)).toEqual(address)
 
       //////////////////////////////////////////////////////////////////////////
       // configure node
@@ -561,18 +557,8 @@ describe('smart contracts', () => {
         defaultParams,
       )
 
-      expect(
-        (await registry.getState()).find(v => v.vname === 'records').value,
-      ).toMatchObject([
-        {
-          key: rootNode,
-          val: {
-            constructor: 'Record',
-            argtypes: [],
-            arguments: ['0x' + address2, '0x' + address2],
-          },
-        },
-      ])
+      expect(await resolverOf(registry, rootNode)).toEqual(address2)
+      expect(await ownerOf(registry, rootNode)).toEqual(address2)
 
       //////////////////////////////////////////////////////////////////////////
       // fail to configure resolver using bad address
@@ -587,18 +573,8 @@ describe('smart contracts', () => {
         defaultParams,
       )
 
-      expect(
-        (await registry.getState()).find(v => v.vname === 'records').value,
-      ).toMatchObject([
-        {
-          key: rootNode,
-          val: {
-            constructor: 'Record',
-            argtypes: [],
-            arguments: ['0x' + address2, '0x' + address2],
-          },
-        },
-      ])
+      expect(await resolverOf(registry, rootNode)).toEqual(address2)
+      expect(await ownerOf(registry, rootNode)).toEqual(address2)
 
       //////////////////////////////////////////////////////////////////////////
       // fail to configure node using bad address
@@ -613,19 +589,9 @@ describe('smart contracts', () => {
         }),
         defaultParams,
       )
+      expect(await resolverOf(registry, rootNode)).toEqual(address2)
+      expect(await ownerOf(registry, rootNode)).toEqual(address2)
 
-      expect(
-        (await registry.getState()).find(v => v.vname === 'records').value,
-      ).toMatchObject([
-        {
-          key: rootNode,
-          val: {
-            constructor: 'Record',
-            argtypes: [],
-            arguments: ['0x' + address2, '0x' + address2],
-          },
-        },
-      ])
     })
 
     it('should freely transfer names properly', async () => {
@@ -657,18 +623,8 @@ describe('smart contracts', () => {
         defaultParams,
       )
 
-      expect(
-        (await registry.getState()).find(v => v.vname === 'records').value,
-      ).toMatchObject([
-        {
-          key: rootNode,
-          val: {
-            constructor: 'Record',
-            argtypes: [],
-            arguments: ['0x' + address2, '0x' + '0'.repeat(40)],
-          },
-        },
-      ])
+      expect(await ownerOf(registry, rootNode)).toEqual(address2)
+      expect(await resolverOf(registry, rootNode)).toEqual(nullAddress)
 
       //////////////////////////////////////////////////////////////////////////
       // fail to transfer using bad address
@@ -683,18 +639,8 @@ describe('smart contracts', () => {
         defaultParams,
       )
 
-      expect(
-        (await registry.getState()).find(v => v.vname === 'records').value,
-      ).toMatchObject([
-        {
-          key: rootNode,
-          val: {
-            constructor: 'Record',
-            argtypes: [],
-            arguments: ['0x' + address2, '0x' + '0'.repeat(40)],
-          },
-        },
-      ])
+      expect(await ownerOf(registry, rootNode)).toEqual(address2)
+      expect(await resolverOf(registry, rootNode)).toEqual(nullAddress)
     })
 
     it('should freely assign names properly', async () => {
@@ -726,27 +672,10 @@ describe('smart contracts', () => {
         }),
         defaultParams,
       )
-
-      expect(
-        (await registry.getState()).find(v => v.vname === 'records').value,
-      ).toMatchObject([
-        {
-          key: rootNode,
-          val: {
-            constructor: 'Record',
-            argtypes: [],
-            arguments: ['0x' + address, '0x' + '0'.repeat(40)],
-          },
-        },
-        {
-          key: namehash('tld'),
-          val: {
-            constructor: 'Record',
-            argtypes: [],
-            arguments: ['0x' + address, '0x' + '0'.repeat(40)],
-          },
-        },
-      ])
+      expect(await ownerOf(registry, rootNode)).toEqual(address)
+      expect(await resolverOf(registry, rootNode)).toEqual(nullAddress)
+      expect(await ownerOf(registry, 'tld')).toEqual(address)
+      expect(await resolverOf(registry, 'tld')).toEqual(nullAddress)
 
       //////////////////////////////////////////////////////////////////////////
       // assign owned subdomain
@@ -761,27 +690,10 @@ describe('smart contracts', () => {
         }),
         defaultParams,
       )
-
-      expect(
-        (await registry.getState()).find(v => v.vname === 'records').value,
-      ).toMatchObject([
-        {
-          key: rootNode,
-          val: {
-            constructor: 'Record',
-            argtypes: [],
-            arguments: ['0x' + address, '0x' + '0'.repeat(40)],
-          },
-        },
-        {
-          key: namehash('tld'),
-          val: {
-            constructor: 'Record',
-            argtypes: [],
-            arguments: ['0x' + address2, '0x' + '0'.repeat(40)],
-          },
-        },
-      ])
+      expect(await ownerOf(registry, rootNode)).toEqual(address)
+      expect(await resolverOf(registry, rootNode)).toEqual(nullAddress)
+      expect(await ownerOf(registry, 'tld')).toEqual(address2)
+      expect(await resolverOf(registry, 'tld')).toEqual(nullAddress)
 
       //////////////////////////////////////////////////////////////////////////
       // fail to assign subdomain using bad address
@@ -799,26 +711,10 @@ describe('smart contracts', () => {
         defaultParams,
       )
 
-      expect(
-        (await registry.getState()).find(v => v.vname === 'records').value,
-      ).toMatchObject([
-        {
-          key: rootNode,
-          val: {
-            constructor: 'Record',
-            argtypes: [],
-            arguments: ['0x' + address, '0x' + '0'.repeat(40)],
-          },
-        },
-        {
-          key: namehash('tld'),
-          val: {
-            constructor: 'Record',
-            argtypes: [],
-            arguments: ['0x' + address2, '0x' + '0'.repeat(40)],
-          },
-        },
-      ])
+      expect(await ownerOf(registry, rootNode)).toEqual(address)
+      expect(await resolverOf(registry, rootNode)).toEqual(nullAddress)
+      expect(await ownerOf(registry, 'tld')).toEqual(address2)
+      expect(await resolverOf(registry, 'tld')).toEqual(nullAddress)
     })
 
     it('should freely bestow names properly', async () => {
@@ -846,26 +742,12 @@ describe('smart contracts', () => {
         defaultParams,
       )
 
-      expect(
-        (await registry.getState()).find(v => v.vname === 'records').value,
-      ).toMatchObject([
-        {
-          key: rootNode,
-          val: {
-            constructor: 'Record',
-            argtypes: [],
-            arguments: ['0x' + address, '0x' + '0'.repeat(40)],
-          },
-        },
-        {
-          key: namehash('tld'),
-          val: {
-            constructor: 'Record',
-            argtypes: [],
-            arguments: ['0x' + address, '0x' + address],
-          },
-        },
-      ])
+      expect(await ownerOf(registry, rootNode)).toEqual(address)
+      expect(await ownerOf(registry, 'tld')).toEqual(address)
+      expect(await ownerOf(registry, 'unknown')).toEqual(null)
+      expect(await resolverOf(registry, rootNode)).toEqual(nullAddress)
+      expect(await resolverOf(registry, 'tld')).toEqual(address)
+      expect(await resolverOf(registry, 'unknown')).toEqual(null)
 
       //////////////////////////////////////////////////////////////////////////
       // fail to bestow owned name
@@ -882,26 +764,8 @@ describe('smart contracts', () => {
         defaultParams,
       )
 
-      expect(
-        (await registry.getState()).find(v => v.vname === 'records').value,
-      ).toMatchObject([
-        {
-          key: rootNode,
-          val: {
-            constructor: 'Record',
-            argtypes: [],
-            arguments: ['0x' + address, '0x' + '0'.repeat(40)],
-          },
-        },
-        {
-          key: namehash('tld'),
-          val: {
-            constructor: 'Record',
-            argtypes: [],
-            arguments: ['0x' + address, '0x' + address],
-          },
-        },
-      ])
+      expect(await ownerOf(registry, 'tld')).toEqual(address)
+      expect(await resolverOf(registry, 'tld')).toEqual(address)
 
       //////////////////////////////////////////////////////////////////////////
       // fail to bestow owned using bad address
@@ -919,27 +783,8 @@ describe('smart contracts', () => {
         }),
         defaultParams,
       )
-
-      expect(
-        (await registry.getState()).find(v => v.vname === 'records').value,
-      ).toMatchObject([
-        {
-          key: rootNode,
-          val: {
-            constructor: 'Record',
-            argtypes: [],
-            arguments: ['0x' + address, '0x' + '0'.repeat(40)],
-          },
-        },
-        {
-          key: namehash('tld'),
-          val: {
-            constructor: 'Record',
-            argtypes: [],
-            arguments: ['0x' + address, '0x' + address],
-          },
-        },
-      ])
+      expect(await ownerOf(registry, 'other-tld')).toEqual(null)
+      expect(await resolverOf(registry, 'other-tld')).toEqual(null)
     })
 
     it('should allow admins to set registrar', async () => {
@@ -962,9 +807,7 @@ describe('smart contracts', () => {
         defaultParams,
       )
 
-      expect(
-        (await registry.getState()).find(v => v.vname === 'registrar').value,
-      ).toBe('0x' + address2)
+      expect(await contractField(registry, 'registrar')).toEqual('0x' + address2)
 
       //////////////////////////////////////////////////////////////////////////
       // fail to set registrar address using bad address
@@ -978,9 +821,7 @@ describe('smart contracts', () => {
         defaultParams,
       )
 
-      expect(
-        (await registry.getState()).find(v => v.vname === 'registrar').value,
-      ).toBe('0x' + address2)
+      expect(await contractField(registry, 'registrar')).toEqual('0x' + address2)
     })
   })
 
@@ -1045,26 +886,10 @@ describe('smart contracts', () => {
         },
       )
 
-      expect(
-        (await registry.getState()).find(v => v.vname === 'records').value,
-      ).toMatchObject([
-        {
-          key: rootNode,
-          val: {
-            constructor: 'Record',
-            argtypes: [],
-            arguments: ['0x' + address, '0x' + '0'.repeat(40)],
-          },
-        },
-        {
-          key: namehash('name'),
-          val: {
-            constructor: 'Record',
-            argtypes: [],
-            arguments: ['0x' + address, '0x' + '0'.repeat(40)],
-          },
-        },
-      ])
+      expect(await ownerOf(registry, rootNode)).toEqual(address)
+      expect(await resolverOf(registry, rootNode)).toEqual(nullAddress)
+      expect(await ownerOf(registry, 'name')).toEqual(address)
+      expect(await resolverOf(registry, 'name')).toEqual(nullAddress)
 
       //////////////////////////////////////////////////////////////////////////
       // fail to register name using bad amount
@@ -1076,26 +901,10 @@ describe('smart contracts', () => {
         defaultParams,
       )
 
-      expect(
-        (await registry.getState()).find(v => v.vname === 'records').value,
-      ).toMatchObject([
-        {
-          key: rootNode,
-          val: {
-            constructor: 'Record',
-            argtypes: [],
-            arguments: ['0x' + address, '0x' + '0'.repeat(40)],
-          },
-        },
-        {
-          key: namehash('name'),
-          val: {
-            constructor: 'Record',
-            argtypes: [],
-            arguments: ['0x' + address, '0x' + '0'.repeat(40)],
-          },
-        },
-      ])
+      expect(await ownerOf(registry, rootNode)).toEqual(address)
+      expect(await resolverOf(registry, rootNode)).toEqual(nullAddress)
+      expect(await ownerOf(registry, 'name')).toEqual(address)
+      expect(await resolverOf(registry, 'name')).toEqual(nullAddress)
 
       //////////////////////////////////////////////////////////////////////////
       // fail to register name using owned name
@@ -1110,26 +919,10 @@ describe('smart contracts', () => {
         },
       )
 
-      expect(
-        (await registry.getState()).find(v => v.vname === 'records').value,
-      ).toMatchObject([
-        {
-          key: rootNode,
-          val: {
-            constructor: 'Record',
-            argtypes: [],
-            arguments: ['0x' + address, '0x' + '0'.repeat(40)],
-          },
-        },
-        {
-          key: namehash('name'),
-          val: {
-            constructor: 'Record',
-            argtypes: [],
-            arguments: ['0x' + address, '0x' + '0'.repeat(40)],
-          },
-        },
-      ])
+      expect(await ownerOf(registry, rootNode)).toEqual(address)
+      expect(await resolverOf(registry, rootNode)).toEqual(nullAddress)
+      expect(await ownerOf(registry, 'name')).toEqual(address)
+      expect(await resolverOf(registry, 'name')).toEqual(nullAddress)
 
       //////////////////////////////////////////////////////////////////////////
       // fail to register name using bad sender
@@ -1149,26 +942,13 @@ describe('smart contracts', () => {
         },
       )
 
-      expect(
-        (await registry.getState()).find(v => v.vname === 'records').value,
-      ).toMatchObject([
-        {
-          key: rootNode,
-          val: {
-            constructor: 'Record',
-            argtypes: [],
-            arguments: ['0x' + address, '0x' + '0'.repeat(40)],
-          },
-        },
-        {
-          key: namehash('name'),
-          val: {
-            constructor: 'Record',
-            argtypes: [],
-            arguments: ['0x' + address, '0x' + '0'.repeat(40)],
-          },
-        },
-      ])
+
+      expect(await ownerOf(registry, rootNode)).toEqual(address)
+      expect(await resolverOf(registry, rootNode)).toEqual(nullAddress)
+      expect(await ownerOf(registry, 'name')).toEqual(address)
+      expect(await resolverOf(registry, 'name')).toEqual(nullAddress)
+      expect(await ownerOf(registry, 'bad-sender')).toEqual(null)
+      expect(await resolverOf(registry, 'bad-sender')).toEqual(null)
     })
   })
 
@@ -1242,9 +1022,8 @@ describe('smart contracts', () => {
         defaultParams,
       )
 
-      expect(
-        (await registrar.getState()).find(v => v.vname === 'running').value,
-      ).toMatchObject({constructor: 'True', argtypes: [], arguments: []})
+      expect(await contractField(registrar, 'running'))
+        .toMatchObject({constructor: 'True', argtypes: [], arguments: []})
 
       //////////////////////////////////////////////////////////////////////////
       // open an auction
@@ -1259,44 +1038,22 @@ describe('smart contracts', () => {
         },
       )
 
-      expect(
-        (await registry.getState()).find(v => v.vname === 'records').value,
-      ).toMatchObject([
-        {
-          key: rootNode,
-          val: {
-            constructor: 'Record',
-            argtypes: [],
-            arguments: ['0x' + address, '0x' + '0'.repeat(40)],
-          },
-        },
-        {
-          key: namehash('name'),
-          val: {
-            constructor: 'Record',
-            argtypes: [],
-            arguments: ['0x' + registrar.address, '0x' + '0'.repeat(40)],
-          },
-        },
-      ])
+      expect(await ownerOf(registry, rootNode)).toEqual(address)
+      expect(await resolverOf(registry, rootNode)).toEqual(nullAddress)
+      expect(await ownerOf(registry, 'name')).toEqual(registrar.address)
+      expect(await resolverOf(registry, 'name')).toEqual(nullAddress)
 
-      expect(
-        (await registrar.getState()).find(v => v.vname === 'auctions').value,
-      ).toMatchObject([
-        {
-          key: namehash('name'),
-          val: {
-            constructor: 'Auction',
-            argtypes: [],
-            arguments: [
-              '0x' + address,
-              '200',
-              expect.stringMatching(/^\d+$/),
-              'name',
-            ],
-          },
-        },
-      ])
+      expect(await contractMapValue(registrar, 'auctions', namehash('name')))
+        .toMatchObject({
+          constructor: 'Auction',
+          argtypes: [],
+          arguments: [
+            '0x' + address,
+            '200',
+            expect.stringMatching(/^\d+$/),
+            'name',
+          ],
+        })
 
       //////////////////////////////////////////////////////////////////////////
       // bid on an auction
@@ -1308,23 +1065,17 @@ describe('smart contracts', () => {
         {...defaultParams, amount: new BN(300)},
       )
 
-      expect(
-        (await registrar.getState()).find(v => v.vname === 'auctions').value,
-      ).toMatchObject([
-        {
-          key: namehash('name'),
-          val: {
-            constructor: 'Auction',
-            argtypes: [],
-            arguments: [
-              '0x' + address,
-              '200',
-              expect.stringMatching(/^\d*$/),
-              'name',
-            ],
-          },
-        },
-      ])
+      expect(await contractMapValue(registrar, 'auctions', namehash('name')))
+        .toMatchObject({
+          constructor: 'Auction',
+          argtypes: [],
+          arguments: [
+            '0x' + address,
+            '200',
+            expect.stringMatching(/^\d*$/),
+            'name',
+          ],
+        })
 
       //////////////////////////////////////////////////////////////////////////
       // close an auction
@@ -1338,30 +1089,12 @@ describe('smart contracts', () => {
         defaultParams,
       )
 
-      expect(
-        (await registry.getState()).find(v => v.vname === 'records').value,
-      ).toMatchObject([
-        {
-          key: rootNode,
-          val: {
-            constructor: 'Record',
-            argtypes: [],
-            arguments: ['0x' + address, '0x' + '0'.repeat(40)],
-          },
-        },
-        {
-          key: namehash('name'),
-          val: {
-            constructor: 'Record',
-            argtypes: [],
-            arguments: ['0x' + address, '0x' + '0'.repeat(40)],
-          },
-        },
-      ])
+      expect(await ownerOf(registry, rootNode)).toEqual(address)
+      expect(await resolverOf(registry, rootNode)).toEqual(nullAddress)
+      expect(await ownerOf(registry, 'name')).toEqual(address)
+      expect(await resolverOf(registry, 'name')).toEqual(nullAddress)
 
-      expect(
-        (await registrar.getState()).find(v => v.vname === 'auctions').value,
-      ).toHaveLength(0)
+      expect(await contractField(registrar, 'auctions')).toHaveLength(0)
 
       //////////////////////////////////////////////////////////////////////////
       // close an auction on register
@@ -1376,38 +1109,14 @@ describe('smart contracts', () => {
         },
       )
 
-      expect(
-        (await registry.getState()).find(v => v.vname === 'records').value,
-      ).toMatchObject([
-        {
-          key: rootNode,
-          val: {
-            constructor: 'Record',
-            argtypes: [],
-            arguments: ['0x' + address, '0x' + '0'.repeat(40)],
-          },
-        },
-        {
-          key: namehash('name'),
-          val: {
-            constructor: 'Record',
-            argtypes: [],
-            arguments: ['0x' + address, '0x' + '0'.repeat(40)],
-          },
-        },
-        {
-          key: namehash('registered-name'),
-          val: {
-            constructor: 'Record',
-            argtypes: [],
-            arguments: ['0x' + address, '0x' + '0'.repeat(40)],
-          },
-        },
-      ])
+      expect(await ownerOf(registry, rootNode)).toEqual(address)
+      expect(await resolverOf(registry, rootNode)).toEqual(nullAddress)
+      expect(await ownerOf(registry, 'name')).toEqual(address)
+      expect(await resolverOf(registry, 'name')).toEqual(nullAddress)
+      expect(await ownerOf(registry, 'registered-name')).toEqual(address)
+      expect(await resolverOf(registry, 'registered-name')).toEqual(nullAddress)
 
-      expect(
-        (await registrar.getState()).find(v => v.vname === 'auctions').value,
-      ).toHaveLength(0)
+      expect(await contractField(registrar, 'auctions')).toHaveLength(0)
 
       //////////////////////////////////////////////////////////////////////////
       // close an auction on bid
@@ -1434,49 +1143,10 @@ describe('smart contracts', () => {
         defaultParams,
       )
 
-      expect(
-        (await registry.getState()).find(v => v.vname === 'records').value,
-      ).toMatchObject([
-        {
-          key: rootNode,
-          val: {
-            constructor: 'Record',
-            argtypes: [],
-            arguments: ['0x' + address, '0x' + '0'.repeat(40)],
-          },
-        },
-        {
-          key: namehash('name'),
-          val: {
-            constructor: 'Record',
-            argtypes: [],
-            arguments: ['0x' + address, '0x' + '0'.repeat(40)],
-          },
-        },
-        {
-          key: namehash('bid-name'),
-          val: {
-            constructor: 'Record',
-            argtypes: [],
-            arguments: ['0x' + address, '0x' + '0'.repeat(40)],
-          },
-        },
-        {
-          key: namehash('registered-name'),
-          val: {
-            constructor: 'Record',
-            argtypes: [],
-            arguments: ['0x' + address, '0x' + '0'.repeat(40)],
-          },
-        },
-      ])
+      expect(await ownerOf(registry, 'bid-name')).toEqual(address)
+      expect(await resolverOf(registry, 'bid-name')).toEqual(nullAddress)
 
-      expect(
-        (await registrar.getState()).find(v => v.vname === 'auctions').value,
-      ).toHaveLength(0)
-
-      // console.log('registry.getState()', JSON.stringify(await registry.getState(), null, 2))
-      // console.log('registrar.getState()', JSON.stringify(await registrar.getState(), null, 2))
+      expect(await contractField(registrar, 'auctions')).toHaveLength(0)
     })
   })
 })
