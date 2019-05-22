@@ -35,7 +35,7 @@ const version = bytes.pack(111, 1)
 
 const defaultParams: TxParams = {
   version,
-  toAddr: '0'.repeat(40),
+  toAddr: '0x' + '0'.repeat(40),
   amount: new BN(0),
   gasPrice: new BN(1000000000),
   gasLimit: Long.fromNumber(25000),
@@ -1201,7 +1201,7 @@ describe('smart contracts', () => {
       expect(await registrar.getInit()).toHaveLength(13)
     })
 
-    xit('should start, bid and end auction', async () => {
+    fit('should start, bid and end auction', async () => {
       const zilliqa = new Zilliqa(null, provider)
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
@@ -1214,8 +1214,8 @@ describe('smart contracts', () => {
       const [, registrar] = await deployAuctionRegistrar(
         zilliqa,
         {
-          owner: '0x' + '0'.repeat(40),
-          registry: '0x' + '0'.repeat(40),
+          owner: '0x' + address,
+          registry: '0x' + registry.address,
           ownedNode: rootNode,
           initialAuctionLength: '3',
           minimumAuctionLength: '2',
@@ -1235,19 +1235,35 @@ describe('smart contracts', () => {
       )
 
       //////////////////////////////////////////////////////////////////////////
-      // register name
+      // run auctions
       //////////////////////////////////////////////////////////////////////////
 
-      const tx = await registry.call(
-        'register',
-        registryData.f.register({parent: rootNode, label: 'name'}),
-        {
-          ...defaultParams,
-          amount: new BN(100000),
-        },
+      await registrar.call(
+        'setRunning',
+        auctionRegistrarData.f.setRunning({
+          newRunning: {constructor: 'True', argtypes: [], arguments: []},
+        }),
+        defaultParams,
       )
 
-      console.log(tx)
+      expect(
+        (await registrar.getState()).find(v => v.vname === 'running').value,
+      ).toMatchObject({constructor: 'True', argtypes: [], arguments: []})
+
+      //////////////////////////////////////////////////////////////////////////
+      // run auctions
+      //////////////////////////////////////////////////////////////////////////
+
+      console.log(
+        await registry.call(
+          'register',
+          registryData.f.register({parent: rootNode, label: 'name'}),
+          {
+            ...defaultParams,
+            amount: new BN(200),
+          },
+        ),
+      )
 
       console.log(
         'registry.getState()',

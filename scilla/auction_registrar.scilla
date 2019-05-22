@@ -109,7 +109,7 @@ field liPerUSD: Uint128 = initialPricePerLi
 (* Defines a default initial price for all domains in USD *)
 field defaultPriceUSD: Uint128 = initialDefaultPrice
 (* Defines a custom initial price in USD for all domains with specific length *)
-(* Prices defined by this field have higher priority than defaultPriceUSD )
+(* Prices defined by this field have higher priority than defaultPriceUSD *)
 (* e.g {2 => 10, 3 => 15} would define that all two-symbol domains will be sold for 10 USD *)
 (* and three-symbol domains for 15 USD *)
 (* a key is used to specify the number of symbols in domain name *)
@@ -213,9 +213,9 @@ end
 
 
 (* Makes an auction for the domain *)
-(* @accepts sent amount all the time)
+(* @accepts sent amount all the time *)
 (* @ensures sender is a ZNS registry *)
-(* @ensures sent amount is above the base price for the domain)
+(* @ensures sent amount is above the base price for the domain *)
 (* @param node domain address *)
 (* @param origin an address that initializes the auction *)
 (* @param parent an address of the parent node *)
@@ -270,7 +270,7 @@ transition register(
       currentMaxPriceUSD <- maxPriceUSD;
 
       maxPrice = builtin mul currentMaxPriceUSD currentLiPerUSD;
-      paidMaxPrice = builtin lt _amount maxPrice;
+      paidMaxPrice = builtin lt maxPrice _amount;
 
       match paidMaxPrice with
       | True =>
@@ -321,7 +321,7 @@ transition register(
 end
 
 (* Increases the bid amount for a domain. Can instantly assign a domain if the maximum allowed price is paid. *)
-(* @ensures an auction is started the domain)
+(* @ensures an auction is started the domain *)
 (* @ensures sent amount is above a minimum increment threshold *)
 (* @param node domain address *)
 (* @accepts sent amount if the new bid is made *)
@@ -449,4 +449,8 @@ transition withdraw(address: ByStr20, amount: Uint128)
     send msgs
   | _ =>
   end
+end
+
+(* A dummy function we have because we bestow the name to _this_address *)
+transition onZNSTransfer(node: ByStr32)
 end

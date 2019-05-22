@@ -203,7 +203,7 @@ field admins: List ByStr20 = Cons {ByStr20} initialOwner nilByStr20
 
 (* Adds or removes the given address as the contract admin based on isApproved flag *)
 (* @ensures sender address is an admin *)
-(* @param address the address to be added as admin)
+(* @param address the address to be added as admin *)
 (* @param isApproved when true the address is added to admins, otherwise the address removed from admins *)
 (* @emits adminSet with address and isApproved flag when the new admin was assigned or removed *)
 (* @emits Error when sender address has no permission for this operation *)
