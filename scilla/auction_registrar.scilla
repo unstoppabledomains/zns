@@ -351,35 +351,27 @@ transition bid(node: ByStr32)
         currentMaxPriceUSD <- maxPriceUSD;
 
         maxPrice = builtin mul currentMaxPriceUSD currentLiPerUSD;
-        paidMaxPrice = builtin lt _amount maxPrice;
+        paidMaxPrice = builtin lt maxPrice _amount;
 
-        match paidMaxPrice with
-        | True =>
-          delete auctions[node];
-          e = eClose node highestBidder currentBid;
-          event e;
+        newEndingBlk = 
+          match paidMaxPrice with
+          | True => blk
+          | False => calcEndingBlk minimumAuctionLength blk endingBlk
+          end;
 
-          msg = {_tag: "assign"; _recipient: registry; _amount: Uint128 0; 
-                parent: ownedNode; label: label; owner: highestBidder};
-          msgs = oneMsg msg;
-          send msgs
-        | False =>
-          newEndingBlk = calcEndingBlk minimumAuctionLength blk endingBlk;
-          newAuction = Auction _sender _amount newEndingBlk label;
+        newAuction = Auction _sender _amount newEndingBlk label;
+        
+        auctions[node] := newAuction;
+        
+        accept;
+        
+        e = eBid node _sender _amount newEndingBlk;
+        event e;
 
-          auctions[node] := newAuction;
-
-          accept;
-
-          e = eBid node _sender _amount newEndingBlk;
-          event e;
-
-          msgs = 
-            let msg = {_tag: ""; _recipient: highestBidder; _amount: currentBid} in
-              oneMsg msg;
-
-          send msgs
-        end
+        msgs = 
+          let msg = {_tag: ""; _recipient: highestBidder; _amount: currentBid} in
+            oneMsg msg;
+        send msgs
       | _ =>
       end
     end
@@ -390,7 +382,7 @@ end
 (* @ensures an auction exists for the node *)
 (* @ensures the current block number is above the auction ending block *)
 (* @emits Close if the auction is closed successfully *)
-(* @emits assign with highest bid address as the node owner *)
+(* @emits bestow with highest bid address as the node owner *)
 transition close(node: ByStr32)
   maybeAuction <- auctions[node];
 
@@ -408,8 +400,9 @@ transition close(node: ByStr32)
         e = eClose node highestBidder currentBid;
         event e;
 
-        msg = {_tag: "assign"; _recipient: registry; _amount: Uint128 0; 
-              parent: ownedNode; label: label; owner: highestBidder};
+        msg = {_tag: "bestow"; _recipient: registry; _amount: Uint128 0; 
+              parent: ownedNode; label: label; owner: highestBidder;
+              resolver: zeroByStr20};
         msgs = oneMsg msg;
         send msgs
       | _ => 
@@ -452,5 +445,4 @@ transition withdraw(address: ByStr20, amount: Uint128)
 end
 
 (* A dummy function we have because we bestow the name to _this_address *)
-transition onZNSTransfer(node: ByStr32)
-end
+transition onZNSTransfer(node: ByStr32) end

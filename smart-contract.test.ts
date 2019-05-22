@@ -20,7 +20,7 @@ import {
   contract_info as simple_registrar_contract_info,
 } from './contract_info/simple_registrar.json'
 import {generateMapperFromContractInfo} from './lib/params'
-// import {checker} from '../lib/scilla'
+import {checker} from './lib/scilla'
 
 const auctionRegistrarData = generateMapperFromContractInfo(
   auction_registrar_contract_info,
@@ -181,16 +181,12 @@ const privateKey2 =
 
 const rootNode = '0x' + '0'.repeat(64)
 
-describe('checks', () => {
+xdescribe('checks', () => {
   for (const input of readdirSync(join(process.cwd(), 'scilla'))
     .map(v => join(process.cwd(), 'scilla', v))
     .filter(v => v.endsWith('.scilla'))) {
-    it.todo(
-      `should successfully type-check ${basename(
-        input,
-      )}` /* , () =>
-      checker({input}) */,
-    )
+    it(`should successfully type-check ${basename(input)}`, () =>
+      checker({input}))
   }
 })
 
@@ -1201,7 +1197,7 @@ describe('smart contracts', () => {
       expect(await registrar.getInit()).toHaveLength(13)
     })
 
-    fit('should start, bid and end auction', async () => {
+    it('should start, bid and end auction', async () => {
       const zilliqa = new Zilliqa(null, provider)
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
@@ -1251,29 +1247,236 @@ describe('smart contracts', () => {
       ).toMatchObject({constructor: 'True', argtypes: [], arguments: []})
 
       //////////////////////////////////////////////////////////////////////////
-      // run auctions
+      // open an auction
       //////////////////////////////////////////////////////////////////////////
 
-      console.log(
-        await registry.call(
-          'register',
-          registryData.f.register({parent: rootNode, label: 'name'}),
-          {
-            ...defaultParams,
-            amount: new BN(200),
+      await registry.call(
+        'register',
+        registryData.f.register({parent: rootNode, label: 'name'}),
+        {
+          ...defaultParams,
+          amount: new BN(200),
+        },
+      )
+
+      expect(
+        (await registry.getState()).find(v => v.vname === 'records').value,
+      ).toMatchObject([
+        {
+          key: rootNode,
+          val: {
+            constructor: 'Record',
+            argtypes: [],
+            arguments: ['0x' + address, '0x' + '0'.repeat(40)],
           },
-        ),
+        },
+        {
+          key: namehash('name'),
+          val: {
+            constructor: 'Record',
+            argtypes: [],
+            arguments: ['0x' + registrar.address, '0x' + '0'.repeat(40)],
+          },
+        },
+      ])
+
+      expect(
+        (await registrar.getState()).find(v => v.vname === 'auctions').value,
+      ).toMatchObject([
+        {
+          key: namehash('name'),
+          val: {
+            constructor: 'Auction',
+            argtypes: [],
+            arguments: [
+              '0x' + address,
+              '200',
+              expect.stringMatching(/^\d+$/),
+              'name',
+            ],
+          },
+        },
+      ])
+
+      //////////////////////////////////////////////////////////////////////////
+      // bid on an auction
+      //////////////////////////////////////////////////////////////////////////
+
+      await registrar.call(
+        'bid',
+        auctionRegistrarData.f.bid({node: namehash('name')}),
+        {...defaultParams, amount: new BN(300)},
       )
 
-      console.log(
-        'registry.getState()',
-        JSON.stringify(await registry.getState(), null, 2),
+      expect(
+        (await registrar.getState()).find(v => v.vname === 'auctions').value,
+      ).toMatchObject([
+        {
+          key: namehash('name'),
+          val: {
+            constructor: 'Auction',
+            argtypes: [],
+            arguments: [
+              '0x' + address,
+              '200',
+              expect.stringMatching(/^\d*$/),
+              'name',
+            ],
+          },
+        },
+      ])
+
+      //////////////////////////////////////////////////////////////////////////
+      // close an auction
+      //////////////////////////////////////////////////////////////////////////
+
+      await new Promise(r => setTimeout(r, 1000))
+
+      await registrar.call(
+        'close',
+        auctionRegistrarData.f.close({node: namehash('name')}),
+        defaultParams,
       )
 
-      console.log(
-        'registrar.getState()',
-        JSON.stringify(await registrar.getState(), null, 2),
+      expect(
+        (await registry.getState()).find(v => v.vname === 'records').value,
+      ).toMatchObject([
+        {
+          key: rootNode,
+          val: {
+            constructor: 'Record',
+            argtypes: [],
+            arguments: ['0x' + address, '0x' + '0'.repeat(40)],
+          },
+        },
+        {
+          key: namehash('name'),
+          val: {
+            constructor: 'Record',
+            argtypes: [],
+            arguments: ['0x' + address, '0x' + '0'.repeat(40)],
+          },
+        },
+      ])
+
+      expect(
+        (await registrar.getState()).find(v => v.vname === 'auctions').value,
+      ).toHaveLength(0)
+
+      //////////////////////////////////////////////////////////////////////////
+      // close an auction on register
+      //////////////////////////////////////////////////////////////////////////
+
+      await registry.call(
+        'register',
+        registryData.f.register({parent: rootNode, label: 'registered-name'}),
+        {
+          ...defaultParams,
+          amount: new BN(2000),
+        },
       )
+
+      expect(
+        (await registry.getState()).find(v => v.vname === 'records').value,
+      ).toMatchObject([
+        {
+          key: rootNode,
+          val: {
+            constructor: 'Record',
+            argtypes: [],
+            arguments: ['0x' + address, '0x' + '0'.repeat(40)],
+          },
+        },
+        {
+          key: namehash('name'),
+          val: {
+            constructor: 'Record',
+            argtypes: [],
+            arguments: ['0x' + address, '0x' + '0'.repeat(40)],
+          },
+        },
+        {
+          key: namehash('registered-name'),
+          val: {
+            constructor: 'Record',
+            argtypes: [],
+            arguments: ['0x' + address, '0x' + '0'.repeat(40)],
+          },
+        },
+      ])
+
+      expect(
+        (await registrar.getState()).find(v => v.vname === 'auctions').value,
+      ).toHaveLength(0)
+
+      //////////////////////////////////////////////////////////////////////////
+      // close an auction on bid
+      //////////////////////////////////////////////////////////////////////////
+
+      await registry.call(
+        'register',
+        registryData.f.register({parent: rootNode, label: 'bid-name'}),
+        {
+          ...defaultParams,
+          amount: new BN(200),
+        },
+      )
+
+      await registrar.call(
+        'bid',
+        auctionRegistrarData.f.bid({node: namehash('bid-name')}),
+        {...defaultParams, amount: new BN(2000)},
+      )
+
+      await registrar.call(
+        'close',
+        auctionRegistrarData.f.close({node: namehash('bid-name')}),
+        defaultParams,
+      )
+
+      expect(
+        (await registry.getState()).find(v => v.vname === 'records').value,
+      ).toMatchObject([
+        {
+          key: rootNode,
+          val: {
+            constructor: 'Record',
+            argtypes: [],
+            arguments: ['0x' + address, '0x' + '0'.repeat(40)],
+          },
+        },
+        {
+          key: namehash('name'),
+          val: {
+            constructor: 'Record',
+            argtypes: [],
+            arguments: ['0x' + address, '0x' + '0'.repeat(40)],
+          },
+        },
+        {
+          key: namehash('bid-name'),
+          val: {
+            constructor: 'Record',
+            argtypes: [],
+            arguments: ['0x' + address, '0x' + '0'.repeat(40)],
+          },
+        },
+        {
+          key: namehash('registered-name'),
+          val: {
+            constructor: 'Record',
+            argtypes: [],
+            arguments: ['0x' + address, '0x' + '0'.repeat(40)],
+          },
+        },
+      ])
+
+      expect(
+        (await registrar.getState()).find(v => v.vname === 'auctions').value,
+      ).toHaveLength(0)
+
+      // console.log('registry.getState()', JSON.stringify(await registry.getState(), null, 2))
+      // console.log('registrar.getState()', JSON.stringify(await registrar.getState(), null, 2))
     })
   })
 })

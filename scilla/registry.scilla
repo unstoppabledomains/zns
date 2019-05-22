@@ -456,7 +456,7 @@ end
 
 
 (* Transfer an unowned subnode to an account. *)
-(* @ensures a node is not owned by anyone *)
+(* @ensures a node is not owned by anyone or owned by registrar *)
 (* @ensures sender address is an admin or a registrar *)
 (* @param parent parent node address *)
 (* @param label a name of the subnode (subdomain) to be assigned *)
@@ -478,7 +478,9 @@ transition bestow(parent: ByStr32, label: String, owner: ByStr20, resolver: BySt
     let isOkSender = orb isSenderRegistrar isSenderAdmin in
     let recordOwner = recordMemberOwner maybeRecord in
     let recordIsUnowned = builtin eq recordOwner zeroByStr20 in
-      andb isOkSender recordIsUnowned;
+    let recordIsOwnedByRegistrar = builtin eq recordOwner currentRegistrar in
+    let isOkRecordOwner = orb recordIsUnowned recordIsOwnedByRegistrar in
+      andb isOkSender isOkRecordOwner;
 
   match isOk with
   | True =>
@@ -507,7 +509,7 @@ transition bestow(parent: ByStr32, label: String, owner: ByStr20, resolver: BySt
 end
 (* END: Admin Transitions *)
 
-(* START: Receiver Transitions *)
+(* START: Admin Transitions *)
 
 (* Sets a new registrar for the registry *)
 (* @ensures the sender address is an admin *)
@@ -562,4 +564,4 @@ transition register(parent: ByStr32, label: String)
   | False =>
   end
 end
-(* END: Receiver Transitions *)
+(* END: Admin Transitions *)
