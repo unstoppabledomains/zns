@@ -320,7 +320,7 @@ transition register(
   end
 end
 
-(* Increases the bid amount for a domain. Can instantly assign a domain if the maximum allowed price is paid. *)
+(* Increases the bid amount for a domain. Can instantly close the auction if the maximum allowed price is paid. *)
 (* @ensures an auction is started the domain *)
 (* @ensures sent amount is above a minimum increment threshold *)
 (* @param node domain address *)
