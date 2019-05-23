@@ -199,17 +199,16 @@ const ownerOf = async (registry, domain) => {
   return record && record.arguments[0].replace(/^0x/, '')
 }
 
-const resolverOf = async(registry, domain) => {
+const resolverOf = async (registry, domain) => {
   const record = await getRegistryRecord(registry, domain)
   return record && record.arguments[1].replace(/^0x/, '')
 }
 
-const resolverRecords = async(resolver) => {
-  const records = await contractField(resolver, 'records') 
-  const result = {}
-  records.forEach(r => result[r.key] = r.val)
-  return result;
+const resolverRecords = async resolver => {
+  const records = await contractField(resolver, 'records')
+  return records.reduce((a, v) => ({...a, [v.key]: v.val}), {})
 }
+
 const approvalOf = async (registry, domain) => {
   const node = namehash(domain)
   const approval = await contractMapValue(registry, 'approvals', node)
@@ -245,6 +244,7 @@ describe('smart contracts', () => {
     provider = new KayaProvider(
       {dataPath: `/tmp/kaya_${id}_`},
       {
+        // 1,000,000,000 ZIL
         [address]: {privateKey, amount: '1000000000000000000000', nonce: 0},
         [address2]: {
           privateKey: privateKey2,
@@ -264,7 +264,7 @@ describe('smart contracts', () => {
         owner: '0x' + address,
       })
       expect(resolverTx.isConfirmed()).toBeTruthy()
-      expect(await resolver.getInit()).toHaveLength(4) //owner,this,cblock,version
+      expect(await resolver.getInit()).toHaveLength(4)
     })
 
     it('should set and unset records', async () => {
@@ -284,7 +284,7 @@ describe('smart contracts', () => {
         defaultParams,
       )
 
-      expect(await resolverRecords(resolver)).toEqual({'test': '0x7357' })
+      expect(await resolverRecords(resolver)).toEqual({test: '0x7357'})
 
       //////////////////////////////////////////////////////////////////////////
       // unset record
@@ -331,7 +331,7 @@ describe('smart contracts', () => {
         defaultParams,
       )
 
-      expect(await resolverRecords(resolver)).toEqual({'test': '0x7357' })
+      expect(await resolverRecords(resolver)).toEqual({test: '0x7357'})
 
       zilliqa.wallet.setDefault(address2)
 
@@ -427,7 +427,9 @@ describe('smart contracts', () => {
         defaultParams,
       )
 
-      expect(await approvalOf(registry, 'node-owned-by-someone-else')).toEqual(null)
+      expect(await approvalOf(registry, 'node-owned-by-someone-else')).toEqual(
+        null,
+      )
 
       //////////////////////////////////////////////////////////////////////////
       // add operator
@@ -442,7 +444,13 @@ describe('smart contracts', () => {
         defaultParams,
       )
 
-      expect(await contractMapValue(registry, 'operators', '0xd90f2e538ce0df89c8273cad3b63ec44a3c4ed82')).toEqual(['0x2f4f79ef6abfc0368f5a7e2c2df82e1afdfe7204'])
+      expect(
+        await await contractMapValue(
+          registry,
+          'operators',
+          '0xd90f2e538ce0df89c8273cad3b63ec44a3c4ed82',
+        ),
+      ).toEqual(['0x2f4f79ef6abfc0368f5a7e2c2df82e1afdfe7204'])
 
       //////////////////////////////////////////////////////////////////////////
       // remove operator
@@ -456,7 +464,13 @@ describe('smart contracts', () => {
         }),
         defaultParams,
       )
-      expect(await contractMapValue(registry, 'operators', '0xd90f2e538ce0df89c8273cad3b63ec44a3c4ed82')).toEqual([])
+      expect(
+        await contractMapValue(
+          registry,
+          'operators',
+          '0xd90f2e538ce0df89c8273cad3b63ec44a3c4ed82',
+        ),
+      ).toEqual([])
     })
 
     it('should add and remove admins if currently admin', async () => {
@@ -482,7 +496,10 @@ describe('smart contracts', () => {
         defaultParams,
       )
 
-      expect(await contractField(registry, 'admins')).toEqual(['0x' + address2, '0x' + address])
+      expect(await contractField(registry, 'admins')).toEqual([
+        '0x' + address2,
+        '0x' + address,
+      ])
 
       //////////////////////////////////////////////////////////////////////////
       // remove admin
@@ -591,7 +608,6 @@ describe('smart contracts', () => {
       )
       expect(await resolverOf(registry, rootNode)).toEqual(address2)
       expect(await ownerOf(registry, rootNode)).toEqual(address2)
-
     })
 
     it('should freely transfer names properly', async () => {
@@ -807,7 +823,9 @@ describe('smart contracts', () => {
         defaultParams,
       )
 
-      expect(await contractField(registry, 'registrar')).toEqual('0x' + address2)
+      expect(await contractField(registry, 'registrar')).toEqual(
+        '0x' + address2,
+      )
 
       //////////////////////////////////////////////////////////////////////////
       // fail to set registrar address using bad address
@@ -821,7 +839,9 @@ describe('smart contracts', () => {
         defaultParams,
       )
 
-      expect(await contractField(registry, 'registrar')).toEqual('0x' + address2)
+      expect(await contractField(registry, 'registrar')).toEqual(
+        '0x' + address2,
+      )
     })
   })
 
@@ -942,7 +962,6 @@ describe('smart contracts', () => {
         },
       )
 
-
       expect(await ownerOf(registry, rootNode)).toEqual(address)
       expect(await resolverOf(registry, rootNode)).toEqual(nullAddress)
       expect(await ownerOf(registry, 'name')).toEqual(address)
@@ -1022,8 +1041,11 @@ describe('smart contracts', () => {
         defaultParams,
       )
 
-      expect(await contractField(registrar, 'running'))
-        .toMatchObject({constructor: 'True', argtypes: [], arguments: []})
+      expect(await contractField(registrar, 'running')).toMatchObject({
+        constructor: 'True',
+        argtypes: [],
+        arguments: [],
+      })
 
       //////////////////////////////////////////////////////////////////////////
       // open an auction
@@ -1043,17 +1065,18 @@ describe('smart contracts', () => {
       expect(await ownerOf(registry, 'name')).toEqual(registrar.address)
       expect(await resolverOf(registry, 'name')).toEqual(nullAddress)
 
-      expect(await contractMapValue(registrar, 'auctions', namehash('name')))
-        .toMatchObject({
-          constructor: 'Auction',
-          argtypes: [],
-          arguments: [
-            '0x' + address,
-            '200',
-            expect.stringMatching(/^\d+$/),
-            'name',
-          ],
-        })
+      expect(
+        await contractMapValue(registrar, 'auctions', namehash('name')),
+      ).toMatchObject({
+        constructor: 'Auction',
+        argtypes: [],
+        arguments: [
+          '0x' + address,
+          '200',
+          expect.stringMatching(/^\d+$/),
+          'name',
+        ],
+      })
 
       //////////////////////////////////////////////////////////////////////////
       // bid on an auction
@@ -1065,23 +1088,27 @@ describe('smart contracts', () => {
         {...defaultParams, amount: new BN(300)},
       )
 
-      expect(await contractMapValue(registrar, 'auctions', namehash('name')))
-        .toMatchObject({
-          constructor: 'Auction',
-          argtypes: [],
-          arguments: [
-            '0x' + address,
-            '200',
-            expect.stringMatching(/^\d*$/),
-            'name',
-          ],
-        })
+      expect(
+        await contractMapValue(registrar, 'auctions', namehash('name')),
+      ).toMatchObject({
+        constructor: 'Auction',
+        argtypes: [],
+        arguments: [
+          '0x' + address,
+          '300',
+          expect.stringMatching(/^\d*$/),
+          'name',
+        ],
+      })
 
       //////////////////////////////////////////////////////////////////////////
       // close an auction
       //////////////////////////////////////////////////////////////////////////
 
-      await new Promise(r => setTimeout(r, 1000))
+      await zilliqa.provider.send('KayaMine')
+      await zilliqa.provider.send('KayaMine')
+      await zilliqa.provider.send('KayaMine')
+      await zilliqa.provider.send('KayaMine') // {result: '4'}
 
       await registrar.call(
         'close',
@@ -1137,6 +1164,8 @@ describe('smart contracts', () => {
         {...defaultParams, amount: new BN(2000)},
       )
 
+      await zilliqa.provider.send('KayaMine')
+
       await registrar.call(
         'close',
         auctionRegistrarData.f.close({node: namehash('bid-name')}),
@@ -1147,6 +1176,205 @@ describe('smart contracts', () => {
       expect(await resolverOf(registry, 'bid-name')).toEqual(nullAddress)
 
       expect(await contractField(registrar, 'auctions')).toHaveLength(0)
+    })
+  })
+
+  xdescribe('integration and pre-configuration', () => {
+    const records = {
+      // null: null,
+      // empty: {},
+      // emptyfields: {
+      //   ADA: '',
+      //   BCH: '',
+      //   BTC: '',
+      //   EOS: '',
+      //   ETH: '',
+      //   LTC: '',
+      //   XLM: '',
+      //   XRP: '',
+      //   ZIL: '',
+      // },
+      partial: {
+        ADA:
+          'DL4pHtsfecWgzp5PQdzFs21sM4rhtFzCqtR25aAyrieSFzzXM8X4Cqw3JvdQaQLdLUbr5K4ZtHNbKNcrdV41X5tewCqdrAFmPEJDQU9G',
+        BTC: '1PZGBAB8ZwXb5i8gp3GCfnmqVTseUVEM5g',
+        ETH: '0x7cf734b3ebb3c580895b2dcd924f59482308d34b',
+        LTC: 'LM26kiNqvnDkeqhno8Kdz8VLJmXdg4wrr9',
+        ZIL: '0x5b2db3ebb3c5808cd924f59482308d7cf734934b',
+      },
+      onlyzil: {
+        ZIL: '0xd924f59482308d7c5b2db3ebb3c5808cf734934b',
+      },
+      full: {
+        ADA: 'Ae2tdPwUZuDdLb8UPEZEfFiSoXYGQAYSSZeShobxMEihLM6ewWvVV8NyGrX',
+        BCH: '1McTmk6CqPWMkgzdkUiVSx6mwiWVixVrx8',
+        BTC: '1Ej6SdCyfacpvpRGsiSWmfNaFxnVzgsjyk',
+        EOS: 'EOS7dsws9He6jM8FQGPNmFr3xj8UtFCGtb1eEm5gaTAagMAWZhUme',
+        ETH: '0xE5b4528144d22C395D42d8a212E70a8F90F8ba7f',
+        LTC: 'LUknCgSJtq3iwuhtK886Jie5iMbhocfxBT',
+        XLM: 'GACJCWYIUHQ6FLVNF45MNYE4WOEXOLWVFHBP5SIMUN3UWZJNOZRR5YZA',
+        XRP: 'rUZ8iNVUY96YuCfGEv2Ntm6oK9PEG8gZZa',
+        ZIL: '0x7cbff0c4b4cDCC94cdf9f97d0D05e774424f81AE',
+      },
+    }
+
+    const randomAddress = () =>
+      '0x' +
+      new Array(40)
+        .fill('')
+        .map(() => Math.floor(Math.random() * 16).toString(16))
+        .join('')
+
+    const users = {
+      1: {
+        names: Object.keys(records).slice(0, 2),
+        zilAddress: randomAddress(),
+        resolverAddress: null,
+      },
+      2: {
+        names: Object.keys(records).slice(2),
+        zilAddress: randomAddress(),
+        resolverAddress: null,
+      },
+    }
+
+    xit('should deploy and pre-configure correctly', async () => {
+      // 1. deploy registry.scilla
+      //      Easy enough
+      // 2. pre-configure owners to be on admin addresses.
+      //      See code generation in pre-configured-resolver.
+      // https://github.com/Zilliqa/Zilliqa-JavaScript-Library/tree/dev/packages/zilliqa-js-crypto#tobech32addressaddress-string-string
+      // 4. set-up endpoint where user supplies Zilliqa address, we set owner on
+      //    resolver to be correct ZIL address
+
+      // 5. dust for backup. operators etc...
+
+      // This is pseudo code for the endpoint
+
+      /* for (const name of user.names) {
+        const node = namehash(name)
+
+        // This actually needs to be a call to the tx processor
+        await registry.call(
+          'configureNode',
+          registryData.f.configureNode({
+            owner: zilClaimAdderss,
+            resolver: user.resolver,
+            node,
+          }),
+          defaultParams,
+        )
+
+        // Something like this
+        return res.json({
+          id: await txProcessor.send(
+            'zil',
+            zilliqa.transactions.new({
+              ...defaultParams,
+              toAddr: registry.address,
+              data: {
+                _tag: 'configureNode',
+                params: registryData.f.configureNode({
+                  owner: zilClaimAdderss,
+                  resolver: user.resolver,
+                  node,
+                }),
+              },
+            }),
+          ),
+        })
+      } */
+
+      // Tenative table for deployment
+      // id | description | ctime | status
+
+      // txQueue
+      //   .send(
+      //     'zil',
+      //     zilliqa.wallet.signWith(
+      //       zilliqa.transactions.new({
+      //         // bla bla bla
+      //       }),
+      //       address,
+      //     ),
+      //   )
+      //   .on('error', error => {
+      //     //
+      //   })
+      //   .on('pending', tx => {
+      //     //
+      //   })
+      //   .on('busy', tx => {
+      //     //
+      //   })
+      //   .on('success', tx => {
+      //     //
+      //   })
+
+      const zilliqa = new Zilliqa(null, provider)
+      zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
+
+      const [, registry] = await deployRegistry(
+        zilliqa,
+        {initialOwner: '0x' + address},
+        {gasLimit: Long.fromNumber(100000)},
+      )
+
+      for (const [, {names, zilAddress}] of Object.entries(users)) {
+        for (const name of names) {
+          if (records[name] /* && Object.keys(records[name]).length > 0 */) {
+            const [, resolver] = await deployResolver(zilliqa, {
+              owner: '0x' + address,
+            })
+
+            console.log('resolver.address', resolver.address)
+
+            const fullName = name + '.zil'
+            const node = namehash(fullName)
+
+            await registry.call(
+              'bestow',
+              registryData.f.bestow({
+                parent: namehash('zil'),
+                label: name,
+                owner: zilAddress,
+                resolver: '0x' + resolver.address,
+              }),
+              defaultParams,
+            )
+
+            for (const [ticker, value] of Object.entries(records[name])) {
+              console.log('value:', value)
+              await resolver.call(
+                'set',
+                resolverData.f.set({
+                  node,
+                  key: `crypto.${ticker}`,
+                  value:
+                    '0x' + Buffer.from(value as any, 'utf8').toString('hex'),
+                }),
+                defaultParams,
+              )
+            }
+
+            console.log(
+              '%s: %o',
+              fullName,
+              await contractMapValue(registry, 'records', node),
+            )
+
+            console.log('%s: %o', fullName, await resolver.getState())
+          }
+        }
+
+        // await resolver.call(
+        //   'setOwner',
+        //   resolverData.f.setOwner({newOwner: zilAddress}),
+        //   defaultParams,
+        // )
+      }
+
+      // console.log('%o', await contractField(registry, 'records'))
     })
   })
 })

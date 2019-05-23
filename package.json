@@ -17,6 +17,7 @@
     "@zilliqa-js/zilliqa": "^0.5.4",
     "base32": "^0.0.6",
     "commander": "^2.20.0",
+    "events": "^3.0.0",
     "hash.js": "^1.1.7",
     "kaya-cli": "unstoppabledomains/kaya",
     "ts-jest": "^24.0.2",
