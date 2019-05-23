@@ -334,6 +334,8 @@ transition bid(node: ByStr32)
 
   match maybeAuction with
   | None =>
+    e = let m = "Auction does not exist" in eError m;
+    event e
   | Some auction =>
     match auction with
     | Auction highestBidder currentBid endingBlk label =>
@@ -373,6 +375,15 @@ transition bid(node: ByStr32)
             oneMsg msg;
         send msgs
       | _ =>
+
+        e = 
+          let bn0 = BNum 0 in
+          let intblk = builtin bsub blk bn0 in
+          let strblk = builtin to_string intblk in
+          let m1 = "Not Ok at blk " in
+          let m = builtin concat m1 strblk in 
+            eError m;
+        event e
       end
     end
   end

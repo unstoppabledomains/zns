@@ -479,7 +479,7 @@ transition bestow(parent: ByStr32, label: String, owner: ByStr20, resolver: BySt
     let recordOwner = recordMemberOwner maybeRecord in
     let recordIsUnowned = builtin eq recordOwner zeroByStr20 in
     let recordIsOwnedByRegistrar = builtin eq recordOwner currentRegistrar in
-    let isRegistrarSenderAndOwned = and recordIsOwnedByRegistrar isSenderRegistrar in
+    let isRegistrarSenderAndOwned = andb recordIsOwnedByRegistrar isSenderRegistrar in
     let isOkRecordOwner = orb recordIsUnowned isRegistrarSenderAndOwned in
       andb isOkSender isOkRecordOwner;
 
