@@ -3,135 +3,333 @@
     "scilla_major_version": "0",
     "vname": "AuctionRegistrar",
     "params": [
-      {"vname": "owner", "type": "ByStr20"},
-      {"vname": "registry", "type": "ByStr20"},
-      {"vname": "ownedNode", "type": "ByStr32"},
-      {"vname": "initialAuctionLength", "type": "Uint64"},
-      {"vname": "minimumAuctionLength", "type": "Uint64"},
-      {"vname": "initialDefaultPrice", "type": "Uint128"},
-      {"vname": "bidIncrementNumerator", "type": "Uint128"},
-      {"vname": "bidIncrementDenominator", "type": "Uint128"},
-      {"vname": "initialPricePerLi", "type": "Uint128"},
-      {"vname": "initialMaxPriceUSD", "type": "Uint128"}
+      {
+        "vname": "owner",
+        "type": "ByStr20"
+      },
+      {
+        "vname": "registry",
+        "type": "ByStr20"
+      },
+      {
+        "vname": "ownedNode",
+        "type": "ByStr32"
+      },
+      {
+        "vname": "initialAuctionLength",
+        "type": "Uint64"
+      },
+      {
+        "vname": "minimumAuctionLength",
+        "type": "Uint64"
+      },
+      {
+        "vname": "initialDefaultPrice",
+        "type": "Uint128"
+      },
+      {
+        "vname": "bidIncrementNumerator",
+        "type": "Uint128"
+      },
+      {
+        "vname": "bidIncrementDenominator",
+        "type": "Uint128"
+      },
+      {
+        "vname": "initialPricePerLi",
+        "type": "Uint128"
+      },
+      {
+        "vname": "initialMaxPriceUSD",
+        "type": "Uint128"
+      }
     ],
     "fields": [
-      {"vname": "running", "type": "Bool"},
-      {"vname": "auctions", "type": "Map (ByStr32) (Auction)"},
-      {"vname": "liPerUSD", "type": "Uint128"},
-      {"vname": "defaultPriceUSD", "type": "Uint128"},
-      {"vname": "lengthPricesUSD", "type": "Map (Uint32) (Uint128)"},
-      {"vname": "customPricesUSD", "type": "Map (ByStr32) (Uint128)"},
-      {"vname": "maxPriceUSD", "type": "Uint128"}
+      {
+        "vname": "running",
+        "type": "Bool"
+      },
+      {
+        "vname": "auctions",
+        "type": "Map (ByStr32) (Auction)"
+      },
+      {
+        "vname": "liPerUSD",
+        "type": "Uint128"
+      },
+      {
+        "vname": "defaultPriceUSD",
+        "type": "Uint128"
+      },
+      {
+        "vname": "lengthPricesUSD",
+        "type": "Map (Uint32) (Uint128)"
+      },
+      {
+        "vname": "customPricesUSD",
+        "type": "Map (ByStr32) (Uint128)"
+      },
+      {
+        "vname": "maxPriceUSD",
+        "type": "Uint128"
+      }
     ],
     "transitions": [
       {
         "vname": "setLiPricePerUSD",
-        "params": [{"vname": "newPrice", "type": "Uint128"}]
+        "params": [
+          {
+            "vname": "newPrice",
+            "type": "Uint128"
+          }
+        ]
       },
       {
         "vname": "setDefaultPriceUSD",
-        "params": [{"vname": "newPrice", "type": "Uint128"}]
+        "params": [
+          {
+            "vname": "newPrice",
+            "type": "Uint128"
+          }
+        ]
       },
       {
         "vname": "setMaxPriceUSD",
-        "params": [{"vname": "newPrice", "type": "Uint128"}]
+        "params": [
+          {
+            "vname": "newPrice",
+            "type": "Uint128"
+          }
+        ]
       },
       {
         "vname": "setLengthPriceInUSD",
         "params": [
-          {"vname": "length", "type": "Uint32"},
-          {"vname": "newPrice", "type": "Uint128"}
+          {
+            "vname": "length",
+            "type": "Uint32"
+          },
+          {
+            "vname": "newPrice",
+            "type": "Uint128"
+          }
         ]
       },
       {
         "vname": "setCustomPriceInUSD",
         "params": [
-          {"vname": "node", "type": "ByStr32"},
-          {"vname": "newPrice", "type": "Uint128"}
+          {
+            "vname": "node",
+            "type": "ByStr32"
+          },
+          {
+            "vname": "newPrice",
+            "type": "Uint128"
+          }
         ]
       },
       {
         "vname": "register",
         "params": [
-          {"vname": "origin", "type": "ByStr20"},
-          {"vname": "node", "type": "ByStr32"},
-          {"vname": "parent", "type": "ByStr32"},
-          {"vname": "label", "type": "String"}
+          {
+            "vname": "origin",
+            "type": "ByStr20"
+          },
+          {
+            "vname": "node",
+            "type": "ByStr32"
+          },
+          {
+            "vname": "parent",
+            "type": "ByStr32"
+          },
+          {
+            "vname": "label",
+            "type": "String"
+          }
         ]
       },
-      {"vname": "bid", "params": [{"vname": "node", "type": "ByStr32"}]},
-      {"vname": "close", "params": [{"vname": "node", "type": "ByStr32"}]},
+      {
+        "vname": "bid",
+        "params": [
+          {
+            "vname": "node",
+            "type": "ByStr32"
+          }
+        ]
+      },
+      {
+        "vname": "close",
+        "params": [
+          {
+            "vname": "node",
+            "type": "ByStr32"
+          }
+        ]
+      },
       {
         "vname": "setRunning",
-        "params": [{"vname": "newRunning", "type": "Bool"}]
+        "params": [
+          {
+            "vname": "newRunning",
+            "type": "Bool"
+          }
+        ]
       },
       {
         "vname": "withdraw",
         "params": [
-          {"vname": "address", "type": "ByStr20"},
-          {"vname": "amount", "type": "Uint128"}
+          {
+            "vname": "address",
+            "type": "ByStr20"
+          },
+          {
+            "vname": "amount",
+            "type": "Uint128"
+          }
         ]
       },
       {
         "vname": "onZNSTransfer",
-        "params": [{"vname": "node", "type": "ByStr32"}]
+        "params": [
+          {
+            "vname": "node",
+            "type": "ByStr32"
+          }
+        ]
       }
     ],
     "events": [
-      {"vname": "Error", "params": [{"vname": "message", "type": "String"}]},
+      {
+        "vname": "Error",
+        "params": [
+          {
+            "vname": "message",
+            "type": "String"
+          }
+        ]
+      },
       {
         "vname": "CustomPriceUSDSet",
         "params": [
-          {"vname": "node", "type": "ByStr32"},
-          {"vname": "price", "type": "Uint128"}
+          {
+            "vname": "node",
+            "type": "ByStr32"
+          },
+          {
+            "vname": "price",
+            "type": "Uint128"
+          }
         ]
       },
       {
         "vname": "LengthPriceUSDSet",
         "params": [
-          {"vname": "length", "type": "Uint32"},
-          {"vname": "price", "type": "Uint128"}
+          {
+            "vname": "length",
+            "type": "Uint32"
+          },
+          {
+            "vname": "price",
+            "type": "Uint128"
+          }
         ]
       },
       {
         "vname": "MaxPriceUSDSet",
-        "params": [{"vname": "price", "type": "Uint128"}]
+        "params": [
+          {
+            "vname": "price",
+            "type": "Uint128"
+          }
+        ]
       },
       {
         "vname": "DefaultPriceUSDSet",
-        "params": [{"vname": "price", "type": "Uint128"}]
+        "params": [
+          {
+            "vname": "price",
+            "type": "Uint128"
+          }
+        ]
       },
       {
         "vname": "LiPricePerUSDSet",
-        "params": [{"vname": "price", "type": "Uint128"}]
+        "params": [
+          {
+            "vname": "price",
+            "type": "Uint128"
+          }
+        ]
       },
       {
         "vname": "Close",
         "params": [
-          {"vname": "node", "type": "ByStr32"},
-          {"vname": "bidder", "type": "ByStr20"},
-          {"vname": "bid", "type": "Uint128"}
+          {
+            "vname": "node",
+            "type": "ByStr32"
+          },
+          {
+            "vname": "bidder",
+            "type": "ByStr20"
+          },
+          {
+            "vname": "bid",
+            "type": "Uint128"
+          }
         ]
       },
       {
         "vname": "Bid",
         "params": [
-          {"vname": "node", "type": "ByStr32"},
-          {"vname": "bidder", "type": "ByStr20"},
-          {"vname": "bid", "type": "Uint128"},
-          {"vname": "endingBlk", "type": "BNum"}
+          {
+            "vname": "node",
+            "type": "ByStr32"
+          },
+          {
+            "vname": "bidder",
+            "type": "ByStr20"
+          },
+          {
+            "vname": "bid",
+            "type": "Uint128"
+          },
+          {
+            "vname": "endingBlk",
+            "type": "BNum"
+          }
         ]
       },
       {
         "vname": "Start",
         "params": [
-          {"vname": "node", "type": "ByStr32"},
-          {"vname": "bidder", "type": "ByStr20"},
-          {"vname": "bid", "type": "Uint128"},
-          {"vname": "endingBlk", "type": "BNum"}
+          {
+            "vname": "node",
+            "type": "ByStr32"
+          },
+          {
+            "vname": "bidder",
+            "type": "ByStr20"
+          },
+          {
+            "vname": "bid",
+            "type": "Uint128"
+          },
+          {
+            "vname": "endingBlk",
+            "type": "BNum"
+          }
         ]
       },
-      {"vname": "RunningSet", "params": [{"vname": "running", "type": "Bool"}]}
+      {
+        "vname": "RunningSet",
+        "params": [
+          {
+            "vname": "running",
+            "type": "Bool"
+          }
+        ]
+      }
     ],
     "ADTs": [
       {
@@ -148,38 +346,67 @@
         "tname": "Option",
         "tparams": ["'A"],
         "tmap": [
-          {"cname": "Some", "argtypes": ["'A"]},
-          {"cname": "None", "argtypes": []}
+          {
+            "cname": "Some",
+            "argtypes": ["'A"]
+          },
+          {
+            "cname": "None",
+            "argtypes": []
+          }
         ]
       },
       {
         "tname": "Bool",
         "tparams": [],
         "tmap": [
-          {"cname": "True", "argtypes": []},
-          {"cname": "False", "argtypes": []}
+          {
+            "cname": "True",
+            "argtypes": []
+          },
+          {
+            "cname": "False",
+            "argtypes": []
+          }
         ]
       },
       {
         "tname": "Nat",
         "tparams": [],
         "tmap": [
-          {"cname": "Zero", "argtypes": []},
-          {"cname": "Succ", "argtypes": ["Nat"]}
+          {
+            "cname": "Zero",
+            "argtypes": []
+          },
+          {
+            "cname": "Succ",
+            "argtypes": ["Nat"]
+          }
         ]
       },
       {
         "tname": "List",
         "tparams": ["'A"],
         "tmap": [
-          {"cname": "Cons", "argtypes": ["'A", "List ('A)"]},
-          {"cname": "Nil", "argtypes": []}
+          {
+            "cname": "Cons",
+            "argtypes": ["'A", "List ('A)"]
+          },
+          {
+            "cname": "Nil",
+            "argtypes": []
+          }
         ]
       },
       {
         "tname": "Pair",
         "tparams": ["'A", "'B"],
-        "tmap": [{"cname": "Pair", "argtypes": ["'A", "'B"]}]
+        "tmap": [
+          {
+            "cname": "Pair",
+            "argtypes": ["'A", "'B"]
+          }
+        ]
       }
     ]
   },
