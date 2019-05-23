@@ -31,6 +31,7 @@
     "testEnvironment": "node"
   },
   "scripts": {
+    "contracts": "sh ./scripts/contractInfo.sh",
     "test": "jest --detectOpenHandles --ci",
     "update-snapshot": "jest -u -t",
     "firebase-auth": "firebase login"
