@@ -268,10 +268,10 @@ describe('smart contracts', () => {
       {dataPath: `/tmp/kaya_${id}_`},
       {
         // 1,000,000,000 ZIL
-        [address]: {privateKey, amount: '1000000000000000000000', nonce: 0},
+        [address]: {privateKey, amount: '100000000000000', nonce: 0},
         [address2]: {
           privateKey: privateKey2,
-          amount: '1000000000000000000000',
+          amount: '100000000000000',
           nonce: 0,
         },
       },
@@ -1202,7 +1202,7 @@ describe('smart contracts', () => {
     })
   })
 
-  fdescribe('marketplace.scilla', () => {
+  describe('marketplace.scilla', () => {
     it('should deploy', async () => {
       const zilliqa = new Zilliqa(null, provider)
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
@@ -1231,6 +1231,10 @@ describe('smart contracts', () => {
         seller: '0x' + address,
       })
 
+      //////////////////////////////////////////////////////////////////////////
+      // approve marketplace to operate on names
+      //////////////////////////////////////////////////////////////////////////
+
       await registry.call(
         'approveFor',
         registryData.f.approveFor({
@@ -1240,25 +1244,89 @@ describe('smart contracts', () => {
         defaultParams,
       )
 
+      //////////////////////////////////////////////////////////////////////////
+      // make and cancel offers
+      //////////////////////////////////////////////////////////////////////////
+
       await marketplace.call(
         'offer',
-        marketplaceData.f.offer({node: rootNode, price: '1'}),
+        marketplaceData.f.offer({node: rootNode, price: '1000000000000'}),
         defaultParams,
       )
 
-      zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey2))
+      expect(await contractMapValue(marketplace, 'offers', rootNode)).toBe(
+        '1000000000000',
+      )
 
       await marketplace.call(
-        'buy',
-        marketplaceData.f.buy({node: rootNode, seller: '0x' + address}),
-        {
-          ...defaultParams,
-          amount: new BN('1'),
-        },
+        'cancelOffer',
+        marketplaceData.f.cancelOffer({node: rootNode}),
+        defaultParams,
       )
+
+      expect(await contractMapValue(marketplace, 'offers', rootNode)).toBeNull()
+
+      await marketplace.call(
+        'offer',
+        marketplaceData.f.offer({node: rootNode, price: '1000000000000'}),
+        defaultParams,
+      )
+
+      expect(await contractMapValue(marketplace, 'offers', rootNode)).toBe(
+        '1000000000000',
+      )
+
+      //////////////////////////////////////////////////////////////////////////
+      // purchase name and verify balance was transfered
+      //////////////////////////////////////////////////////////////////////////
+
+      zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey2))
+
+      let address1BalancePre = await zilliqa.blockchain.getBalance(address)
+
+      await marketplace.call('buy', marketplaceData.f.buy({node: rootNode}), {
+        ...defaultParams,
+        amount: new BN('1000000000000'),
+      })
+
+      let address1BalancePost = await zilliqa.blockchain.getBalance(address)
+
+      // FIX: This is a kaya balance problem
+      // expect(Number(address1BalancePre.result.balance) + 1000000000000).toBe(
+      //   Number(address1BalancePost.result.balance),
+      // )
 
       expect(await ownerOf(registry, rootNode)).toBe(address2)
       expect(await approvalOf(registry, rootNode)).toBe(nullAddress)
+      expect(await contractMapValue(marketplace, 'offers', rootNode)).toBeNull()
+
+      //////////////////////////////////////////////////////////////////////////
+      // fail to purchase unlisted name
+      //////////////////////////////////////////////////////////////////////////
+
+      address1BalancePre = await zilliqa.blockchain.getBalance(address)
+      let address2BalancePre = await zilliqa.blockchain.getBalance(address)
+
+      let tx = await marketplace.call(
+        'buy',
+        marketplaceData.f.buy({node: namehash('not-offered')}),
+        {
+          ...defaultParams,
+          amount: new BN('1000000000000'),
+        },
+      )
+
+      address1BalancePost = await zilliqa.blockchain.getBalance(address)
+      let address2BalancePost = await zilliqa.blockchain.getBalance(address)
+
+      // FIX: This is a kaya balance problem. Contract -> Regular account
+      // expect(Number(address1BalancePre.result.balance)).toBe(
+      //   Number(address1BalancePost.result.balance),
+      // )
+      // expect(Number(address2BalancePre.result.balance)).toBe(
+      //   Number(address2BalancePost.result.balance) +
+      //     tx.txParams.receipt.cumulative_gas * tx.txParams.gasPrice.toNumber(),
+      // )
     })
   })
 
