@@ -2,14 +2,23 @@
   "contract_info": {
     "scilla_major_version": "0",
     "vname": "Resolver",
-    "params": [ { "vname": "owner", "type": "ByStr20" } ],
-    "fields": [ { "vname": "records", "type": "Map (String) (ByStr)" } ],
+    "params": [
+      { "vname": "owner", "type": "ByStr20" },
+      { "vname": "ada", "type": "String" },
+      { "vname": "btc", "type": "String" },
+      { "vname": "eos", "type": "String" },
+      { "vname": "eth", "type": "String" },
+      { "vname": "xlm", "type": "String" },
+      { "vname": "xrp", "type": "String" },
+      { "vname": "zil", "type": "String" }
+    ],
+    "fields": [ { "vname": "records", "type": "Map (String) (String)" } ],
     "transitions": [
       {
         "vname": "set",
         "params": [
           { "vname": "key", "type": "String" },
-          { "vname": "value", "type": "ByStr" }
+          { "vname": "value", "type": "String" }
         ]
       },
       {
@@ -33,7 +42,7 @@
         "vname": "RecordSet",
         "params": [
           { "vname": "key", "type": "String" },
-          { "vname": "value", "type": "ByStr" }
+          { "vname": "value", "type": "String" }
         ]
       }
     ],

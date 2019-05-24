@@ -6,7 +6,7 @@ library ResolverLib
 
 let eRecordSet =
   fun(key: String) =>
-  fun(value: ByStr) =>
+  fun(value: String) =>
     {_eventname: "RecordSet"; key: key; value: value}
 
 let eRecordUnset =
@@ -20,9 +20,44 @@ let eError =
   fun(message: String) =>
     {_eventname: "Error"; code: code; message: message}
 
-contract Resolver(owner: ByStr20)
+contract Resolver(
+  owner: ByStr20,
+  ada: String,
+  btc: String,
+  eos: String,
+  eth: String,
+  xlm: String,
+  xrp: String,
+  zil: String
+)
 
-field records: Map String ByStr = Emp String ByStr
+field records: Map String String = 
+  let blank = ""                in
+  let empty = Emp String String in
+
+  let adaKey = "crypto.ADA.address" in
+  let btcKey = "crypto.BTC.address" in
+  let eosKey = "crypto.EOS.address" in
+  let ethKey = "crypto.ETH.address" in
+  let xlmKey = "crypto.XLM.address" in
+  let xrpKey = "crypto.XRP.address" in
+  let zilKey = "crypto.ZIL.address" in
+
+  let adaBlank = builtin eq blank ada in
+  let btcBlank = builtin eq blank btc in
+  let eosBlank = builtin eq blank eos in
+  let ethBlank = builtin eq blank eth in
+  let xlmBlank = builtin eq blank xlm in
+  let xrpBlank = builtin eq blank xrp in
+  let zilBlank = builtin eq blank zil in
+
+  let withAda = match adaBlank with | True => empty   | False => builtin put empty   adaKey ada end in
+  let withBtc = match btcBlank with | True => withAda | False => builtin put withAda btcKey btc end in
+  let withEos = match eosBlank with | True => withBtc | False => builtin put withBtc eosKey eos end in
+  let withEth = match ethBlank with | True => withEos | False => builtin put withEos ethKey eth end in
+  let withXlm = match xlmBlank with | True => withEth | False => builtin put withEth xlmKey xlm end in
+  let withXrp = match xrpBlank with | True => withXlm | False => builtin put withXlm xrpKey xrp end in
+                match zilBlank with | True => withXrp | False => builtin put withXrp zilKey zil end
 
 (* Sets a key value pair *)
 (* @ensures a sender address is an owner of the contract *)
@@ -30,7 +65,7 @@ field records: Map String ByStr = Emp String ByStr
 (* @param value *)
 (* @emits RecordSet if the operation was successful *)
 (* @emits Error if a sender address has no permission for the operation *)
-transition set(key: String, value: ByStr)
+transition set(key: String, value: String)
   isOkSender = builtin eq owner _sender;
   match isOkSender with
   | True =>

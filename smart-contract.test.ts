@@ -5,6 +5,7 @@ import {readFileSync} from 'fs'
 import {readdirSync} from 'fs'
 import * as hashjs from 'hash.js'
 import * as KayaProvider from 'kaya-cli/src/provider'
+import * as kayaConfig from 'kaya-cli/src/config'
 import {basename, join} from 'path'
 import * as uuid from 'uuid/v4'
 import {
@@ -24,6 +25,9 @@ import {
 } from './contract_info/simple_registrar.json'
 import {generateMapperFromContractInfo} from './lib/params'
 import {checker} from './lib/scilla'
+
+kayaConfig.constants.smart_contract.SCILLA_RUNNER = `${__dirname}/bin/scilla-runner`
+kayaConfig.constants.smart_contract.SCILLA_CHECKER = `${__dirname}/bin/scilla-checker`
 
 const auctionRegistrarData = generateMapperFromContractInfo(
   auction_registrar_contract_info,
@@ -157,13 +161,13 @@ function deployAuctionRegistrar(
 
 function deployResolver(
   zilliqa: Zilliqa,
-  {owner, _creation_block = '0'},
+  {owner, ada, btc, eos, eth, xlm, xrp, zil, _creation_block = '0'},
   params: Partial<TxParams> = {},
 ) {
   return zilliqa.contracts
     .new(
       readFileSync('./scilla/resolver.scilla', 'utf8'),
-      resolverData.init({owner}).concat({
+      resolverData.init({owner, ada, btc, eos, eth, xlm, xrp, zil}).concat({
         vname: '_creation_block',
         type: 'BNum',
         value: _creation_block.toString(),
@@ -248,6 +252,17 @@ const privateKey2 =
 const rootNode = '0x' + '0'.repeat(64)
 const nullAddress = '0'.repeat(40)
 
+const resolverInitState = {
+  owner: '0x' + address,
+  ada: '',
+  btc: '',
+  eos: '',
+  eth: '',
+  xlm: '',
+  xrp: '',
+  zil: '',
+}
+
 xdescribe('checks', () => {
   for (const input of readdirSync(join(process.cwd(), 'scilla'))
     .map(v => join(process.cwd(), 'scilla', v))
@@ -278,36 +293,63 @@ describe('smart contracts', () => {
     )
   })
 
+
   describe('resolver.scilla', () => {
     it('should deploy', async () => {
       const zilliqa = new Zilliqa(null, provider)
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
+      const [resolverTx, resolver] = await deployResolver(zilliqa, resolverInitState)
+      expect(resolverTx.isConfirmed()).toBeTruthy()
+
+      expect(await resolver.getInit()).toHaveLength(11) //owner,this,cblock,version
+      expect(await resolverRecords(resolver)).toEqual({})
+    })
+    it('should deploy non-blank initial state', async () => {
+      const zilliqa = new Zilliqa(null, provider)
+      zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
+
       const [resolverTx, resolver] = await deployResolver(zilliqa, {
         owner: '0x' + address,
+        ada: '0x1111',
+        btc: '0x2222',
+        eos: '0x3333',
+        eth: '0x4444',
+        xlm: '0x5555',
+        xrp: '0x6666',
+        zil: '0x7777',
       })
       expect(resolverTx.isConfirmed()).toBeTruthy()
-      expect(await resolver.getInit()).toHaveLength(4)
-    })
 
+      expect(await resolver.getInit()).toHaveLength(11) //owner,this,cblock,version
+      expect(await resolverRecords(resolver)).toEqual({
+         "crypto.ADA.address": '0x1111',
+         "crypto.BTC.address": '0x2222',
+         "crypto.EOS.address": '0x3333',
+         "crypto.ETH.address": '0x4444',
+         "crypto.XLM.address": '0x5555',
+         "crypto.XRP.address": '0x6666',
+         "crypto.ZIL.address": '0x7777',
+      })
+
+    })
     it('should set and unset records', async () => {
       const zilliqa = new Zilliqa(null, provider)
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
-      const [, resolver] = await deployResolver(zilliqa, {
-        owner: '0x' + address,
-      })
+      const [, resolver] = await deployResolver(zilliqa, resolverInitState)
 
+      expect(await resolverRecords(resolver)).toEqual({})
       //////////////////////////////////////////////////////////////////////////
       // set record
       //////////////////////////////////////////////////////////////////////////
 
       await resolver.call(
         'set',
-        resolverData.f.set({key: 'test', value: '0x7357'}),
+        resolverData.f.set({key: 'crypto.ADA.address', value: '0x7357'}),
         defaultParams,
       )
 
-      expect(await resolverRecords(resolver)).toEqual({test: '0x7357'})
+      expect(await resolverRecords(resolver)).toEqual({'crypto.ADA.address': '0x7357' })
 
       //////////////////////////////////////////////////////////////////////////
       // unset record
@@ -315,7 +357,7 @@ describe('smart contracts', () => {
 
       await resolver.call(
         'unset',
-        resolverData.f.unset({key: 'test'}),
+        resolverData.f.unset({key: 'crypto.ADA.address'}),
         defaultParams,
       )
 
@@ -325,9 +367,7 @@ describe('smart contracts', () => {
     it('should fail to set and unset records if sender not owner', async () => {
       const zilliqa = new Zilliqa(null, provider)
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
-      const [, resolver] = await deployResolver(zilliqa, {
-        owner: '0x' + address,
-      })
+      const [, resolver] = await deployResolver(zilliqa, resolverInitState)
 
       //////////////////////////////////////////////////////////////////////////
       // fail to set record using bad address
@@ -354,7 +394,7 @@ describe('smart contracts', () => {
         defaultParams,
       )
 
-      expect(await resolverRecords(resolver)).toEqual({test: '0x7357'})
+      expect(await resolverRecords(resolver)).toEqual({'test': '0x7357' })
 
       zilliqa.wallet.setDefault(address2)
 
@@ -369,9 +409,7 @@ describe('smart contracts', () => {
     it("should gracefully fail to unset records if they don't exist", async () => {
       const zilliqa = new Zilliqa(null, provider)
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
-      const [, resolver] = await deployResolver(zilliqa, {
-        owner: '0x' + address,
-      })
+      const [, resolver] = await deployResolver(zilliqa, resolverInitState)
 
       //////////////////////////////////////////////////////////////////////////
       // shouldn't do anything
@@ -1474,9 +1512,7 @@ describe('smart contracts', () => {
       for (const [, {names, zilAddress}] of Object.entries(users)) {
         for (const name of names) {
           if (records[name] /* && Object.keys(records[name]).length > 0 */) {
-            const [, resolver] = await deployResolver(zilliqa, {
-              owner: '0x' + address,
-            })
+            const [, resolver] = await deployResolver(zilliqa, resolverInitState)
 
             console.log('resolver.address', resolver.address)
 

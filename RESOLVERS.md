@@ -29,8 +29,8 @@ We represent a nested structure of keys and values inside a simple map.
 dns.A[0]=127.0.0.1
 dns.A[1]=1.2.3.4
 dns.AAAA[0]=::1
-crypto.BTC=13xb4...
-crypto.ETH=0x12345...
+crypto.BTC.address=13xb4...
+crypto.ETH.address=0x12345...
 ```
 
 And on request transform them into this:
@@ -42,8 +42,8 @@ And on request transform them into this:
     "AAAA": ["::1"]
   },
   "crypto": {
-    "BTC": "13xb4...",
-    "ETH": "0x12345..."
+    "BTC": { address: "13xb4..." },
+    "ETH": { address: "0x123..." }
   }
 }
 ```
@@ -63,32 +63,31 @@ standard codes/symbols found on [coinmarketcap](https://coinmarketcap.com).
 For a Bitcoin address the key is
 
 ```
-crypto.BTC=1BvBMSEYstWetqTFn5Au4m4GFg7xJaNVN2
+crypto.BTC.address=1BvBMSEYstWetqTFn5Au4m4GFg7xJaNVN2
 ```
 
 The Ethereum address the key is
 
 ```
-crypto.ETH=0x0b8202db02472ecf3d4d0185eb26998889663cf2
+crypto.ETH.address=0x0b8202db02472ecf3d4d0185eb26998889663cf2
 ```
 
 If a currency requires the use of a custodial address like a Memo, Destination
 Tag, or Payment ID i.e. currencies like EOS (EOS), Ripple (XRP), Stellar Lumens
-(XLM), Binance Coin (BNB), or Monero (XMR), an extra field can be attached in
-the form of `(TICKER)_X`.
+(XLM), Binance Coin (BNB), or Monero (XMR), an extra field can be specified besides `address`.
 
 This means an EOS address is represented as an account name and public key
 
 ```
-crypto.EOS=eosisawesome
-crypto.EOS_X=EOStWeu4m4GFg7MSEYsxJtqTFn5AaNVN2MSEYstWetqTFn5Au4m47
+crypto.EOS.address=eosisawesome
+crypto.EOS.memo=EOStWeu4m4GFg7MSEYsxJtqTFn5AaNVN2MSEYstWetqTFn5Au4m47
 ```
 
 A Stellar address can be represented as an account id and memo
 
 ```
-crypto.XLM=G5CHCGSNFHEJMRZOX3Z6YVXM3XGCEZWKCA5VLDNRLN3RPROJMDS674JZ
-crypto.XLM_X=random@email.com*bittrex.com
+crypto.XLM.address=G5CHCGSNFHEJMRZOX3Z6YVXM3XGCEZWKCA5VLDNRLN3RPROJMDS674JZ
+crypto.XLM.memo=random@email.com*bittrex.com
 ```
 
 **TODO:** Take a look at the
