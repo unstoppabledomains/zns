@@ -32,8 +32,9 @@
     "testEnvironment": "node"
   },
   "scripts": {
-    "contracts": "sh ./scripts/contractInfo.sh",
-    "test": "jest --detectOpenHandles --ci",
+    "verify": "[ -x ./bin/scilla-runner ] && [ -x ./bin/scilla-checker ] && [ -d ./scilla/stdlib ] || (echo 'Scilla libraries are not symlinked' && exit 1)",
+    "contracts": "yarn verify && sh ./scripts/contractInfo.sh",
+    "test": "yarn verify && jest smart-contract.test.ts",
     "update-snapshot": "jest -u -t",
     "firebase-auth": "firebase login"
   }
