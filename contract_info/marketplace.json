@@ -1,0 +1,115 @@
+{
+  "contract_info": {
+    "scilla_major_version": "0",
+    "vname": "Marketplace",
+    "params": [ { "vname": "registry", "type": "ByStr20" } ],
+    "fields": [
+      {
+        "vname": "offers",
+        "type": "Map (ByStr20) (Map (ByStr32) (Uint128))"
+      },
+      { "vname": "lastSeller", "type": "ByStr20" },
+      { "vname": "lastBuyer", "type": "ByStr20" }
+    ],
+    "transitions": [
+      {
+        "vname": "offer",
+        "params": [
+          { "vname": "node", "type": "ByStr32" },
+          { "vname": "price", "type": "Uint128" }
+        ]
+      },
+      {
+        "vname": "canceledOffer",
+        "params": [ { "vname": "node", "type": "ByStr32" } ]
+      },
+      {
+        "vname": "buy",
+        "params": [
+          { "vname": "node", "type": "ByStr32" },
+          { "vname": "seller", "type": "ByStr20" }
+        ]
+      },
+      {
+        "vname": "onTransferSuccess",
+        "params": [
+          { "vname": "node", "type": "ByStr32" },
+          { "vname": "owner", "type": "ByStr20" }
+        ]
+      },
+      {
+        "vname": "onTransferFailure",
+        "params": [
+          { "vname": "node", "type": "ByStr32" },
+          { "vname": "owner", "type": "ByStr20" }
+        ]
+      }
+    ],
+    "events": [
+      {
+        "vname": "Sold",
+        "params": [
+          { "vname": "buyer", "type": "ByStr20" },
+          { "vname": "seller", "type": "ByStr20" },
+          { "vname": "node", "type": "ByStr32" },
+          { "vname": "price", "type": "Uint128" }
+        ]
+      },
+      {
+        "vname": "OfferCanceled",
+        "params": [
+          { "vname": "seller", "type": "ByStr20" },
+          { "vname": "node", "type": "ByStr32" }
+        ]
+      },
+      {
+        "vname": "Offer",
+        "params": [
+          { "vname": "seller", "type": "ByStr20" },
+          { "vname": "node", "type": "ByStr32" },
+          { "vname": "price", "type": "Uint128" }
+        ]
+      }
+    ],
+    "ADTs": [
+      {
+        "tname": "Option",
+        "tparams": [ "'A" ],
+        "tmap": [
+          { "cname": "Some", "argtypes": [ "'A" ] },
+          { "cname": "None", "argtypes": [] }
+        ]
+      },
+      {
+        "tname": "Bool",
+        "tparams": [],
+        "tmap": [
+          { "cname": "True", "argtypes": [] },
+          { "cname": "False", "argtypes": [] }
+        ]
+      },
+      {
+        "tname": "Nat",
+        "tparams": [],
+        "tmap": [
+          { "cname": "Zero", "argtypes": [] },
+          { "cname": "Succ", "argtypes": [ "Nat" ] }
+        ]
+      },
+      {
+        "tname": "List",
+        "tparams": [ "'A" ],
+        "tmap": [
+          { "cname": "Cons", "argtypes": [ "'A", "List ('A)" ] },
+          { "cname": "Nil", "argtypes": [] }
+        ]
+      },
+      {
+        "tname": "Pair",
+        "tparams": [ "'A", "'B" ],
+        "tmap": [ { "cname": "Pair", "argtypes": [ "'A", "'B" ] } ]
+      }
+    ]
+  },
+  "warnings": []
+}

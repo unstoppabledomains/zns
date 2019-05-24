@@ -334,13 +334,18 @@ transition configureNode(node: ByStr32, owner: ByStr20, resolver: ByStr20)
     e = eConfigured node owner resolver;
     event e;
 
-    msgs = let m = {_tag: "onZNSTransfer"; node: node; 
-                    _amount: Uint128 0; _recipient: owner} 
+    msgs = let m = {_tag: "onConfigureSuccess"; node: node; owner: owner; 
+                    _amount: Uint128 0; _recipient: _sender} 
       in oneMsg m;
     send msgs
   | False =>
     e = let m = "Sender not node owner, approved or operator" in eError m eCodeFailureIAM;
-    event e
+    event e;
+
+    msgs = let m = {_tag: "onConfigureFailure"; node: node; owner: recordOwner; 
+                    _amount: Uint128 0; _recipient: _sender} 
+      in oneMsg m;
+    send msgs
   end
 end
 
@@ -395,13 +400,18 @@ transition transfer(node: ByStr32, owner: ByStr20)
     e = eConfigured node owner zeroByStr20;
     event e;
 
-    msgs = let m = {_tag: "onZNSTransfer"; node: node; 
-                    _amount: Uint128 0; _recipient: owner} 
+    msgs = let m = {_tag: "onTransferSuccess"; node: node; owner: owner; 
+                    _amount: Uint128 0; _recipient: _sender} 
       in oneMsg m;
     send msgs
   | False =>
     e = let m = "Sender not node owner, approved or operator" in eError m eCodeFailureIAM;
-    event e
+    event e;
+    
+    msgs = let m = {_tag: "onTransferFailure"; node: node; owner: owner; 
+                    _amount: Uint128 0; _recipient: _sender} 
+      in oneMsg m;
+    send msgs
   end
 end
 
@@ -441,13 +451,18 @@ transition assign(parent: ByStr32, label: String, owner: ByStr20)
     e = eConfigured node owner zeroByStr20;
     event e;
 
-    msgs = let m = {_tag: "onZNSTransfer"; node: node; 
-                    _amount: Uint128 0; _recipient: owner} 
+    msgs = let m = {_tag: "onAssignSuccess"; parent: parent; label: label; 
+                    owner: owner; _amount: Uint128 0; _recipient: _sender} 
       in oneMsg m;
     send msgs
   | False =>
     e = let m = "Sender not parent owner, approved or operator" in eError m eCodeFailureIAM;
-    event e
+    event e;
+
+    msgs = let m = {_tag: "onAssignFailure"; parent: parent; label: label; 
+                    owner: recordOwner; _amount: Uint128 0; _recipient: _sender} 
+      in oneMsg m;
+    send msgs
   end
 end
 (* END: Name Transitions *)

@@ -11,6 +11,9 @@ import {
   contract_info as auction_registrar_contract_info,
 } from './contract_info/auction_registrar.json'
 import {
+  contract_info as marketplace_contract_info,
+} from './contract_info/marketplace.json'
+import {
   contract_info as registry_contract_info,
 } from './contract_info/registry.json'
 import {
@@ -24,6 +27,9 @@ import {checker} from './lib/scilla'
 
 const auctionRegistrarData = generateMapperFromContractInfo(
   auction_registrar_contract_info,
+)
+const marketplaceData = generateMapperFromContractInfo(
+  marketplace_contract_info,
 )
 const registryData = generateMapperFromContractInfo(registry_contract_info)
 const resolverData = generateMapperFromContractInfo(resolver_contract_info)
@@ -39,6 +45,23 @@ const defaultParams: TxParams = {
   amount: new BN(0),
   gasPrice: new BN(1000000000),
   gasLimit: Long.fromNumber(25000),
+}
+
+function deployMarketplace(
+  zilliqa: Zilliqa,
+  {registry, _creation_block = '0'},
+  params: Partial<TxParams> = {},
+) {
+  return zilliqa.contracts
+    .new(
+      readFileSync('./scilla/marketplace.scilla', 'utf8'),
+      marketplaceData.init({registry}).concat({
+        vname: '_creation_block',
+        type: 'BNum',
+        value: _creation_block.toString(),
+      }),
+    )
+    .deploy({...defaultParams, ...params})
 }
 
 function deployRegistry(
@@ -1176,6 +1199,63 @@ describe('smart contracts', () => {
       expect(await resolverOf(registry, 'bid-name')).toEqual(nullAddress)
 
       expect(await contractField(registrar, 'auctions')).toHaveLength(0)
+    })
+  })
+
+  fdescribe('marketplace.scilla', () => {
+    it('should deploy', async () => {
+      const zilliqa = new Zilliqa(null, provider)
+      zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
+
+      const [marketplaceTx, marketplace] = await deployMarketplace(zilliqa, {
+        registry: '0x' + '0'.repeat(40),
+      })
+      expect(marketplaceTx.isConfirmed()).toBeTruthy()
+      expect(await marketplace.getInit()).toHaveLength(4)
+    })
+
+    it('should enable buying and selling of names', async () => {
+      const zilliqa = new Zilliqa(null, provider)
+      zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
+
+      const [, registry] = await deployRegistry(
+        zilliqa,
+        {initialOwner: '0x' + address},
+        {gasLimit: Long.fromNumber(100000)},
+      )
+
+      const [, marketplace] = await deployMarketplace(zilliqa, {
+        registry: '0x' + registry.address,
+      })
+
+      await registry.call(
+        'approveFor',
+        registryData.f.approveFor({
+          address: '0x' + marketplace.address,
+          isApproved: {constructor: 'True', argtypes: [], arguments: []},
+        }),
+        defaultParams,
+      )
+
+      await marketplace.call(
+        'offer',
+        marketplaceData.f.offer({node: rootNode, price: '1'}),
+        defaultParams,
+      )
+
+      zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey2))
+
+      await marketplace.call(
+        'buy',
+        marketplaceData.f.buy({node: rootNode, seller: '0x' + address}),
+        {
+          ...defaultParams,
+          amount: new BN('1'),
+        },
+      )
+
+      expect(await ownerOf(registry, rootNode)).toBe(address2)
+      expect(await approvalOf(registry, rootNode)).toBe(nullAddress)
     })
   })
 
