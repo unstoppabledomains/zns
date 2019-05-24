@@ -162,7 +162,7 @@ async function deploy(privateKey, testnet = true) {
   const setTx = await resolver.call(
     'set',
     resolverData.f.set({
-      key: 'crypto.ZIL',
+      key: 'crypto.ZIL.address',
       value: `0x${zilliqa.wallet.defaultAccount.address}`,
     }),
     {

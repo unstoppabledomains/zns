@@ -1536,7 +1536,7 @@ describe('smart contracts', () => {
                 'set',
                 resolverData.f.set({
                   node,
-                  key: `crypto.${ticker}`,
+                  key: `crypto.${ticker}.address`,
                   value:
                     '0x' + Buffer.from(value as any, 'utf8').toString('hex'),
                 }),
