@@ -12,51 +12,75 @@ let oneMsg =
     Cons {Message} msg nilMessage
 
 let eOffer =
-  fun(seller: ByStr20) =>
   fun(node: ByStr32) =>
   fun(price: Uint128) =>
-    {_eventname: "Offer"; seller: seller; node: node; price: price}
+    {_eventname: "Offer"; node: node; price: price}
 
 let eOfferCanceled =
-  fun(seller: ByStr20) =>
   fun(node: ByStr32) =>
-    {_eventname: "OfferCanceled"; seller: seller; node: node}
+    {_eventname: "OfferCanceled"; node: node}
 
 let eSold =
   fun(buyer: ByStr20) =>
-  fun(seller: ByStr20) =>
   fun(node: ByStr32) =>
   fun(price: Uint128) =>
-    {_eventname: "Sold"; buyer: buyer; seller: seller; node: node; price: price}
+    {_eventname: "Sold"; buyer: buyer; node: node; price: price}
 
-contract Marketplace(registry: ByStr20)
+contract Marketplace
+(* Configure the seller and registry addresses on deploy *)
+(seller: ByStr20, registry: ByStr20)
 
-field offers: Map ByStr20 (Map ByStr32 Uint128) = Emp ByStr20 (Map ByStr32 Uint128)
-field lastSeller: ByStr20 = zeroByStr20
-field lastBuyer: ByStr20 = zeroByStr20
+(* sale offers are stored by ZNS node *)
+field offers: Map ByStr32 Uint128 = Emp ByStr32 Uint128
 
+(* We use buyerTmp to store the buyer address while transfer is being executed *)
+field buyerTmp: ByStr20 = zeroByStr20
+
+(* Make or reset an offer to sell a node you own *)
+(* @param node *)
+(* @param price *)
+(* @emits Offer to track current offers *)
 transition offer(node: ByStr32, price: Uint128)
-  offers[_sender][node] := price;
+  isOk = builtin eq _sender seller;
 
-  e = eOffer _sender node price;
-  event e
+  match isOk with
+  | True =>
+    offers[node] := price;
+
+    e = eOffer node price;
+    event e
+  | False =>
+  end
 end
 
-transition canceledOffer(node: ByStr32)
-  delete offers[_sender][node];
+(* Delete an offer to sell a node you own *)
+(* @param node *)
+(* @param price *)
+(* @emits Offer to track current offers *)
+transition cancelOffer(node: ByStr32)
+  isOk = builtin eq _sender seller;
 
-  e = eOfferCanceled _sender node;
-  event e
+  match isOk with
+  | True =>
+    delete offers[node];
+
+    e = eOfferCanceled node;
+    event e
+  | False =>
+  end
 end
 
-transition buy(node: ByStr32, seller: ByStr20)
+(* Purchase a name from a specified seller *)
+(* @ensures _sender matched the sellers offer on the node *)
+(* @param node *)
+(* @sends transfer a transfer call to the registry if enough payment *)
+transition buy(node: ByStr32)
   accept;
 
-  lastSeller := seller;
-  lastBuyer := _sender;
-  maybeOffer <- offers[seller][node];
+  buyerTmp := _sender;
+  maybeOffer <- offers[node];
 
-  offerMatchsAmount = 
+  offerMatchsAmount =
     match maybeOffer with
     | None => False
     | Some listing => builtin eq listing _amount
@@ -73,43 +97,56 @@ transition buy(node: ByStr32, seller: ByStr20)
   end
 end
 
+(* The callback that is exicuted when the transfer is successful *)
+(* @ensures _sender is the registry *)
+(* @param node *)
+(* @param owner *)
+(* @emits Sold event to notify of a successful sale *)
+(* @sends money earned in sale to sender *)
+(* @notice we send _balance to ensure that bouced onTransferFailure calls dont get lost *)
 transition onTransferSuccess(node: ByStr32, owner: ByStr20)
   isOk = builtin eq _sender registry;
 
   match isOk with
   | True => 
-    seller <- lastSeller;
-    maybeOffer <- offers[seller][node];
+    maybeOffer <- offers[node];
     price = 
       match maybeOffer with
       | None => Uint128 0
       | Some listing => listing
       end;
+    delete offers[node];
 
-    e = eSold owner seller node price;
+    e = eSold owner node price;
     event e;
 
+    balance <- _balance;
+
     msgs =
-      let m = {_tag: ""; _recipient: seller; _amount: price} in oneMsg m;
+      let m = {_tag: ""; _recipient: seller; _amount: balance} in oneMsg m;
     send msgs
   | False => 
   end
 end
 
+(* The callback that is exicuted when the transfer fails *)
+(* @ensures _sender is the registry *)
+(* @param node *)
+(* @param owner *)
+(* @emits Sold event to notify of a successful sale *)
+(* @sends refunds buyer *)
 transition onTransferFailure(node: ByStr32, owner: ByStr20)
   isOk = builtin eq _sender registry;
 
   match isOk with
   | True =>
-    buyer <- lastBuyer;
-    seller <- lastSeller;
-    maybeOffer <- offers[seller][node];
+    buyer <- buyerTmp;
+    maybeOffer <- offers[node];
     price = 
       match maybeOffer with
       | None => Uint128 0
       | Some listing => listing
       end;
-    delete offers[seller][node];
 
     msgs =
       let m = {_tag: ""; _recipient: buyer; _amount: price} in oneMsg m;

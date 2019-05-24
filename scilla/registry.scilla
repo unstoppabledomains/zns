@@ -315,7 +315,8 @@ end
 (* @param node address of the node to be configured*)
 (* @param owner a new owner of the node *)
 (* @param resolver a new resolver address of the node *)
-(* @sends onZNSTransfer to the new owner when it was successfully changed *)
+(* @sends onConfigureSuccess to the sender if it was successfully changed *)
+(* @sends onConfigureFailure to the sender if it failed to change *)
 (* @emits Configured the operation was successful *)
 (* @emits Error when sender address has no permission for this operation *)
 transition configureNode(node: ByStr32, owner: ByStr20, resolver: ByStr20) 
@@ -380,7 +381,8 @@ end
 (* @ensures sender address is an owner of the node or one of node's owner operators or an approved address of this node *)
 (* @param node address of the node to be configured *)
 (* @param owner a new owner of the node *)
-(* @sends onZNSTransfer to the new owner when it was successfully changed *)
+(* @sends onTransferSuccess to the sender if it was successfully changed *)
+(* @sends onTransferFailure to the sender if it failed to change *)
 (* @emits Configured if the node's owner was changed successfully*)
 (* @emits Error when a sender address has no permission for this operation *)
 transition transfer(node: ByStr32, owner: ByStr20)
@@ -420,7 +422,8 @@ end
 (* @param parent parent node address *)
 (* @param label a name of the subnode (subdomain) to be assigned *)
 (* @param owner an owner address of the subnode *)
-(* @sends onZNSTransfer to the new owner of the subnode when it was successfully assign *)
+(* @sends onAssignSuccess to the sender if it was successfully changed *)
+(* @sends onAssignFailure to the sender if it failed to change *)
 (* @emits Configured if the node's owner was changed successfully*)
 (* @emits NewDomain when the target node(domain) didn't exist before and was made *)
 (* @emits Error when a sender address has no permission for this operation *)
@@ -476,7 +479,6 @@ end
 (* @param parent parent node address *)
 (* @param label a name of the subnode (subdomain) to be assigned *)
 (* @param owner a new owner address of the subnode *)
-(* @sends onZNSTransfer to the new owner of the subnode when it was successfully assigned *)
 (* @emits NewDomain when node(domain) was assigned to the new owner *)
 (* @emits Configured if the node's owner was changed successfully*)
 (* @emits Error when a sender address has no permission for this operation *)
@@ -512,12 +514,7 @@ transition bestow(parent: ByStr32, label: String, owner: ByStr20, resolver: BySt
     records[node] := newRecord;
 
     e = eConfigured node owner resolver;
-    event e;
-
-    msgs = let m = {_tag: "onZNSTransfer"; node: node; 
-                  _amount: Uint128 0; _recipient: owner} 
-      in oneMsg m;
-    send msgs
+    event e
   | False =>
     e = let m = "Sender admin" in eError m eCodeFailureIAM;
     event e

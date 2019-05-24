@@ -2,14 +2,13 @@
   "contract_info": {
     "scilla_major_version": "0",
     "vname": "Marketplace",
-    "params": [ { "vname": "registry", "type": "ByStr20" } ],
+    "params": [
+      { "vname": "seller", "type": "ByStr20" },
+      { "vname": "registry", "type": "ByStr20" }
+    ],
     "fields": [
-      {
-        "vname": "offers",
-        "type": "Map (ByStr20) (Map (ByStr32) (Uint128))"
-      },
-      { "vname": "lastSeller", "type": "ByStr20" },
-      { "vname": "lastBuyer", "type": "ByStr20" }
+      { "vname": "offers", "type": "Map (ByStr32) (Uint128)" },
+      { "vname": "buyerTmp", "type": "ByStr20" }
     ],
     "transitions": [
       {
@@ -20,15 +19,12 @@
         ]
       },
       {
-        "vname": "canceledOffer",
+        "vname": "cancelOffer",
         "params": [ { "vname": "node", "type": "ByStr32" } ]
       },
       {
         "vname": "buy",
-        "params": [
-          { "vname": "node", "type": "ByStr32" },
-          { "vname": "seller", "type": "ByStr20" }
-        ]
+        "params": [ { "vname": "node", "type": "ByStr32" } ]
       },
       {
         "vname": "onTransferSuccess",
@@ -50,22 +46,17 @@
         "vname": "Sold",
         "params": [
           { "vname": "buyer", "type": "ByStr20" },
-          { "vname": "seller", "type": "ByStr20" },
           { "vname": "node", "type": "ByStr32" },
           { "vname": "price", "type": "Uint128" }
         ]
       },
       {
         "vname": "OfferCanceled",
-        "params": [
-          { "vname": "seller", "type": "ByStr20" },
-          { "vname": "node", "type": "ByStr32" }
-        ]
+        "params": [ { "vname": "node", "type": "ByStr32" } ]
       },
       {
         "vname": "Offer",
         "params": [
-          { "vname": "seller", "type": "ByStr20" },
           { "vname": "node", "type": "ByStr32" },
           { "vname": "price", "type": "Uint128" }
         ]

@@ -49,13 +49,13 @@ const defaultParams: TxParams = {
 
 function deployMarketplace(
   zilliqa: Zilliqa,
-  {registry, _creation_block = '0'},
+  {registry, seller, _creation_block = '0'},
   params: Partial<TxParams> = {},
 ) {
   return zilliqa.contracts
     .new(
       readFileSync('./scilla/marketplace.scilla', 'utf8'),
-      marketplaceData.init({registry}).concat({
+      marketplaceData.init({registry, seller}).concat({
         vname: '_creation_block',
         type: 'BNum',
         value: _creation_block.toString(),
@@ -1209,9 +1209,11 @@ describe('smart contracts', () => {
 
       const [marketplaceTx, marketplace] = await deployMarketplace(zilliqa, {
         registry: '0x' + '0'.repeat(40),
+        seller: '0x' + '0'.repeat(40),
       })
+
       expect(marketplaceTx.isConfirmed()).toBeTruthy()
-      expect(await marketplace.getInit()).toHaveLength(4)
+      expect(await marketplace.getInit()).toHaveLength(5)
     })
 
     it('should enable buying and selling of names', async () => {
@@ -1226,6 +1228,7 @@ describe('smart contracts', () => {
 
       const [, marketplace] = await deployMarketplace(zilliqa, {
         registry: '0x' + registry.address,
+        seller: '0x' + address,
       })
 
       await registry.call(
