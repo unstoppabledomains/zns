@@ -15,12 +15,20 @@ data, as well as traditional dns records.
   [build requirements are listed here](https://github.com/Zilliqa/scilla/blob/master/INSTALL.md).
 - Nodejs and Yarn are required as well.
 
-### Running tests
+### Installing
 
 ```sh
 yarn install
+# Symlink scilla toolchain
+ln -s <scilla-toolchain-path> runner
+# Ensure scilla toolchain is ready
+yarn verify
+```
 
-SCILLA_PROJECT_DIR=/path/to/scilla/ yarn test
+### Testing
+
+```
+yarn test
 ```
 
 For more on development look at the [Testing Guide](./TESTING.md).

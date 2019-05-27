@@ -26,8 +26,8 @@ import {
 import {generateMapperFromContractInfo} from './lib/params'
 import {checker} from './lib/scilla'
 
-kayaConfig.constants.smart_contract.SCILLA_RUNNER = `${__dirname}/bin/scilla-runner`
-kayaConfig.constants.smart_contract.SCILLA_CHECKER = `${__dirname}/bin/scilla-checker`
+kayaConfig.constants.smart_contract.SCILLA_RUNNER = `${__dirname}/runner/bin/scilla-runner`
+kayaConfig.constants.smart_contract.SCILLA_CHECKER = `${__dirname}/runner/bin/scilla-checker`
 
 const auctionRegistrarData = generateMapperFromContractInfo(
   auction_registrar_contract_info,

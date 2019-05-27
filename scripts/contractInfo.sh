@@ -1,7 +1,10 @@
 ROOT="`dirname $0`/.."
 cd $ROOT
-CHECKER=./bin/scilla-checker
-STDLIB=./scilla/stdlib
+CHECKER=./runner/bin/scilla-checker
+STDLIB=./runner/src/stdlib
+OUTDIR=./contract_info
+mkdir -p $OUTDIR
+rm $OUTDIR/*
 if [ ! -x $CHECKER ]; then
   echo "$CHECKER is not executable"
   exit 1
@@ -11,7 +14,7 @@ if [ ! -d $STDLIB ]; then
   exit 1
 fi
 for CONTRACT in `ls ./scilla/*.scilla`; do
-  INFO=./contract_info/`basename $CONTRACT .scilla`.json
+  INFO=$OUTDIR/`basename $CONTRACT .scilla`.json
   $CHECKER -libdir $STDLIB -contractinfo $CONTRACT > $INFO
 done
 exit 0
