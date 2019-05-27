@@ -53,13 +53,13 @@ const defaultParams: TxParams = {
 
 function deployMarketplace(
   zilliqa: Zilliqa,
-  {registry, seller, _creation_block = '0'},
+  {registry, seller, zone, _creation_block = '0'},
   params: Partial<TxParams> = {},
 ) {
   return zilliqa.contracts
     .new(
       readFileSync('./scilla/marketplace.scilla', 'utf8'),
-      marketplaceData.init({registry, seller}).concat({
+      marketplaceData.init({registry, seller, zone}).concat({
         vname: '_creation_block',
         type: 'BNum',
         value: _creation_block.toString(),
@@ -186,7 +186,10 @@ function sha256(buffer) {
 }
 
 function namehash(name) {
-  if (name.match(/^0x\d+$/)) {
+  if (name.match(/^(0x)?[0-9a-f]+$/i)) {
+    if (!name.startsWith("0x")) {
+      name = "0x" + name
+    }
     return name
   }
   let node = Buffer.alloc(32, 0)
@@ -1248,14 +1251,17 @@ describe('smart contracts', () => {
       const [marketplaceTx, marketplace] = await deployMarketplace(zilliqa, {
         registry: '0x' + '0'.repeat(40),
         seller: '0x' + '0'.repeat(40),
+        zone: rootNode,
       })
 
       expect(marketplaceTx.isConfirmed()).toBeTruthy()
-      expect(await marketplace.getInit()).toHaveLength(5)
+      expect(await marketplace.getInit()).toHaveLength(6)
     })
 
     it('should enable buying and selling of names', async () => {
       const zilliqa = new Zilliqa(null, provider)
+      const soldDomain = 'domain';
+      const soldNode = namehash('domain');
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
       const [, registry] = await deployRegistry(
@@ -1267,7 +1273,20 @@ describe('smart contracts', () => {
       const [, marketplace] = await deployMarketplace(zilliqa, {
         registry: '0x' + registry.address,
         seller: '0x' + address,
+        zone: rootNode,
       })
+
+      await registry.call(
+        'bestow',
+        registryData.f.bestow({
+          parent: rootNode,
+          label: soldDomain,
+          owner: '0x' + address,
+          resolver: "0x" + nullAddress,
+        }),
+        defaultParams,
+      )
+      expect(await ownerOf(registry, soldDomain)).toBe(address)
 
       //////////////////////////////////////////////////////////////////////////
       // approve marketplace to operate on names
@@ -1288,29 +1307,29 @@ describe('smart contracts', () => {
 
       await marketplace.call(
         'offer',
-        marketplaceData.f.offer({node: rootNode, price: '1000000000000'}),
+        marketplaceData.f.offer({parent: rootNode, label: soldDomain, price: '1000000000000'}),
         defaultParams,
       )
 
-      expect(await contractMapValue(marketplace, 'offers', rootNode)).toBe(
+      expect(await contractMapValue(marketplace, 'offers', soldNode)).toBe(
         '1000000000000',
       )
 
       await marketplace.call(
         'cancelOffer',
-        marketplaceData.f.cancelOffer({node: rootNode}),
+        marketplaceData.f.cancelOffer({node: soldNode}),
         defaultParams,
       )
 
-      expect(await contractMapValue(marketplace, 'offers', rootNode)).toBeNull()
+      expect(await contractMapValue(marketplace, 'offers', soldNode)).toBeNull()
 
       await marketplace.call(
         'offer',
-        marketplaceData.f.offer({node: rootNode, price: '1000000000000'}),
+        marketplaceData.f.offer({parent: rootNode, label: soldDomain, price: '1000000000000'}),
         defaultParams,
       )
 
-      expect(await contractMapValue(marketplace, 'offers', rootNode)).toBe(
+      expect(await contractMapValue(marketplace, 'offers', soldNode)).toBe(
         '1000000000000',
       )
 
@@ -1322,7 +1341,7 @@ describe('smart contracts', () => {
 
       let address1BalancePre = await zilliqa.blockchain.getBalance(address)
 
-      await marketplace.call('buy', marketplaceData.f.buy({node: rootNode}), {
+      await marketplace.call('buy', marketplaceData.f.buy({node: soldNode}), {
         ...defaultParams,
         amount: new BN('1000000000000'),
       })
@@ -1334,9 +1353,9 @@ describe('smart contracts', () => {
       //   Number(address1BalancePost.result.balance),
       // )
 
-      expect(await ownerOf(registry, rootNode)).toBe(address2)
-      expect(await approvalOf(registry, rootNode)).toBe(nullAddress)
-      expect(await contractMapValue(marketplace, 'offers', rootNode)).toBeNull()
+      expect(await ownerOf(registry, soldDomain)).toBe(address2)
+      expect(await approvalOf(registry, soldDomain)).toBe(nullAddress)
+      expect(await contractMapValue(marketplace, 'offers', soldNode)).toBeNull()
 
       //////////////////////////////////////////////////////////////////////////
       // fail to purchase unlisted name
@@ -1367,6 +1386,31 @@ describe('smart contracts', () => {
       // )
     })
   })
+
+  it("should disallow to sell domain outside the zone", async () => {
+    const zilliqa = new Zilliqa(null, provider)
+    zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
+
+    const [, marketplace] = await deployMarketplace(zilliqa, {
+      registry: "0x" + nullAddress,
+      seller: '0x' + address,
+      zone: namehash("zil"),
+    })
+
+    await marketplace.call(
+      'offer',
+      marketplaceData.f.offer({parent: namehash('com'), label: 'value', price: '1000000000000'}),
+      defaultParams,
+    )
+    await marketplace.call(
+      'offer',
+      marketplaceData.f.offer({parent: namehash('zil'), label: 'value', price: '1000000000000'}),
+      defaultParams,
+    )
+
+    expect(await contractMapValue(marketplace, 'offers', namehash('value.com'))).toEqual(null)
+    expect(await contractMapValue(marketplace, 'offers', namehash('value.zil'))).toEqual("1000000000000")
+  }) 
 
   xdescribe('integration and pre-configuration', () => {
     const records = {

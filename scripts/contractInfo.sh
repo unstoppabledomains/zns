@@ -15,6 +15,6 @@ if [ ! -d $STDLIB ]; then
 fi
 for CONTRACT in `ls ./scilla/*.scilla`; do
   INFO=$OUTDIR/`basename $CONTRACT .scilla`.json
-  $CHECKER -libdir $STDLIB -contractinfo $CONTRACT > $INFO
+  $CHECKER -libdir $STDLIB -contractinfo $CONTRACT > $INFO || exit 1
 done
 exit 0

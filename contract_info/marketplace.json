@@ -4,7 +4,8 @@
     "vname": "Marketplace",
     "params": [
       { "vname": "seller", "type": "ByStr20" },
-      { "vname": "registry", "type": "ByStr20" }
+      { "vname": "registry", "type": "ByStr20" },
+      { "vname": "zone", "type": "ByStr32" }
     ],
     "fields": [
       { "vname": "offers", "type": "Map (ByStr32) (Uint128)" },
@@ -14,7 +15,8 @@
       {
         "vname": "offer",
         "params": [
-          { "vname": "node", "type": "ByStr32" },
+          { "vname": "parent", "type": "ByStr32" },
+          { "vname": "label", "type": "String" },
           { "vname": "price", "type": "Uint128" }
         ]
       },

@@ -26,9 +26,18 @@ let eSold =
   fun(price: Uint128) =>
     {_eventname: "Sold"; buyer: buyer; node: node; price: price}
 
-contract Marketplace
-(* Configure the seller and registry addresses on deploy *)
-(seller: ByStr20, registry: ByStr20)
+let parentLabelToNode = 
+  fun(parent: ByStr32) =>
+  fun(label: String) =>
+    let labelHash = builtin sha256hash label in
+    let nodeInput = builtin concat parent labelHash in
+      builtin sha256hash nodeInput
+
+contract Marketplace(
+  seller: ByStr20, 
+  registry: ByStr20,
+  zone: ByStr32
+)
 
 (* sale offers are stored by ZNS node *)
 field offers: Map ByStr32 Uint128 = Emp ByStr32 Uint128
@@ -40,8 +49,12 @@ field buyerTmp: ByStr20 = zeroByStr20
 (* @param node *)
 (* @param price *)
 (* @emits Offer to track current offers *)
-transition offer(node: ByStr32, price: Uint128)
-  isOk = builtin eq _sender seller;
+transition offer(parent: ByStr32, label: String, price: Uint128)
+  node = parentLabelToNode parent label;
+  isOk = 
+    let isSenderOk = builtin eq _sender seller in
+    let isParentOk = builtin eq zone parent in
+      andb isSenderOk isParentOk;
 
   match isOk with
   | True =>
