@@ -31,7 +31,11 @@ yarn verify
 yarn test
 ```
 
-For more on development look at the [Testing Guide](./TESTING.md).
+ZNS uses Kaya - an official Zilliqa node simulation library.
+However, mainstream version of Kaya has bugs that are fixed in [our fork](https://github.com/unstoppabledomains/kaya)
+
+Zilliqa RPC calls are made using [Zilliqa-JavaScript-Library](https://github.com/Zilliqa/Zilliqa-JavaScript-Library) by configuring it with Kaya provider instead of default HTTP provider 
+This ensures the Zilliqa node simulator and the test suite exist in the same process.
 
 ## Contracts
 
@@ -53,41 +57,6 @@ There are 3 ZNS contract variants.
   price designed to be put in place after the initial auction period. Registrar
   mechanics are explained in detail in the
   [Registrar Reference](./REGISTRAR.md).
-
-For more thoughts on ZNS look at the [List of Concerns](./CONCERNS.md).
-
-## Example Flow
-
-1. **Pre-order**
-
-   - `new registry(initialOwner)`
-   - `registry.setAdmin(...pre_configuration_admins, true)`
-   - `registry.bestow(...pre_orders)`
-   - `registry.bestow(rootNode, zil, burn)`
-   - `registry.transfer(rootNode, burn)`
-
-2. **Auctions**
-
-   - `new auction_registrar(registry, zil, auction_stats)`
-   - `registry.setAdmin(auction_registrar, true)`
-   - `registry.register(zilNode, myname)`
-     - `auction_registrar.register(...) - Starts auction`
-     - `registry.bestow(zilNode, myname, auction_registrar, burn)`
-   - `auction_registrar.bid(mynameNode)`
-   - `auction_registrar.close(mynameNode)`
-
-3. **Fixed price**
-
-   - `new simple_registrar(registry, zil, price)`
-   - `registry.setAdmin(simple_registrar, true)`
-   - `registry.sendZNSRecordTo(simple_registrar, zilNode, myname)`
-     - `simple_registrar.onZNSRecordReceived(...) - Purchases name`
-     - `registry.bestow(zilNode, myname, origin, burn)`
-
-4. **CC Purchases**
-
-   - `registry.setAdmin(cc_registration_account, true)`
-   - `registry.bestow(zilNode, myname, cc_purchaser, resolver)`
 
 ## License
 

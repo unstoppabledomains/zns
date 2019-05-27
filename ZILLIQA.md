@@ -13,8 +13,6 @@
 
 - Zilliqa uses the same Account/Gas model that Ethereum does.
 
-- `kaya` doesn't work with multi-contract calls. So we made the `lib/simulator`.
-
 # Scilla
 
 ## Installation
