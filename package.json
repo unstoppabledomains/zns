@@ -19,7 +19,7 @@
     "commander": "^2.20.0",
     "events": "^3.0.0",
     "hash.js": "^1.1.7",
-    "kaya-cli": "unstoppabledomains/kaya",
+    "kaya-cli": "unstoppabledomains/kaya#8384b81c8b07d76723cccefdad32b05da888dc05",
     "ts-jest": "^24.0.2",
     "tslib": "^1.9.3",
     "typescript": "^3.4.5",
