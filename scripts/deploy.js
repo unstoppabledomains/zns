@@ -64,7 +64,7 @@ async function deploy(privateKey, testnet = true) {
   zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
   console.log('zilliqa.wallet.defaultAccount:', zilliqa.wallet.defaultAccount)
-  console.log('gasPrice:', gasPrice)
+  console.log('gasPrice:', gasPrice.toString())
 
   const balance = await zilliqa.blockchain.getBalance(
     zilliqa.wallet.defaultAccount.address,
@@ -131,7 +131,7 @@ async function deploy(privateKey, testnet = true) {
       readFileSync(
         path.join(__dirname, '../scilla/resolver.scilla'),
       ).toString(),
-      registry.init({
+      registryData.init({
         owner: `0x${zilliqa.wallet.defaultAccount.address}`,
       }),
     )
