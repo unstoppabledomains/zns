@@ -89,16 +89,11 @@ let eNewDomain =
   fun(label: String) =>
     {_eventname: "NewDomain"; parent: parent; label: label}
 
-let eTransfered = 
-  fun(node: ByStr32) =>
-  fun(owner: ByStr20) =>
-    {_eventname: "Transfered"; node: node; owner: owner}
-
 let eConfigured = 
   fun(node: ByStr32) =>
   fun(owner: ByStr20) =>
   fun(resolver: ByStr20) =>
-    {_eventname: "Configured"; owner: owner; resolver: resolver}
+    {_eventname: "Configured"; node: node; owner: owner; resolver: resolver}
 (* We use the Error event to alert the caller if something went wrong because *)
 (* Scilla doesn't support throwing *)
 let codeSuccess = Uint32 0

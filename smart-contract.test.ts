@@ -219,6 +219,18 @@ const contractMapValue = async (contract, field, key) => {
   return record && record.val
 }
 
+const transactionEvents = (tx) => {
+  const events = tx.txParams.receipt.event_logs || []
+  // Following the original reverse order of events
+  return events.map((event) => {
+    const params = {_eventname: event._eventname}
+    event.params.forEach((param) => {
+      params[param.vname] = param.value
+    })
+    return params;
+  })
+}
+
 const getRegistryRecord = async (registry, domain) => {
   const node = namehash(domain)
   return await contractMapValue(registry, 'records', node)
@@ -612,7 +624,7 @@ describe('smart contracts', () => {
       // configure resolver
       //////////////////////////////////////////////////////////////////////////
 
-      await registry.call(
+      const configureResolverTx = await registry.call(
         'configureResolver',
         registryData.f.configureResolver({
           node: rootNode,
@@ -620,6 +632,13 @@ describe('smart contracts', () => {
         }),
         defaultParams,
       )
+      expect(configureResolverTx.isConfirmed()).toBeTruthy()
+      expect(transactionEvents(configureResolverTx)).toEqual([{
+        _eventname: 'Configured',
+        node: rootNode,
+        owner: '0x' + address,
+        resolver: '0x' + address2, 
+      }])
 
       expect(await resolverOf(registry, rootNode)).toEqual(address2)
       expect(await ownerOf(registry, rootNode)).toEqual(address)
@@ -628,7 +647,7 @@ describe('smart contracts', () => {
       // configure node
       //////////////////////////////////////////////////////////////////////////
 
-      await registry.call(
+      const configureNodeTx = await registry.call(
         'configureNode',
         registryData.f.configureNode({
           node: rootNode,
@@ -637,6 +656,13 @@ describe('smart contracts', () => {
         }),
         defaultParams,
       )
+      expect(configureNodeTx.isConfirmed()).toBeTruthy()
+      expect(transactionEvents(configureNodeTx)).toEqual([{
+        _eventname: 'Configured',
+        node: rootNode,
+        owner: '0x' + address2,
+        resolver: '0x' + address2, 
+      }])
 
       expect(await resolverOf(registry, rootNode)).toEqual(address2)
       expect(await ownerOf(registry, rootNode)).toEqual(address2)
@@ -694,7 +720,7 @@ describe('smart contracts', () => {
         defaultParams,
       )
 
-      await registry.call(
+      const transferTx = await registry.call(
         'transfer',
         registryData.f.transfer({
           node: rootNode,
@@ -702,6 +728,15 @@ describe('smart contracts', () => {
         }),
         defaultParams,
       )
+      expect(transferTx.isConfirmed()).toBeTruthy
+      expect(await transactionEvents(transferTx)).toEqual([
+        { 
+          _eventname: 'Configured',
+          node: rootNode,
+          owner: "0x" + address2,
+          resolver: "0x" + nullAddress,
+        },
+      ]);
 
       expect(await ownerOf(registry, rootNode)).toEqual(address2)
       expect(await resolverOf(registry, rootNode)).toEqual(nullAddress)
@@ -743,7 +778,7 @@ describe('smart contracts', () => {
         defaultParams,
       )
 
-      await registry.call(
+      const assignTx = await registry.call(
         'assign',
         registryData.f.assign({
           parent: rootNode,
@@ -752,6 +787,20 @@ describe('smart contracts', () => {
         }),
         defaultParams,
       )
+      expect(assignTx.isConfirmed()).toBeTruthy
+      expect(await transactionEvents(assignTx)).toEqual([
+        { 
+          _eventname: 'Configured',
+          node: namehash('tld'),
+          owner: "0x" + address,
+          resolver: "0x" + nullAddress,
+        },
+        { 
+          _eventname: 'NewDomain',
+          parent: rootNode,
+          label: 'tld' 
+        }
+      ]);
       expect(await ownerOf(registry, rootNode)).toEqual(address)
       expect(await resolverOf(registry, rootNode)).toEqual(nullAddress)
       expect(await ownerOf(registry, 'tld')).toEqual(address)
@@ -811,7 +860,7 @@ describe('smart contracts', () => {
       // bestow name
       //////////////////////////////////////////////////////////////////////////
 
-      await registry.call(
+      const bestowTx = await registry.call(
         'bestow',
         registryData.f.bestow({
           parent: rootNode,
@@ -821,6 +870,21 @@ describe('smart contracts', () => {
         }),
         defaultParams,
       )
+
+      expect(bestowTx.isConfirmed()).toBeTruthy
+      expect(await transactionEvents(bestowTx)).toEqual([
+        { 
+          _eventname: 'Configured',
+          node: namehash('tld'),
+          owner: "0x" + address,
+          resolver: "0x" + address,
+        },
+        { 
+          _eventname: 'NewDomain',
+          parent: rootNode,
+          label: 'tld' 
+        }
+      ]);
 
       expect(await ownerOf(registry, rootNode)).toEqual(address)
       expect(await ownerOf(registry, 'tld')).toEqual(address)
@@ -961,7 +1025,7 @@ describe('smart contracts', () => {
       // register name
       //////////////////////////////////////////////////////////////////////////
 
-      await registry.call(
+      const registerTx = await registry.call(
         'register',
         registryData.f.register({parent: rootNode, label: 'name'}),
         {
@@ -969,6 +1033,20 @@ describe('smart contracts', () => {
           amount: new BN(1),
         },
       )
+      expect(registerTx.isConfirmed()).toBeTruthy
+      expect(await transactionEvents(registerTx)).toEqual([
+        { 
+          _eventname: 'Configured',
+          node: namehash('name'),
+          owner: "0x" + address,
+          resolver: "0x" + nullAddress,
+        },
+        { 
+          _eventname: 'NewDomain',
+          parent: rootNode,
+          label: 'name' 
+        }
+      ]);
 
       expect(await ownerOf(registry, rootNode)).toEqual(address)
       expect(await resolverOf(registry, rootNode)).toEqual(nullAddress)
