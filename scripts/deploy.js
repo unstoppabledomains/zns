@@ -106,6 +106,7 @@ async function deploy(privateKey, testnet = true) {
     })
 
   console.log('registryTx:', registryTx)
+  console.log('registry address:', registry.address);
 
   const assignTx = await registry.call(
     'assign',
