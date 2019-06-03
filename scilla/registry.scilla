@@ -572,4 +572,26 @@ transition register(parent: ByStr32, label: String)
   | False =>
   end
 end
+
+(* Callback method expected to be called by resolver when its configuration is changed *)
+(* @param node that has its resolver configured *)
+(* @ensures the node still has the _sender as its resolver *)
+(* @emits Configured that can be used by 3rd parties to monitor changes in resolvers configuration all over the registry *)
+transition onResolverConfigured(node: ByStr32)
+  maybeRecord <- records[node];
+  match maybeRecord with
+  | None =>
+  | Some record =>
+    match record with 
+    | Record owner resolver =>
+      isOk = builtin eq resolver _sender;
+      match isOk with
+      | True =>
+        e = eConfigured node owner resolver;
+        event e
+      | False =>
+      end
+    end
+  end
+end
 (* END: Admin Transitions *)

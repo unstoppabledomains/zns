@@ -1642,6 +1642,11 @@ event-target-shim@^5.0.0:
   resolved "https://registry.yarnpkg.com/event-target-shim/-/event-target-shim-5.0.1.tgz#5d4d3ebdf9583d63a5333ce2deb7480ab2b05789"
   integrity sha512-i/2XbnSz/uxRCU6+NdVJgKWDTM427+MqYbkQzD321DuCQJUqOuJKIA0IM2+W2xtYHdKOmZ4dR6fExsd4SXL+WQ==
 
+events@^3.0.0:
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/events/-/events-3.0.0.tgz#9a0a0dfaf62893d92b875b8f2698ca4114973e88"
+  integrity sha512-Dc381HFWJzEOhQ+d8pkNon++bk9h6cdAoAj4iE6Q4y6xgTzySWXlKn05/TVNpjnfRqi/X0EpJEJohPjNI3zpVA==
+
 evp_bytestokey@^1.0.3:
   version "1.0.3"
   resolved "https://registry.yarnpkg.com/evp_bytestokey/-/evp_bytestokey-1.0.3.tgz#7fcbdb198dc71959432efe13842684e0525acb02"
@@ -3055,9 +3060,9 @@ jws@^3.1.5:
     jwa "^1.4.1"
     safe-buffer "^5.0.1"
 
-kaya-cli@unstoppabledomains/kaya:
+kaya-cli@unstoppabledomains/kaya#0b5a5718f20ca953671806a9d44f334d0f30ef01:
   version "0.2.9"
-  resolved "https://codeload.github.com/unstoppabledomains/kaya/tar.gz/bb6236ae6d54cec4013e718b55f881f0fb587725"
+  resolved "https://codeload.github.com/unstoppabledomains/kaya/tar.gz/0b5a5718f20ca953671806a9d44f334d0f30ef01"
   dependencies:
     "@zilliqa-js/zilliqa" "^0.5.2"
     bn.js "^4.11.8"

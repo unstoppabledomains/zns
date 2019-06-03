@@ -4,6 +4,8 @@
     "vname": "Resolver",
     "params": [
       { "vname": "owner", "type": "ByStr20" },
+      { "vname": "registry", "type": "ByStr20" },
+      { "vname": "node", "type": "ByStr32" },
       { "vname": "ada", "type": "String" },
       { "vname": "btc", "type": "String" },
       { "vname": "eos", "type": "String" },
