@@ -41,7 +41,6 @@ let eError =
 
 contract SimpleRegistrar(
   registry: ByStr20,
-  ownedNode: ByStr32,
   owner: ByStr20,
   initialDefaultPrice: Uint128,
   initialLiPerUSD: Uint128
@@ -134,13 +133,12 @@ transition setCustomPriceInUSD(node: ByStr32, newPrice: Uint128)
   end
 end
 
-(* Purchases a domain and assigns it to the given origin *)
+(* Purchases a top level domain and bestows it to the given origin *)
 (* @accepts sent amount all the time *)
 (* @ensures sender is a ZNS registry *)
 (* @ensures sent amount is the right price of the domain *)
 (* @param node domain node address *)
 (* @param origin a buyer and new owner of the domain *)
-(* @param parent an address of the parent node *)
 (* @param label the new domain name *)
 (* @sends money back to the origin if the price is incorrect *)
 (* @sends bestow to the registry contract if the purchase is valid *)
@@ -149,7 +147,6 @@ end
 transition register(
   origin: ByStr20, 
   node: ByStr32, 
-  parent: ByStr32,
   label: String
 )
   accept;
@@ -173,11 +170,9 @@ transition register(
       builtin mul priceUSD currentLiPerUSD;
 
   isOk = 
-    let isOkParent = builtin eq ownedNode parent in
     let isOkSender = builtin eq registry _sender in
     let isOkAmount = builtin eq price _amount in
-    let isOkRequest = andb isOkSender isOkAmount in
-      andb isOkParent isOkRequest;
+      andb isOkSender isOkAmount;
 
   match isOk with
   | True => 
@@ -185,7 +180,7 @@ transition register(
 
     msgs = 
       let msg = {_tag: "bestow"; _recipient: registry; _amount: Uint128 0; 
-                 parent: parent; label: label; owner: origin; 
+                 label: label; owner: origin; 
                  resolver: zeroByStr20} in
         oneMsg msg;
     send msgs

@@ -65,7 +65,6 @@
       {
         "vname": "bestow",
         "params": [
-          { "vname": "parent", "type": "ByStr32" },
           { "vname": "label", "type": "String" },
           { "vname": "owner", "type": "ByStr20" },
           { "vname": "resolver", "type": "ByStr20" }
@@ -77,10 +76,7 @@
       },
       {
         "vname": "register",
-        "params": [
-          { "vname": "parent", "type": "ByStr32" },
-          { "vname": "label", "type": "String" }
-        ]
+        "params": [ { "vname": "label", "type": "String" } ]
       },
       {
         "vname": "onResolverConfigured",

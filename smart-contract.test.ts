@@ -89,7 +89,6 @@ function deploySimpleRegistrar(
   zilliqa: Zilliqa,
   {
     registry,
-    ownedNode,
     owner,
     initialDefaultPrice, // = 1,
     initialLiPerUSD, // 0.017 * 10 ** 12,
@@ -103,7 +102,6 @@ function deploySimpleRegistrar(
       simpleRegistrarData
         .init({
           registry,
-          ownedNode,
           owner,
           initialDefaultPrice,
           initialLiPerUSD,
@@ -122,7 +120,6 @@ function deployAuctionRegistrar(
   {
     owner,
     registry,
-    ownedNode,
     initialAuctionLength,
     minimumAuctionLength,
     initialDefaultPrice,
@@ -141,7 +138,6 @@ function deployAuctionRegistrar(
         .init({
           owner,
           registry,
-          ownedNode,
           initialAuctionLength,
           minimumAuctionLength,
           initialDefaultPrice,
@@ -166,13 +162,13 @@ const address2 = '2f4f79ef6abfc0368f5a7e2c2df82e1afdfe7204'
 const privateKey2 =
   '1234567890123456789012345678901234567890123456789012345678901234'
 
-const rootNode = '0x' + '0'.repeat(64)
+const rootNode = namehash('zil')
 const nullAddress = '0'.repeat(40)
 
 const resolverInitState = {
   owner: '0x' + address,
   registry: '0x' + address,
-  node: namehash('test'),
+  node: namehash('test.zil'),
   ada: '',
   btc: '',
   eos: '',
@@ -330,7 +326,7 @@ describe('smart contracts', () => {
       const [resolverTx, resolver] = await deployResolver(zilliqa, {
         owner: '0x' + address,          
         registry: '0x' + address,
-        node: namehash('hello'),
+        node: namehash('hello.zil'),
         ada: '0x1111',
         btc: '0x2222',
         eos: '0x3333',
@@ -363,14 +359,13 @@ describe('smart contracts', () => {
       )
       const [resolverTx, resolver] = await deployResolver(
         zilliqa,
-        { ...resolverInitState, registry: "0x" + registry.address, node: namehash('tld') },
+        { ...resolverInitState, registry: "0x" + registry.address, node: namehash('hello.zil') },
       )
       expect(resolverTx.isConfirmed()).toBeTruthy()
       const bestowTx = await registry.call(
         'bestow',
         registryData.f.bestow({
-          parent: rootNode,
-          label: 'tld',
+          label: 'hello',
           owner: '0x' + address,
           resolver: '0x' + resolver.address,
         }),
@@ -390,7 +385,7 @@ describe('smart contracts', () => {
 
       const configuredEvent = {
         _eventname: 'Configured', 
-        node: namehash('tld'), 
+        node: namehash('hello.zil'), 
         owner: '0x'+address,
         resolver: '0x' + resolver.address,
       }
@@ -500,8 +495,7 @@ describe('smart contracts', () => {
       const bestowTx = await registry.call(
         'bestow',
         registryData.f.bestow({
-          parent: rootNode,
-          label: 'tld',
+          label: 'hello',
           owner: '0x' + address,
           resolver: '0x' + address2,
         }),
@@ -511,7 +505,7 @@ describe('smart contracts', () => {
       const onResolverConfiguredTx = await registry.call(
         'onResolverConfigured',
         registryData.f.onResolverConfigured({
-          node: namehash('tld'),
+          node: namehash('hello.zil'),
         }),
         defaultParams,
       )
@@ -520,7 +514,7 @@ describe('smart contracts', () => {
       const onResolverConfiguredTx2 = await registry.call(
         'onResolverConfigured',
         registryData.f.onResolverConfigured({
-          node: namehash('unknown'),
+          node: namehash('unknown.zil'),
         }),
         defaultParams,
       )
@@ -571,7 +565,7 @@ describe('smart contracts', () => {
       await registry.call(
         'approve',
         registryData.f.approve({
-          node: namehash('node-owned-by-someone-else'),
+          node: namehash('node-owned-by-someone-else.zil'),
           address: '0x' + address2,
         }),
         defaultParams,
@@ -856,7 +850,7 @@ describe('smart contracts', () => {
         'assign',
         registryData.f.assign({
           parent: rootNode,
-          label: 'tld',
+          label: 'example',
           owner: '0x' + address,
         }),
         defaultParams,
@@ -865,20 +859,20 @@ describe('smart contracts', () => {
       expect(await transactionEvents(assignTx)).toEqual([
         { 
           _eventname: 'Configured',
-          node: namehash('tld'),
+          node: namehash('example.zil'),
           owner: "0x" + address,
           resolver: "0x" + nullAddress,
         },
         { 
           _eventname: 'NewDomain',
           parent: rootNode,
-          label: 'tld' 
+          label: 'example' 
         }
       ]);
       expect(await ownerOf(registry, rootNode)).toEqual(address)
       expect(await resolverOf(registry, rootNode)).toEqual(nullAddress)
-      expect(await ownerOf(registry, 'tld')).toEqual(address)
-      expect(await resolverOf(registry, 'tld')).toEqual(nullAddress)
+      expect(await ownerOf(registry, 'example.zil')).toEqual(address)
+      expect(await resolverOf(registry, 'example.zil')).toEqual(nullAddress)
 
       //////////////////////////////////////////////////////////////////////////
       // assign owned subdomain
@@ -888,15 +882,15 @@ describe('smart contracts', () => {
         'assign',
         registryData.f.assign({
           parent: rootNode,
-          label: 'tld',
+          label: 'example',
           owner: '0x' + address2,
         }),
         defaultParams,
       )
       expect(await ownerOf(registry, rootNode)).toEqual(address)
       expect(await resolverOf(registry, rootNode)).toEqual(nullAddress)
-      expect(await ownerOf(registry, 'tld')).toEqual(address2)
-      expect(await resolverOf(registry, 'tld')).toEqual(nullAddress)
+      expect(await ownerOf(registry, 'example.zil')).toEqual(address2)
+      expect(await resolverOf(registry, 'example.zil')).toEqual(nullAddress)
 
       //////////////////////////////////////////////////////////////////////////
       // fail to assign subdomain using bad address
@@ -908,7 +902,7 @@ describe('smart contracts', () => {
         'assign',
         registryData.f.assign({
           parent: rootNode,
-          label: 'tld',
+          label: 'example',
           owner: '0x' + address2,
         }),
         defaultParams,
@@ -916,8 +910,8 @@ describe('smart contracts', () => {
 
       expect(await ownerOf(registry, rootNode)).toEqual(address)
       expect(await resolverOf(registry, rootNode)).toEqual(nullAddress)
-      expect(await ownerOf(registry, 'tld')).toEqual(address2)
-      expect(await resolverOf(registry, 'tld')).toEqual(nullAddress)
+      expect(await ownerOf(registry, 'example.zil')).toEqual(address2)
+      expect(await resolverOf(registry, 'example.zil')).toEqual(nullAddress)
     })
 
     it('should freely bestow names properly', async () => {
@@ -937,8 +931,7 @@ describe('smart contracts', () => {
       const bestowTx = await registry.call(
         'bestow',
         registryData.f.bestow({
-          parent: rootNode,
-          label: 'tld',
+          label: 'example',
           owner: '0x' + address,
           resolver: '0x' + address,
         }),
@@ -949,22 +942,22 @@ describe('smart contracts', () => {
       expect(await transactionEvents(bestowTx)).toEqual([
         { 
           _eventname: 'Configured',
-          node: namehash('tld'),
+          node: namehash('example.zil'),
           owner: "0x" + address,
           resolver: "0x" + address,
         },
         { 
           _eventname: 'NewDomain',
           parent: rootNode,
-          label: 'tld' 
+          label: 'example' 
         }
       ]);
 
       expect(await ownerOf(registry, rootNode)).toEqual(address)
-      expect(await ownerOf(registry, 'tld')).toEqual(address)
+      expect(await ownerOf(registry, 'example.zil')).toEqual(address)
       expect(await ownerOf(registry, 'unknown')).toEqual(null)
       expect(await resolverOf(registry, rootNode)).toEqual(nullAddress)
-      expect(await resolverOf(registry, 'tld')).toEqual(address)
+      expect(await resolverOf(registry, 'example.zil')).toEqual(address)
       expect(await resolverOf(registry, 'unknown')).toEqual(null)
 
       //////////////////////////////////////////////////////////////////////////
@@ -974,16 +967,15 @@ describe('smart contracts', () => {
       await registry.call(
         'bestow',
         registryData.f.bestow({
-          parent: rootNode,
-          label: 'tld',
+          label: 'example',
           owner: '0x' + address2,
           resolver: '0x' + address2,
         }),
         defaultParams,
       )
 
-      expect(await ownerOf(registry, 'tld')).toEqual(address)
-      expect(await resolverOf(registry, 'tld')).toEqual(address)
+      expect(await ownerOf(registry, 'example.zil')).toEqual(address)
+      expect(await resolverOf(registry, 'example.zil')).toEqual(address)
 
       //////////////////////////////////////////////////////////////////////////
       // fail to bestow owned using bad address
@@ -994,15 +986,14 @@ describe('smart contracts', () => {
       await registry.call(
         'bestow',
         registryData.f.bestow({
-          parent: rootNode,
-          label: 'other-tld',
+          label: 'another',
           owner: '0x' + address2,
           resolver: '0x' + address2,
         }),
         defaultParams,
       )
-      expect(await ownerOf(registry, 'other-tld')).toEqual(null)
-      expect(await resolverOf(registry, 'other-tld')).toEqual(null)
+      expect(await ownerOf(registry, 'another.zil')).toEqual(null)
+      expect(await resolverOf(registry, 'another.zil')).toEqual(null)
     })
 
     it('should allow admins to set registrar', async () => {
@@ -1057,14 +1048,13 @@ describe('smart contracts', () => {
         {
           registry: '0x' + '0'.repeat(40),
           owner: '0x' + '0'.repeat(40),
-          ownedNode: rootNode,
           initialDefaultPrice: '1',
           initialLiPerUSD: '1',
         },
         {gasLimit: Long.fromNumber(100000)},
       )
       expect(registrarTx.isConfirmed()).toBeTruthy()
-      expect(await registrar.getInit()).toHaveLength(8)
+      expect(await registrar.getInit()).toHaveLength(7)
     })
 
     it('should register name', async () => {
@@ -1082,7 +1072,6 @@ describe('smart contracts', () => {
         {
           registry: '0x' + registry.address,
           owner: '0x' + address,
-          ownedNode: rootNode,
           initialDefaultPrice: '1',
           initialLiPerUSD: '1',
         },
@@ -1101,7 +1090,7 @@ describe('smart contracts', () => {
 
       const registerTx = await registry.call(
         'register',
-        registryData.f.register({parent: rootNode, label: 'name'}),
+        registryData.f.register({label: 'name'}),
         {
           ...defaultParams,
           amount: new BN(1),
@@ -1111,7 +1100,7 @@ describe('smart contracts', () => {
       expect(await transactionEvents(registerTx)).toEqual([
         { 
           _eventname: 'Configured',
-          node: namehash('name'),
+          node: namehash('name.zil'),
           owner: "0x" + address,
           resolver: "0x" + nullAddress,
         },
@@ -1124,8 +1113,8 @@ describe('smart contracts', () => {
 
       expect(await ownerOf(registry, rootNode)).toEqual(address)
       expect(await resolverOf(registry, rootNode)).toEqual(nullAddress)
-      expect(await ownerOf(registry, 'name')).toEqual(address)
-      expect(await resolverOf(registry, 'name')).toEqual(nullAddress)
+      expect(await ownerOf(registry, 'name.zil')).toEqual(address)
+      expect(await resolverOf(registry, 'name.zil')).toEqual(nullAddress)
 
       //////////////////////////////////////////////////////////////////////////
       // fail to register name using bad amount
@@ -1133,14 +1122,14 @@ describe('smart contracts', () => {
 
       await registry.call(
         'register',
-        registryData.f.register({parent: rootNode, label: 'not-enough-funds'}),
+        registryData.f.register({label: 'not-enough-funds'}),
         defaultParams,
       )
 
       expect(await ownerOf(registry, rootNode)).toEqual(address)
       expect(await resolverOf(registry, rootNode)).toEqual(nullAddress)
-      expect(await ownerOf(registry, 'name')).toEqual(address)
-      expect(await resolverOf(registry, 'name')).toEqual(nullAddress)
+      expect(await ownerOf(registry, 'not-enough-funds.zil')).toEqual(null)
+      expect(await resolverOf(registry, 'not-enough-funds.zil')).toEqual(null)
 
       //////////////////////////////////////////////////////////////////////////
       // fail to register name using owned name
@@ -1148,7 +1137,7 @@ describe('smart contracts', () => {
 
       await registry.call(
         'register',
-        registryData.f.register({parent: rootNode, label: 'name'}),
+        registryData.f.register({label: 'name'}),
         {
           ...defaultParams,
           amount: new BN(1),
@@ -1157,8 +1146,8 @@ describe('smart contracts', () => {
 
       expect(await ownerOf(registry, rootNode)).toEqual(address)
       expect(await resolverOf(registry, rootNode)).toEqual(nullAddress)
-      expect(await ownerOf(registry, 'name')).toEqual(address)
-      expect(await resolverOf(registry, 'name')).toEqual(nullAddress)
+      expect(await ownerOf(registry, 'name.zil')).toEqual(address)
+      expect(await resolverOf(registry, 'name.zil')).toEqual(nullAddress)
 
       //////////////////////////////////////////////////////////////////////////
       // fail to register name using bad sender
@@ -1167,8 +1156,7 @@ describe('smart contracts', () => {
       await registrar.call(
         'register',
         simpleRegistrarData.f.register({
-          node: namehash('bad-sender'),
-          parent: rootNode,
+          node: namehash('bad-sender.zil'),
           label: 'bad-sender',
           origin: '0x' + address,
         }),
@@ -1180,10 +1168,10 @@ describe('smart contracts', () => {
 
       expect(await ownerOf(registry, rootNode)).toEqual(address)
       expect(await resolverOf(registry, rootNode)).toEqual(nullAddress)
-      expect(await ownerOf(registry, 'name')).toEqual(address)
-      expect(await resolverOf(registry, 'name')).toEqual(nullAddress)
-      expect(await ownerOf(registry, 'bad-sender')).toEqual(null)
-      expect(await resolverOf(registry, 'bad-sender')).toEqual(null)
+      expect(await ownerOf(registry, 'name.zil')).toEqual(address)
+      expect(await resolverOf(registry, 'name.zil')).toEqual(nullAddress)
+      expect(await ownerOf(registry, 'bad-sender.zil')).toEqual(null)
+      expect(await resolverOf(registry, 'bad-sender.zil')).toEqual(null)
     })
   })
 
@@ -1197,7 +1185,6 @@ describe('smart contracts', () => {
         {
           owner: '0x' + '0'.repeat(40),
           registry: '0x' + '0'.repeat(40),
-          ownedNode: rootNode,
           initialAuctionLength: '1',
           minimumAuctionLength: '1',
           initialDefaultPrice: '1',
@@ -1209,7 +1196,7 @@ describe('smart contracts', () => {
         {gasLimit: Long.fromNumber(100000)},
       )
       expect(registrarTx.isConfirmed()).toBeTruthy()
-      expect(await registrar.getInit()).toHaveLength(13)
+      expect(await registrar.getInit()).toHaveLength(12)
     })
 
     it('should start, bid and end auction', async () => {
@@ -1227,7 +1214,6 @@ describe('smart contracts', () => {
         {
           owner: '0x' + address,
           registry: '0x' + registry.address,
-          ownedNode: rootNode,
           initialAuctionLength: '3',
           minimumAuctionLength: '2',
           initialDefaultPrice: '100',
@@ -1267,22 +1253,23 @@ describe('smart contracts', () => {
       // open an auction
       //////////////////////////////////////////////////////////////////////////
 
-      await registry.call(
+      const registerTx = await registry.call(
         'register',
-        registryData.f.register({parent: rootNode, label: 'name'}),
+        registryData.f.register({label: 'name'}),
         {
           ...defaultParams,
           amount: new BN(200),
         },
       )
+      expect(registerTx.isConfirmed()).toEqual(true)
 
       expect(await ownerOf(registry, rootNode)).toEqual(address)
       expect(await resolverOf(registry, rootNode)).toEqual(nullAddress)
-      expect(await ownerOf(registry, 'name')).toEqual(registrar.address)
-      expect(await resolverOf(registry, 'name')).toEqual(nullAddress)
+      expect(await ownerOf(registry, 'name.zil')).toEqual(registrar.address)
+      expect(await resolverOf(registry, 'name.zil')).toEqual(nullAddress)
 
       expect(
-        await contractMapValue(registrar, 'auctions', namehash('name')),
+        await contractMapValue(registrar, 'auctions', namehash('name.zil')),
       ).toMatchObject({
         constructor: 'Auction',
         argtypes: [],
@@ -1300,12 +1287,12 @@ describe('smart contracts', () => {
 
       await registrar.call(
         'bid',
-        auctionRegistrarData.f.bid({node: namehash('name')}),
+        auctionRegistrarData.f.bid({node: namehash('name.zil')}),
         {...defaultParams, amount: new BN(300)},
       )
 
       expect(
-        await contractMapValue(registrar, 'auctions', namehash('name')),
+        await contractMapValue(registrar, 'auctions', namehash('name.zil')),
       ).toMatchObject({
         constructor: 'Auction',
         argtypes: [],
@@ -1328,14 +1315,14 @@ describe('smart contracts', () => {
 
       await registrar.call(
         'close',
-        auctionRegistrarData.f.close({node: namehash('name')}),
+        auctionRegistrarData.f.close({node: namehash('name.zil')}),
         defaultParams,
       )
 
       expect(await ownerOf(registry, rootNode)).toEqual(address)
       expect(await resolverOf(registry, rootNode)).toEqual(nullAddress)
-      expect(await ownerOf(registry, 'name')).toEqual(address)
-      expect(await resolverOf(registry, 'name')).toEqual(nullAddress)
+      expect(await ownerOf(registry, 'name.zil')).toEqual(address)
+      expect(await resolverOf(registry, 'name.zil')).toEqual(nullAddress)
 
       expect(await contractField(registrar, 'auctions')).toHaveLength(0)
 
@@ -1345,7 +1332,7 @@ describe('smart contracts', () => {
 
       await registry.call(
         'register',
-        registryData.f.register({parent: rootNode, label: 'registered-name'}),
+        registryData.f.register({label: 'registered-name'}),
         {
           ...defaultParams,
           amount: new BN(2000),
@@ -1354,10 +1341,10 @@ describe('smart contracts', () => {
 
       expect(await ownerOf(registry, rootNode)).toEqual(address)
       expect(await resolverOf(registry, rootNode)).toEqual(nullAddress)
-      expect(await ownerOf(registry, 'name')).toEqual(address)
-      expect(await resolverOf(registry, 'name')).toEqual(nullAddress)
-      expect(await ownerOf(registry, 'registered-name')).toEqual(address)
-      expect(await resolverOf(registry, 'registered-name')).toEqual(nullAddress)
+      expect(await ownerOf(registry, 'name.zil')).toEqual(address)
+      expect(await resolverOf(registry, 'name.zil')).toEqual(nullAddress)
+      expect(await ownerOf(registry, 'registered-name.zil')).toEqual(address)
+      expect(await resolverOf(registry, 'registered-name.zil')).toEqual(nullAddress)
 
       expect(await contractField(registrar, 'auctions')).toHaveLength(0)
 
@@ -1367,7 +1354,7 @@ describe('smart contracts', () => {
 
       await registry.call(
         'register',
-        registryData.f.register({parent: rootNode, label: 'bid-name'}),
+        registryData.f.register({label: 'bid-name'}),
         {
           ...defaultParams,
           amount: new BN(200),
@@ -1376,7 +1363,7 @@ describe('smart contracts', () => {
 
       await registrar.call(
         'bid',
-        auctionRegistrarData.f.bid({node: namehash('bid-name')}),
+        auctionRegistrarData.f.bid({node: namehash('bid-name.zil')}),
         {...defaultParams, amount: new BN(2000)},
       )
 
@@ -1384,12 +1371,12 @@ describe('smart contracts', () => {
 
       await registrar.call(
         'close',
-        auctionRegistrarData.f.close({node: namehash('bid-name')}),
+        auctionRegistrarData.f.close({node: namehash('bid-name.zil')}),
         defaultParams,
       )
 
-      expect(await ownerOf(registry, 'bid-name')).toEqual(address)
-      expect(await resolverOf(registry, 'bid-name')).toEqual(nullAddress)
+      expect(await ownerOf(registry, 'bid-name.zil')).toEqual(address)
+      expect(await resolverOf(registry, 'bid-name.zil')).toEqual(nullAddress)
 
       expect(await contractField(registrar, 'auctions')).toHaveLength(0)
     })
@@ -1412,8 +1399,9 @@ describe('smart contracts', () => {
 
     it('should enable buying and selling of names', async () => {
       const zilliqa = new Zilliqa(null, provider)
-      const soldDomain = 'domain';
-      const soldNode = namehash('domain');
+      const soldLabel = 'domain';
+      const soldDomain = 'domain.zil'
+      const soldNode = namehash('domain.zil');
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
       const [, registry] = await deployRegistry(
@@ -1431,8 +1419,7 @@ describe('smart contracts', () => {
       await registry.call(
         'bestow',
         registryData.f.bestow({
-          parent: rootNode,
-          label: soldDomain,
+          label: soldLabel,
           owner: '0x' + address,
           resolver: "0x" + nullAddress,
         }),
@@ -1459,7 +1446,7 @@ describe('smart contracts', () => {
 
       await marketplace.call(
         'offer',
-        marketplaceData.f.offer({parent: rootNode, label: soldDomain, price: '1000000000000'}),
+        marketplaceData.f.offer({parent: rootNode, label: soldLabel, price: '1000000000000'}),
         defaultParams,
       )
 
@@ -1477,7 +1464,7 @@ describe('smart contracts', () => {
 
       await marketplace.call(
         'offer',
-        marketplaceData.f.offer({parent: rootNode, label: soldDomain, price: '1000000000000'}),
+        marketplaceData.f.offer({parent: rootNode, label: soldLabel, price: '1000000000000'}),
         defaultParams,
       )
 
@@ -1518,7 +1505,7 @@ describe('smart contracts', () => {
 
       let tx = await marketplace.call(
         'buy',
-        marketplaceData.f.buy({node: namehash('not-offered')}),
+        marketplaceData.f.buy({node: namehash('not-offered.zil')}),
         {
           ...defaultParams,
           amount: new BN('1000000000000'),
@@ -1714,17 +1701,6 @@ describe('smart contracts', () => {
 
             const fullName = name + '.zil'
             const node = namehash(fullName)
-
-            await registry.call(
-              'bestow',
-              registryData.f.bestow({
-                parent: namehash('zil'),
-                label: name,
-                owner: zilAddress,
-                resolver: '0x' + resolver.address,
-              }),
-              defaultParams,
-            )
 
             for (const [ticker, value] of Object.entries(records[name])) {
               console.log('value:', value)

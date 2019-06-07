@@ -4,7 +4,6 @@
     "vname": "SimpleRegistrar",
     "params": [
       { "vname": "registry", "type": "ByStr20" },
-      { "vname": "ownedNode", "type": "ByStr32" },
       { "vname": "owner", "type": "ByStr20" },
       { "vname": "initialDefaultPrice", "type": "Uint128" },
       { "vname": "initialLiPerUSD", "type": "Uint128" }
@@ -43,7 +42,6 @@
         "params": [
           { "vname": "origin", "type": "ByStr20" },
           { "vname": "node", "type": "ByStr32" },
-          { "vname": "parent", "type": "ByStr32" },
           { "vname": "label", "type": "String" }
         ]
       },

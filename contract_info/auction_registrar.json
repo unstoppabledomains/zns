@@ -5,7 +5,6 @@
     "params": [
       { "vname": "owner", "type": "ByStr20" },
       { "vname": "registry", "type": "ByStr20" },
-      { "vname": "ownedNode", "type": "ByStr32" },
       { "vname": "initialAuctionLength", "type": "Uint64" },
       { "vname": "minimumAuctionLength", "type": "Uint64" },
       { "vname": "initialDefaultPrice", "type": "Uint128" },
@@ -55,7 +54,6 @@
         "params": [
           { "vname": "origin", "type": "ByStr20" },
           { "vname": "node", "type": "ByStr32" },
-          { "vname": "parent", "type": "ByStr32" },
           { "vname": "label", "type": "String" }
         ]
       },

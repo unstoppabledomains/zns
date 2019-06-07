@@ -91,7 +91,6 @@ let eError =
 contract AuctionRegistrar(
   owner: ByStr20,
   registry: ByStr20,
-  ownedNode: ByStr32,
   initialAuctionLength: Uint64,
   minimumAuctionLength: Uint64,
   initialDefaultPrice: Uint128,
@@ -212,13 +211,12 @@ transition setCustomPriceInUSD(node: ByStr32, newPrice: Uint128)
 end
 
 
-(* Makes an auction for the domain *)
+(* Makes an auction for a top level domain *)
 (* @accepts sent amount all the time *)
 (* @ensures sender is a ZNS registry *)
 (* @ensures sent amount is above the base price for the domain *)
 (* @param node domain address *)
 (* @param origin an address that initializes the auction *)
-(* @param parent an address of the parent node *)
 (* @param label the new domain name *)
 (* @sends sent amount back to the origin if the auction can not be started *)
 (* @sends bestow with origin address to the registry contract if sent amount is more than a maximum price *)
@@ -228,7 +226,6 @@ end
 transition register(
   origin: ByStr20, 
   node: ByStr32, 
-  parent: ByStr32,
   label: String
 )
   accept;
@@ -258,12 +255,10 @@ transition register(
         builtin mul priceUSD currentLiPerUSD;
 
     isOk = 
-      let isOkParent = builtin eq ownedNode parent in
       let isOkSender = builtin eq registry _sender in
       let isOkAmount = builtin lt price _amount in
       let isOkRequest = andb isOkSender isOkAmount in
-      let isOk = andb isOkParent isOkRequest in
-        andb isOk isRunning;
+        andb isRunning isOkRequest;
 
     match isOk with
     | True =>
@@ -279,7 +274,7 @@ transition register(
 
         msgs = 
           let m = {_tag: "bestow"; _recipient: registry; _amount: Uint128 0; 
-                  parent: ownedNode; label: label; owner: origin; 
+                  label: label; owner: origin; 
                   resolver: zeroByStr20} in
           oneMsg m;
         send msgs
@@ -295,7 +290,7 @@ transition register(
 
         msgs = 
           let m = {_tag: "bestow"; _recipient: registry; _amount: Uint128 0; 
-                  parent: ownedNode; label: label; owner: _this_address; 
+                  label: label; owner: _this_address; 
                   resolver: zeroByStr20} in
           oneMsg m;
         send msgs
@@ -412,7 +407,7 @@ transition close(node: ByStr32)
         event e;
 
         msg = {_tag: "bestow"; _recipient: registry; _amount: Uint128 0; 
-              parent: ownedNode; label: label; owner: highestBidder;
+              label: label; owner: highestBidder;
               resolver: zeroByStr20};
         msgs = oneMsg msg;
         send msgs
