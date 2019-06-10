@@ -1155,7 +1155,7 @@ describe('smart contracts', () => {
       // fail to register name using bad sender
       //////////////////////////////////////////////////////////////////////////
 
-      await expectUnchangedState(registry, async () => {
+      await expectUnchangedState(registrar, async () => {
         await registrar.call(
           'register',
           simpleRegistrarData.f.register({
