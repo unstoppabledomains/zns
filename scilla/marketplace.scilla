@@ -84,9 +84,10 @@ transition cancelOffer(node: ByStr32)
 end
 
 (* Purchase a name from a specified seller *)
+(* @ensures node is offered for sale *)
 (* @ensures _sender matched the sellers offer on the node *)
 (* @param node *)
-(* @sends transfer a transfer call to the registry if enough payment *)
+(* @sends transfer to the registry if enough payment *)
 transition buy(node: ByStr32)
 
   buyerTmp := _sender;
