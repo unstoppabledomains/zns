@@ -244,7 +244,7 @@ const contractField = async (contract, name) => {
 
 const expectUnchangedState = async (contract, block) => {
   const oldState = await contract.getState()
-  const result = await block.call
+  const result = await block.call()
   expect(await contract.getState()).toEqual(oldState)
   return result
 }
@@ -467,9 +467,6 @@ describe('smart contracts', () => {
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
       const [, resolver] = await deployResolver(zilliqa)
 
-      //////////////////////////////////////////////////////////////////////////
-      // shouldn't do anything
-      //////////////////////////////////////////////////////////////////////////
       await expectUnchangedState(resolver, async () => {
         await resolver.call(
           'unset',
@@ -576,18 +573,16 @@ describe('smart contracts', () => {
       // fail to approve node owned by someone else
       //////////////////////////////////////////////////////////////////////////
 
-      await registry.call(
-        'approve',
-        registryData.f.approve({
-          node: namehash('node-owned-by-someone-else'),
-          address: '0x' + address2,
-        }),
-        defaultParams,
-      )
-
-      expect(await approvalOf(registry, 'node-owned-by-someone-else')).toEqual(
-        null,
-      )
+      await expectUnchangedState(registry, async () => {
+        await registry.call(
+          'approve',
+          registryData.f.approve({
+            node: namehash('node-owned-by-someone-else'),
+            address: '0x' + address2,
+          }),
+          defaultParams,
+        )
+      })
 
       //////////////////////////////////////////////////////////////////////////
       // add operator
@@ -680,16 +675,16 @@ describe('smart contracts', () => {
 
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey2))
 
-      await registry.call(
-        'setAdmin',
-        registryData.f.setAdmin({
-          address: '0x' + address2,
-          isApproved: {constructor: 'True', argtypes: [], arguments: []},
-        }),
-        defaultParams,
-      )
-
-      expect(await contractField(registry, 'admins')).toEqual(['0x' + address])
+      await expectUnchangedState(registry, async () => {
+        await registry.call(
+          'setAdmin',
+          registryData.f.setAdmin({
+            address: '0x' + address2,
+            isApproved: {constructor: 'True', argtypes: [], arguments: []},
+          }),
+          defaultParams,
+        )
+      })
     })
 
     it('should freely configure names properly', async () => {
@@ -714,6 +709,7 @@ describe('smart contracts', () => {
         }),
         defaultParams,
       )
+
       expect(configureResolverTx.isConfirmed()).toBeTruthy()
       expect(transactionEvents(configureResolverTx)).toEqual([{
         _eventname: 'Configured',
@@ -753,33 +749,32 @@ describe('smart contracts', () => {
       // fail to configure resolver using bad address
       //////////////////////////////////////////////////////////////////////////
 
-      await registry.call(
-        'configureResolver',
-        registryData.f.configureResolver({
-          node: rootNode,
-          resolver: '0x' + address,
-        }),
-        defaultParams,
-      )
-
-      expect(await resolverOf(registry, rootNode)).toEqual(address2)
-      expect(await ownerOf(registry, rootNode)).toEqual(address2)
+      await expectUnchangedState(registry, async () => {
+        await registry.call(
+          'configureResolver',
+          registryData.f.configureResolver({
+            node: rootNode,
+            resolver: '0x' + address,
+          }),
+          defaultParams,
+        )
+      })
 
       //////////////////////////////////////////////////////////////////////////
       // fail to configure node using bad address
       //////////////////////////////////////////////////////////////////////////
 
-      await registry.call(
-        'configureNode',
-        registryData.f.configureNode({
-          node: rootNode,
-          owner: '0x' + address,
-          resolver: '0x' + address,
-        }),
-        defaultParams,
-      )
-      expect(await resolverOf(registry, rootNode)).toEqual(address2)
-      expect(await ownerOf(registry, rootNode)).toEqual(address2)
+      await expectUnchangedState(registry, async () => {
+        await registry.call(
+          'configureNode',
+          registryData.f.configureNode({
+            node: rootNode,
+            owner: '0x' + address,
+            resolver: '0x' + address,
+          }),
+          defaultParams,
+        )
+      })
     })
 
     it('should freely transfer names properly', async () => {
@@ -827,17 +822,16 @@ describe('smart contracts', () => {
       // fail to transfer using bad address
       //////////////////////////////////////////////////////////////////////////
 
-      await registry.call(
-        'transfer',
-        registryData.f.transfer({
-          node: rootNode,
-          owner: '0x' + address,
-        }),
-        defaultParams,
-      )
-
-      expect(await ownerOf(registry, rootNode)).toEqual(address2)
-      expect(await resolverOf(registry, rootNode)).toEqual(nullAddress)
+      await expectUnchangedState(registry, async () => {
+        await registry.call(
+          'transfer',
+          registryData.f.transfer({
+            node: rootNode,
+            owner: '0x' + address,
+          }),
+          defaultParams,
+        )
+      })
     })
 
     it('should freely assign names properly', async () => {
@@ -912,20 +906,18 @@ describe('smart contracts', () => {
 
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey2))
 
-      await registry.call(
-        'assign',
-        registryData.f.assign({
-          parent: rootNode,
-          label: 'tld',
-          owner: '0x' + address2,
-        }),
-        defaultParams,
-      )
 
-      expect(await ownerOf(registry, rootNode)).toEqual(address)
-      expect(await resolverOf(registry, rootNode)).toEqual(nullAddress)
-      expect(await ownerOf(registry, 'tld')).toEqual(address2)
-      expect(await resolverOf(registry, 'tld')).toEqual(nullAddress)
+      await expectUnchangedState(registry, async () => {
+        await registry.call(
+          'assign',
+          registryData.f.assign({
+            parent: rootNode,
+            label: 'tld',
+            owner: "0x" + nullAddress,
+          }),
+          defaultParams,
+        )
+      })
     })
 
     it('should freely bestow names properly', async () => {
@@ -964,7 +956,7 @@ describe('smart contracts', () => {
         {
           _eventname: 'NewDomain',
           parent: rootNode,
-          label: 'example'
+          label: 'tld'
         }
       ]);
 
@@ -979,19 +971,18 @@ describe('smart contracts', () => {
       // fail to bestow owned name
       //////////////////////////////////////////////////////////////////////////
 
-      await registry.call(
-        'bestow',
-        registryData.f.bestow({
-          parent: rootNode,
-          label: 'tld',
-          owner: '0x' + address2,
-          resolver: '0x' + address2,
-        }),
-        defaultParams,
-      )
-
-      expect(await ownerOf(registry, 'tld')).toEqual(address)
-      expect(await resolverOf(registry, 'tld')).toEqual(address)
+      await expectUnchangedState(registry, async () => {
+        await registry.call(
+          'bestow',
+          registryData.f.bestow({
+            parent: rootNode,
+            label: 'tld',
+            owner: '0x' + address2,
+            resolver: '0x' + address2,
+          }),
+          defaultParams,
+        )
+      })
 
       //////////////////////////////////////////////////////////////////////////
       // fail to bestow owned using bad address
@@ -999,18 +990,18 @@ describe('smart contracts', () => {
 
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey2))
 
-      await registry.call(
-        'bestow',
-        registryData.f.bestow({
-          parent: rootNode,
-          label: 'other-tld',
-          owner: '0x' + address2,
-          resolver: '0x' + address2,
-        }),
-        defaultParams,
-      )
-      expect(await ownerOf(registry, 'other-tld')).toEqual(null)
-      expect(await resolverOf(registry, 'other-tld')).toEqual(null)
+      await expectUnchangedState(registry, async () => {
+        await registry.call(
+          'bestow',
+          registryData.f.bestow({
+            parent: rootNode,
+            label: 'other-tld',
+            owner: '0x' + address2,
+            resolver: '0x' + address2,
+          }),
+          defaultParams,
+        )
+      })
     })
 
     it('should allow admins to set registrar', async () => {
@@ -1043,15 +1034,13 @@ describe('smart contracts', () => {
 
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey2))
 
-      await registry.call(
-        'setRegistrar',
-        registryData.f.setRegistrar({address: '0x' + address}),
-        defaultParams,
-      )
-
-      expect(await contractField(registry, 'registrar')).toEqual(
-        '0x' + address2,
-      )
+      await expectUnchangedState(registry, async () => {
+        await registry.call(
+          'setRegistrar',
+          registryData.f.setRegistrar({address: '0x' + address}),
+          defaultParams,
+        )
+      })
     })
   })
 
@@ -1139,59 +1128,48 @@ describe('smart contracts', () => {
       // fail to register name using bad amount
       //////////////////////////////////////////////////////////////////////////
 
-      await registry.call(
-        'register',
-        registryData.f.register({parent: rootNode, label: 'not-enough-funds'}),
-        defaultParams,
-      )
-
-      expect(await ownerOf(registry, rootNode)).toEqual(address)
-      expect(await resolverOf(registry, rootNode)).toEqual(nullAddress)
-      expect(await ownerOf(registry, 'name')).toEqual(address)
-      expect(await resolverOf(registry, 'name')).toEqual(nullAddress)
+      await expectUnchangedState(registry, async () => {
+        await registry.call(
+          'register',
+          registryData.f.register({parent: rootNode, label: 'not-enough-funds'}),
+          defaultParams,
+        )
+      })
 
       //////////////////////////////////////////////////////////////////////////
       // fail to register name using owned name
       //////////////////////////////////////////////////////////////////////////
 
-      await registry.call(
-        'register',
-        registryData.f.register({parent: rootNode, label: 'name'}),
-        {
-          ...defaultParams,
-          amount: new BN(1),
-        },
-      )
-
-      expect(await ownerOf(registry, rootNode)).toEqual(address)
-      expect(await resolverOf(registry, rootNode)).toEqual(nullAddress)
-      expect(await ownerOf(registry, 'name')).toEqual(address)
-      expect(await resolverOf(registry, 'name')).toEqual(nullAddress)
+      await expectUnchangedState(registry, async () => {
+        await registry.call(
+          'register',
+          registryData.f.register({parent: rootNode, label: 'name'}),
+          {
+            ...defaultParams,
+            amount: new BN(1),
+          },
+        )
+      })
 
       //////////////////////////////////////////////////////////////////////////
       // fail to register name using bad sender
       //////////////////////////////////////////////////////////////////////////
 
-      await registrar.call(
-        'register',
-        simpleRegistrarData.f.register({
-          node: namehash('bad-sender'),
-          parent: rootNode,
-          label: 'bad-sender',
-          origin: '0x' + address,
-        }),
-        {
-          ...defaultParams,
-          amount: new BN(1),
-        },
-      )
-
-      expect(await ownerOf(registry, rootNode)).toEqual(address)
-      expect(await resolverOf(registry, rootNode)).toEqual(nullAddress)
-      expect(await ownerOf(registry, 'name')).toEqual(address)
-      expect(await resolverOf(registry, 'name')).toEqual(nullAddress)
-      expect(await ownerOf(registry, 'bad-sender')).toEqual(null)
-      expect(await resolverOf(registry, 'bad-sender')).toEqual(null)
+      await expectUnchangedState(registry, async () => {
+        await registrar.call(
+          'register',
+          simpleRegistrarData.f.register({
+            node: namehash('bad-sender'),
+            parent: rootNode,
+            label: 'bad-sender',
+            origin: '0x' + address,
+          }),
+          {
+            ...defaultParams,
+            amount: new BN(1),
+          },
+        )
+      })
     })
   })
 
@@ -1524,22 +1502,24 @@ describe('smart contracts', () => {
       address1BalancePre = await zilliqa.blockchain.getBalance(address)
       let address2BalancePre = await zilliqa.blockchain.getBalance(address)
 
-      let tx = await marketplace.call(
-        'buy',
-        marketplaceData.f.buy({node: namehash('not-offered')}),
-        {
-          ...defaultParams,
-          amount: new BN('1000000000000'),
-        },
-      )
+      let tx = await expectUnchangedState(marketplace, async () => {
+        return await marketplace.call(
+          'buy',
+          marketplaceData.f.buy({node: namehash('not-offered')}),
+          {
+            ...defaultParams,
+            amount: new BN('1000000000000'),
+          },
+        )
+      })
 
       address1BalancePost = await zilliqa.blockchain.getBalance(address)
       let address2BalancePost = await zilliqa.blockchain.getBalance(address)
 
+       expect(Number(address1BalancePre.result.balance)).toBe(
+         Number(address1BalancePost.result.balance),
+       )
       // FIX: This is a kaya balance problem. Contract -> Regular account
-      // expect(Number(address1BalancePre.result.balance)).toBe(
-      //   Number(address1BalancePost.result.balance),
-      // )
       // expect(Number(address2BalancePre.result.balance)).toBe(
       //   Number(address2BalancePost.result.balance) +
       //     tx.txParams.receipt.cumulative_gas * tx.txParams.gasPrice.toNumber(),

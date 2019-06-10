@@ -88,7 +88,6 @@ end
 (* @param node *)
 (* @sends transfer a transfer call to the registry if enough payment *)
 transition buy(node: ByStr32)
-  accept;
 
   buyerTmp := _sender;
   maybeOffer <- offers[node];
@@ -101,6 +100,7 @@ transition buy(node: ByStr32)
 
   match offerMatchsAmount with
   | True =>
+    accept;
     msgs =
       let m = {_tag: "transfer"; _recipient: registry; _amount: Uint128 0;
                node: node; owner: _sender}
