@@ -242,6 +242,13 @@ const contractField = async (contract, name) => {
   return field.value
 }
 
+const expectUnchangedState = async (contract, block) => {
+  const oldState = await contract.getState()
+  const result = await block.call
+  expect(await contract.getState()).toEqual(oldState)
+  return result
+}
+
 const contractMapValue = async (contract, field, key) => {
   const map = await contractField(contract, field)
   const record = map.find(r => r.key == key) || null
@@ -328,7 +335,7 @@ describe('smart contracts', () => {
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
       const [resolverTx, resolver] = await deployResolver(zilliqa, {
-        owner: '0x' + address,          
+        owner: '0x' + address,
         registry: '0x' + address,
         node: namehash('hello'),
         ada: '0x1111',
@@ -389,8 +396,8 @@ describe('smart contracts', () => {
       )
 
       const configuredEvent = {
-        _eventname: 'Configured', 
-        node: namehash('tld'), 
+        _eventname: 'Configured',
+        node: namehash('tld'),
         owner: '0x'+address,
         resolver: '0x' + resolver.address,
       }
@@ -422,12 +429,13 @@ describe('smart contracts', () => {
 
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey2))
 
-      await resolver.call(
-        'set',
-        resolverData.f.set({key: 'test', value: '0x7357'}),
-        defaultParams,
-      )
-      expect(await resolverRecords(resolver)).toEqual({})
+      await expectUnchangedState(resolver, async () => {
+        await resolver.call(
+          'set',
+          resolverData.f.set({key: 'test', value: '0x7357'}),
+          defaultParams,
+        )
+      })
 
       //////////////////////////////////////////////////////////////////////////
       // set record then fail to unset record using bad address
@@ -445,12 +453,13 @@ describe('smart contracts', () => {
 
       zilliqa.wallet.setDefault(address2)
 
-      await resolver.call(
-        'unset',
-        resolverData.f.unset({key: 'test'}),
-        defaultParams,
-      )
-      expect(await resolverRecords(resolver)).toEqual({test: '0x7357'})
+      await expectUnchangedState(resolver, async () => {
+        await resolver.call(
+          'unset',
+          resolverData.f.unset({key: 'test'}),
+          defaultParams,
+        )
+      })
     })
 
     it("should gracefully fail to unset records if they don't exist", async () => {
@@ -461,14 +470,13 @@ describe('smart contracts', () => {
       //////////////////////////////////////////////////////////////////////////
       // shouldn't do anything
       //////////////////////////////////////////////////////////////////////////
-
-      await resolver.call(
-        'unset',
-        resolverData.f.unset({key: 'does_not_exist'}),
-        defaultParams,
-      )
-
-      expect(await resolverRecords(resolver)).toEqual({})
+      await expectUnchangedState(resolver, async () => {
+        await resolver.call(
+          'unset',
+          resolverData.f.unset({key: 'does_not_exist'}),
+          defaultParams,
+        )
+      })
     })
   })
 
@@ -711,7 +719,7 @@ describe('smart contracts', () => {
         _eventname: 'Configured',
         node: rootNode,
         owner: '0x' + address,
-        resolver: '0x' + address2, 
+        resolver: '0x' + address2,
       }])
 
       expect(await resolverOf(registry, rootNode)).toEqual(address2)
@@ -735,7 +743,7 @@ describe('smart contracts', () => {
         _eventname: 'Configured',
         node: rootNode,
         owner: '0x' + address2,
-        resolver: '0x' + address2, 
+        resolver: '0x' + address2,
       }])
 
       expect(await resolverOf(registry, rootNode)).toEqual(address2)
@@ -804,7 +812,7 @@ describe('smart contracts', () => {
       )
       expect(transferTx.isConfirmed()).toBeTruthy
       expect(await transactionEvents(transferTx)).toEqual([
-        { 
+        {
           _eventname: 'Configured',
           node: rootNode,
           owner: "0x" + address2,
@@ -863,16 +871,16 @@ describe('smart contracts', () => {
       )
       expect(assignTx.isConfirmed()).toBeTruthy
       expect(await transactionEvents(assignTx)).toEqual([
-        { 
+        {
           _eventname: 'Configured',
           node: namehash('tld'),
           owner: "0x" + address,
           resolver: "0x" + nullAddress,
         },
-        { 
+        {
           _eventname: 'NewDomain',
           parent: rootNode,
-          label: 'tld' 
+          label: 'tld'
         }
       ]);
       expect(await ownerOf(registry, rootNode)).toEqual(address)
@@ -947,16 +955,16 @@ describe('smart contracts', () => {
 
       expect(bestowTx.isConfirmed()).toBeTruthy
       expect(await transactionEvents(bestowTx)).toEqual([
-        { 
+        {
           _eventname: 'Configured',
           node: namehash('tld'),
           owner: "0x" + address,
           resolver: "0x" + address,
         },
-        { 
+        {
           _eventname: 'NewDomain',
           parent: rootNode,
-          label: 'tld' 
+          label: 'example'
         }
       ]);
 
@@ -1109,16 +1117,16 @@ describe('smart contracts', () => {
       )
       expect(registerTx.isConfirmed()).toBeTruthy
       expect(await transactionEvents(registerTx)).toEqual([
-        { 
+        {
           _eventname: 'Configured',
           node: namehash('name'),
           owner: "0x" + address,
           resolver: "0x" + nullAddress,
         },
-        { 
+        {
           _eventname: 'NewDomain',
           parent: rootNode,
-          label: 'name' 
+          label: 'name'
         }
       ]);
 
@@ -1562,7 +1570,7 @@ describe('smart contracts', () => {
 
     expect(await contractMapValue(marketplace, 'offers', namehash('value.com'))).toEqual(null)
     expect(await contractMapValue(marketplace, 'offers', namehash('value.zil'))).toEqual("1000000000000")
-  }) 
+  })
 
   xdescribe('integration and pre-configuration', () => {
     const records = {
