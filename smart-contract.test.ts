@@ -3,7 +3,6 @@ import {BN, bytes, Long} from '@zilliqa-js/util'
 import {Zilliqa} from '@zilliqa-js/zilliqa'
 import {readFileSync} from 'fs'
 import {readdirSync} from 'fs'
-import * as hashjs from 'hash.js'
 import * as KayaProvider from 'kaya-cli/src/provider'
 import * as kayaConfig from 'kaya-cli/src/config'
 import {basename, join} from 'path'
@@ -25,6 +24,7 @@ import {
 } from './contract_info/simple_registrar.json'
 import {generateMapperFromContractInfo} from './lib/params'
 import {checker} from './lib/scilla'
+import namehash from 'namicorn/lib/zns/namehash'
 
 kayaConfig.constants.smart_contract.SCILLA_RUNNER = `${__dirname}/runner/bin/scilla-runner`
 kayaConfig.constants.smart_contract.SCILLA_CHECKER = `${__dirname}/runner/bin/scilla-checker`
@@ -197,35 +197,6 @@ function deployResolver(
     .deploy({...defaultParams, ...params})
 }
 
-function sha256(buffer) {
-  return Buffer.from(
-    hashjs
-      .sha256()
-      .update(buffer)
-      .digest(),
-  )
-}
-
-function namehash(name) {
-  if (name.match(/^(0x)?[0-9a-f]+$/i)) {
-    if (!name.startsWith("0x")) {
-      name = "0x" + name
-    }
-    return name
-  }
-  let node = Buffer.alloc(32, 0)
-
-  if (name) {
-    let labels = name.split('.')
-
-    for (let i = labels.length - 1; i >= 0; i--) {
-      node = sha256(Buffer.concat([node, sha256(labels[i])]))
-    }
-  }
-
-  return '0x' + node.toString('hex')
-}
-
 const asHash = (params) => {
   return params.reduce((a, v) => ({...a, [v.vname]: v.value}), {})
 }
@@ -253,7 +224,7 @@ const transactionEvents = (tx) => {
 }
 
 const getRegistryRecord = async (registry, domain) => {
-  const node = namehash(domain)
+  const node = domain.match(/(0x)?\d+/) ? domain : namehash(domain)
   return await contractMapValue(registry, 'records', node)
 }
 
@@ -273,7 +244,7 @@ const resolverRecords = async resolver => {
 }
 
 const approvalOf = async (registry, domain) => {
-  const node = namehash(domain)
+  const node = domain.match(/(0x)?\d+/) ? domain : namehash(domain)
   const approval = await contractMapValue(registry, 'approvals', node)
   return approval && approval.replace(/^0x/, '')
 }
@@ -324,7 +295,7 @@ describe('smart contracts', () => {
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
       const [resolverTx, resolver] = await deployResolver(zilliqa, {
-        owner: '0x' + address,          
+        owner: '0x' + address,
         registry: '0x' + address,
         node: namehash('hello.zil'),
         ada: '0x1111',
@@ -384,8 +355,8 @@ describe('smart contracts', () => {
       )
 
       const configuredEvent = {
-        _eventname: 'Configured', 
-        node: namehash('hello.zil'), 
+        _eventname: 'Configured',
+        node: namehash('hello.zil'),
         owner: '0x'+address,
         resolver: '0x' + resolver.address,
       }
@@ -478,6 +449,8 @@ describe('smart contracts', () => {
         {gasLimit: Long.fromNumber(100000)},
       )
       expect(registryTx.isConfirmed()).toBeTruthy()
+      expect(await ownerOf(registry, rootNode)).toEqual(address)
+      expect(await resolverOf(registry, rootNode)).toEqual(nullAddress)
       expect(await registry.getInit()).toHaveLength(4)
     })
 
@@ -705,7 +678,7 @@ describe('smart contracts', () => {
         _eventname: 'Configured',
         node: rootNode,
         owner: '0x' + address,
-        resolver: '0x' + address2, 
+        resolver: '0x' + address2,
       }])
 
       expect(await resolverOf(registry, rootNode)).toEqual(address2)
@@ -729,7 +702,7 @@ describe('smart contracts', () => {
         _eventname: 'Configured',
         node: rootNode,
         owner: '0x' + address2,
-        resolver: '0x' + address2, 
+        resolver: '0x' + address2,
       }])
 
       expect(await resolverOf(registry, rootNode)).toEqual(address2)
@@ -798,7 +771,7 @@ describe('smart contracts', () => {
       )
       expect(transferTx.isConfirmed()).toBeTruthy
       expect(await transactionEvents(transferTx)).toEqual([
-        { 
+        {
           _eventname: 'Configured',
           node: rootNode,
           owner: "0x" + address2,
@@ -857,16 +830,16 @@ describe('smart contracts', () => {
       )
       expect(assignTx.isConfirmed()).toBeTruthy
       expect(await transactionEvents(assignTx)).toEqual([
-        { 
+        {
           _eventname: 'Configured',
           node: namehash('example.zil'),
           owner: "0x" + address,
           resolver: "0x" + nullAddress,
         },
-        { 
+        {
           _eventname: 'NewDomain',
           parent: rootNode,
-          label: 'example' 
+          label: 'example'
         }
       ]);
       expect(await ownerOf(registry, rootNode)).toEqual(address)
@@ -940,16 +913,16 @@ describe('smart contracts', () => {
 
       expect(bestowTx.isConfirmed()).toBeTruthy
       expect(await transactionEvents(bestowTx)).toEqual([
-        { 
+        {
           _eventname: 'Configured',
           node: namehash('example.zil'),
           owner: "0x" + address,
           resolver: "0x" + address,
         },
-        { 
+        {
           _eventname: 'NewDomain',
           parent: rootNode,
-          label: 'example' 
+          label: 'example'
         }
       ]);
 
@@ -1098,16 +1071,16 @@ describe('smart contracts', () => {
       )
       expect(registerTx.isConfirmed()).toBeTruthy
       expect(await transactionEvents(registerTx)).toEqual([
-        { 
+        {
           _eventname: 'Configured',
           node: namehash('name.zil'),
           owner: "0x" + address,
           resolver: "0x" + nullAddress,
         },
-        { 
+        {
           _eventname: 'NewDomain',
           parent: rootNode,
-          label: 'name' 
+          label: 'name'
         }
       ]);
 
@@ -1549,7 +1522,7 @@ describe('smart contracts', () => {
 
     expect(await contractMapValue(marketplace, 'offers', namehash('value.com'))).toEqual(null)
     expect(await contractMapValue(marketplace, 'offers', namehash('value.zil'))).toEqual("1000000000000")
-  }) 
+  })
 
   xdescribe('integration and pre-configuration', () => {
     const records = {
