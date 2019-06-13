@@ -514,7 +514,7 @@ transition bestow(label: String, owner: ByStr20, resolver: ByStr20)
     e = eConfigured node owner resolver;
     event e
   | False =>
-    e = let m = "Sender admin" in eError m eCodeFailureIAM;
+    e = let m = "Sender is not an admin" in eError m eCodeFailureIAM;
     event e
   end
 end
