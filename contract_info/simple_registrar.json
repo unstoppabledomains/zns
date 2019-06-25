@@ -7,17 +7,17 @@
       { "vname": "ownedNode", "type": "ByStr32" },
       { "vname": "owner", "type": "ByStr20" },
       { "vname": "initialDefaultPrice", "type": "Uint128" },
-      { "vname": "initialLiPerUSD", "type": "Uint128" }
+      { "vname": "initialQaPerUSD", "type": "Uint128" }
     ],
     "fields": [
-      { "vname": "liPerUSD", "type": "Uint128" },
+      { "vname": "qaPerUSD", "type": "Uint128" },
       { "vname": "defaultPriceUSD", "type": "Uint128" },
       { "vname": "lengthPricesUSD", "type": "Map (Uint32) (Uint128)" },
       { "vname": "customPricesUSD", "type": "Map (ByStr32) (Uint128)" }
     ],
     "transitions": [
       {
-        "vname": "setLiPricePerUSD",
+        "vname": "setQaPricePerUSD",
         "params": [ { "vname": "newPrice", "type": "Uint128" } ]
       },
       {
@@ -25,14 +25,14 @@
         "params": [ { "vname": "newPrice", "type": "Uint128" } ]
       },
       {
-        "vname": "setLengthPriceInUSD",
+        "vname": "setLengthPriceUSD",
         "params": [
           { "vname": "length", "type": "Uint32" },
           { "vname": "newPrice", "type": "Uint128" }
         ]
       },
       {
-        "vname": "setCustomPriceInUSD",
+        "vname": "setCustomPriceUSD",
         "params": [
           { "vname": "node", "type": "ByStr32" },
           { "vname": "newPrice", "type": "Uint128" }
@@ -79,7 +79,7 @@
         "params": [ { "vname": "price", "type": "Uint128" } ]
       },
       {
-        "vname": "LiPricePerUSDSet",
+        "vname": "QaPricePerUSDSet",
         "params": [ { "vname": "price", "type": "Uint128" } ]
       },
       {

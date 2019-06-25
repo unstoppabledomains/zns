@@ -11,13 +11,13 @@
       { "vname": "initialDefaultPrice", "type": "Uint128" },
       { "vname": "bidIncrementNumerator", "type": "Uint128" },
       { "vname": "bidIncrementDenominator", "type": "Uint128" },
-      { "vname": "initialPricePerLi", "type": "Uint128" },
+      { "vname": "initialPricePerQa", "type": "Uint128" },
       { "vname": "initialMaxPriceUSD", "type": "Uint128" }
     ],
     "fields": [
       { "vname": "running", "type": "Bool" },
       { "vname": "auctions", "type": "Map (ByStr32) (Auction)" },
-      { "vname": "liPerUSD", "type": "Uint128" },
+      { "vname": "qaPerUSD", "type": "Uint128" },
       { "vname": "defaultPriceUSD", "type": "Uint128" },
       { "vname": "lengthPricesUSD", "type": "Map (Uint32) (Uint128)" },
       { "vname": "customPricesUSD", "type": "Map (ByStr32) (Uint128)" },
@@ -25,7 +25,7 @@
     ],
     "transitions": [
       {
-        "vname": "setLiPricePerUSD",
+        "vname": "setQaPricePerUSD",
         "params": [ { "vname": "newPrice", "type": "Uint128" } ]
       },
       {
@@ -37,14 +37,14 @@
         "params": [ { "vname": "newPrice", "type": "Uint128" } ]
       },
       {
-        "vname": "setLengthPriceInUSD",
+        "vname": "setLengthPriceUSD",
         "params": [
           { "vname": "length", "type": "Uint32" },
           { "vname": "newPrice", "type": "Uint128" }
         ]
       },
       {
-        "vname": "setCustomPriceInUSD",
+        "vname": "setCustomPriceUSD",
         "params": [
           { "vname": "node", "type": "ByStr32" },
           { "vname": "newPrice", "type": "Uint128" }
@@ -77,10 +77,6 @@
           { "vname": "address", "type": "ByStr20" },
           { "vname": "amount", "type": "Uint128" }
         ]
-      },
-      {
-        "vname": "onZNSTransfer",
-        "params": [ { "vname": "node", "type": "ByStr32" } ]
       }
     ],
     "events": [
@@ -111,7 +107,7 @@
         "params": [ { "vname": "price", "type": "Uint128" } ]
       },
       {
-        "vname": "LiPricePerUSDSet",
+        "vname": "QaPricePerUSDSet",
         "params": [ { "vname": "price", "type": "Uint128" } ]
       },
       {

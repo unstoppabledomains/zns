@@ -89,7 +89,6 @@ end
 (* @param node *)
 (* @sends transfer to the registry if enough payment *)
 transition buy(node: ByStr32)
-
   buyerTmp := _sender;
   maybeOffer <- offers[node];
 
@@ -107,7 +106,7 @@ transition buy(node: ByStr32)
                node: node; owner: _sender}
         in oneMsg m;
     send msgs
-    | False =>
+  | False =>
   end
 end
 

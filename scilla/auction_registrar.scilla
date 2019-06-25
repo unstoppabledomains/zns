@@ -20,8 +20,8 @@ let calcMinimumBid =
   fun(bidIncrementDenominator: Uint128) => 
   fun(currentBid: Uint128) =>
     let f1 = builtin add bidIncrementNumerator bidIncrementDenominator in
-    let f2 = builtin div currentBid bidIncrementDenominator in
-      builtin mul f1 f2
+    let f2 = builtin mul currentBid f1 in
+      builtin div f2 bidIncrementDenominator
 
 let calcEndingBlk =
   fun(minimumAuctionLength: Uint64) => 
@@ -62,9 +62,9 @@ let eClose =
     {_eventname: "Close"; node: node; bidder: bidder; bid: bid}
 
 
-let eLiPricePerUSDSet =
+let eQaPricePerUSDSet =
   fun(price: Uint128) =>
-    {_eventname: "LiPricePerUSDSet"; price: price}
+    {_eventname: "QaPricePerUSDSet"; price: price}
 
 let eDefaultPriceUSDSet =
   fun(price: Uint128) =>
@@ -97,15 +97,15 @@ contract AuctionRegistrar(
   initialDefaultPrice: Uint128,
   bidIncrementNumerator: Uint128,
   bidIncrementDenominator: Uint128,
-  initialPricePerLi: Uint128,
+  initialPricePerQa: Uint128,
   initialMaxPriceUSD: Uint128
 )
 
 field running: Bool = False
 field auctions: Map ByStr32 Auction = Emp ByStr32 Auction 
 
-(* Defines a currency conversion between USD and Li (a subunit of ZIL) *)
-field liPerUSD: Uint128 = initialPricePerLi
+(* Defines a currency conversion between USD and Qa (a subunit of ZIL) *)
+field qaPerUSD: Uint128 = initialPricePerQa
 (* Defines a default initial price for all domains in USD *)
 field defaultPriceUSD: Uint128 = initialDefaultPrice
 (* Defines a custom initial price in USD for all domains with specific length *)
@@ -124,19 +124,19 @@ field customPricesUSD: Map ByStr32 Uint128 = Emp ByStr32 Uint128
 (* No bid can be made above this price *)
 field maxPriceUSD: Uint128 = initialMaxPriceUSD
 
-(* Sets liPerUSD field *)
+(* Sets qaPerUSD field *)
 (* @ensures sender is an owner of the contract *)
 (* @param newPrice a new value for the field *)
-(* @emits LiPricePerUSDSet if the field was updated successfully *)
-transition setLiPricePerUSD(newPrice: Uint128)
+(* @emits QaPricePerUSDSet if the field was updated successfully *)
+transition setQaPricePerUSD(newPrice: Uint128)
   isOkSender = builtin eq _sender owner;
 
   match isOkSender with
   | True =>
-    e = eLiPricePerUSDSet newPrice;
+    e = eQaPricePerUSDSet newPrice;
     event e;
 
-    liPerUSD := newPrice
+    qaPerUSD := newPrice
   | _ =>
   end
 end
@@ -164,7 +164,7 @@ end
 (* @emits MaxPriceUSDSet if the field was updated successfully *)
 transition setMaxPriceUSD(newPrice: Uint128)
   isOkSender = builtin eq _sender owner;
-
+  
   match isOkSender with
   | True =>
     e = eMaxPriceUSDSet newPrice;
@@ -180,7 +180,7 @@ end
 (* @param length number of symbols in the domain name *)
 (* @param newPrice a price for domains of the give length *)
 (* @emits LengthPriceUSDSet if the price was updated successfully *)
-transition setLengthPriceInUSD(length: Uint32, newPrice: Uint128)
+transition setLengthPriceUSD(length: Uint32, newPrice: Uint128)
   isOkSender = builtin eq _sender owner;
 
   match isOkSender with
@@ -188,7 +188,13 @@ transition setLengthPriceInUSD(length: Uint32, newPrice: Uint128)
     e = eLengthPriceUSDSet length newPrice;
     event e;
 
-    lengthPricesUSD[length] := newPrice
+    isNewPriceZero = let n = Uint128 0 in builtin eq newPrice n;
+    match isNewPriceZero with
+    | True =>
+      delete lengthPricesUSD[length] 
+    | False =>
+      lengthPricesUSD[length] := newPrice
+    end
   | _ =>
   end
 end
@@ -198,7 +204,7 @@ end
 (* @param node domain node address *)
 (* @param newPrice a new fixed price for the domain *)
 (* @emits CustomPriceUSDSet if the price was updated successfully *)
-transition setCustomPriceInUSD(node: ByStr32, newPrice: Uint128)
+transition setCustomPriceUSD(node: ByStr32, newPrice: Uint128)
   isOkSender = builtin eq _sender owner;
 
   match isOkSender with
@@ -206,11 +212,16 @@ transition setCustomPriceInUSD(node: ByStr32, newPrice: Uint128)
     e = eCustomPriceUSDSet node newPrice;
     event e;
 
-    customPricesUSD[node] := newPrice
+    isNewPriceZero = let n = Uint128 0 in builtin eq newPrice n;
+    match isNewPriceZero with
+    | True =>
+      delete customPricesUSD[node]
+    | False =>
+      customPricesUSD[node] := newPrice
+    end
   | _ =>
   end
 end
-
 
 (* Makes an auction for the domain *)
 (* @accepts sent amount all the time *)
@@ -243,7 +254,7 @@ transition register(
     labelLen = builtin strlen label;
     maybeLengthPriceUSD <- lengthPricesUSD[labelLen];
     currentDefaultPriceUSD <- defaultPriceUSD;
-    currentLiPerUSD <- liPerUSD;
+    currentQaPerUSD <- qaPerUSD;
 
     price =
       let priceUSD = 
@@ -255,7 +266,7 @@ transition register(
           | None => currentDefaultPriceUSD
           end
         end in
-        builtin mul priceUSD currentLiPerUSD;
+        builtin mul priceUSD currentQaPerUSD;
 
     isOk = 
       let isOkParent = builtin eq ownedNode parent in
@@ -269,7 +280,7 @@ transition register(
     | True =>
       currentMaxPriceUSD <- maxPriceUSD;
 
-      maxPrice = builtin mul currentMaxPriceUSD currentLiPerUSD;
+      maxPrice = builtin mul currentMaxPriceUSD currentQaPerUSD;
       paidMaxPrice = builtin lt maxPrice _amount;
 
       match paidMaxPrice with
@@ -305,7 +316,7 @@ transition register(
       event e;
 
       msgs = 
-        let m = {_tag: ""; _recipient: origin; _amount: _amount} in
+        let m = {_tag: "onRefund"; _recipient: origin; _amount: _amount} in
           oneMsg m;
       send msgs
     end
@@ -314,7 +325,7 @@ transition register(
     event e;
  
     msgs = 
-      let m = {_tag: ""; _recipient: origin; _amount: _amount} in
+      let m = {_tag: "onRefund"; _recipient: origin; _amount: _amount} in
         oneMsg m;
     send msgs
   end
@@ -349,10 +360,10 @@ transition bid(node: ByStr32)
 
       match isOk with
       | True =>
-        currentLiPerUSD <- liPerUSD;
+        currentQaPerUSD <- qaPerUSD;
         currentMaxPriceUSD <- maxPriceUSD;
 
-        maxPrice = builtin mul currentMaxPriceUSD currentLiPerUSD;
+        maxPrice = builtin mul currentMaxPriceUSD currentQaPerUSD;
         paidMaxPrice = builtin lt maxPrice _amount;
 
         newEndingBlk = 
@@ -371,18 +382,13 @@ transition bid(node: ByStr32)
         event e;
 
         msgs = 
-          let msg = {_tag: ""; _recipient: highestBidder; _amount: currentBid} in
+          let msg = {_tag: "onRefund"; _recipient: highestBidder; _amount: currentBid} in
             oneMsg msg;
         send msgs
       | _ =>
-
-        e = 
-          let bn0 = BNum 0 in
-          let intblk = builtin bsub blk bn0 in
-          let strblk = builtin to_string intblk in
-          let m1 = "Not Ok at blk " in
-          let m = builtin concat m1 strblk in 
-            eError m;
+        e =
+          let m = "Invalid amount or block"
+            in eError m;
         event e
       end
     end
@@ -399,6 +405,10 @@ transition close(node: ByStr32)
 
   match maybeAuction with
   | None =>
+    e =
+      let m = "No auction for node"
+        in eError m;
+      event e
   | Some auction => 
     match auction with
     | Auction highestBidder currentBid endingBlk label => 
@@ -411,12 +421,15 @@ transition close(node: ByStr32)
         e = eClose node highestBidder currentBid;
         event e;
 
-        msg = {_tag: "bestow"; _recipient: registry; _amount: Uint128 0; 
-              parent: ownedNode; label: label; owner: highestBidder;
-              resolver: zeroByStr20};
+        msg = {_tag: "transfer"; _recipient: registry; _amount: Uint128 0; 
+              node: node; owner: highestBidder};
         msgs = oneMsg msg;
         send msgs
       | _ => 
+        e =
+        let m = "Invalid block"
+          in eError m;
+        event e
       end
     end
   end
@@ -448,12 +461,9 @@ transition withdraw(address: ByStr20, amount: Uint128)
 
   match isOkSender with
   | True =>
-    msg = {_tag: ""; _recipient: address; _amount: amount};
+    msg = {_tag: "onRefund"; _recipient: address; _amount: amount};
     msgs = oneMsg msg;
     send msgs
   | _ =>
   end
 end
-
-(* A dummy function we have because we bestow the name to _this_address *)
-transition onZNSTransfer(node: ByStr32) end

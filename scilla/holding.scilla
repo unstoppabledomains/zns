@@ -1,0 +1,130 @@
+scilla_version 0
+
+import BoolUtils ListUtils
+
+library HoldingLib
+
+let zeroUint64 = Uint64 0
+let zeroByStr20 = 0x0000000000000000000000000000000000000000
+let zeroByStr32 = 
+  0x0000000000000000000000000000000000000000000000000000000000000000
+let nilByStr20 = Nil {ByStr20}
+let nilMessage = Nil {Message}
+
+let oneMsg =
+  fun(msg: Message) =>
+    Cons {Message} msg nilMessage
+
+let eqByStr20 =
+  fun(bs1: ByStr20) =>
+  fun(bs2: ByStr20) =>
+    builtin eq bs1 bs2
+
+let listByStr20Contains = 
+  fun(list: List ByStr20) =>
+  fun(bs: ByStr20) =>
+    let listMemByStr20 = @list_mem ByStr20 in
+      listMemByStr20 eqByStr20 bs list
+
+let listByStr20Excludes =
+  fun(list: List ByStr20) =>
+  fun(bs: ByStr20) =>
+    let b = listByStr20Contains list bs in negb b
+
+let listByStr20FilterOut = 
+  fun(list: List ByStr20) =>
+  fun(bs: ByStr20) =>
+    let listByStr20Filter = @list_filter ByStr20 in
+    let fn = fun(v: ByStr20) => 
+      let b = builtin eq v bs in
+       negb b in
+      listByStr20Filter fn list
+
+(* XAND Gate *)
+let xandb =
+  fun(b1: Bool) =>
+  fun(b2: Bool) =>
+    match b1 with
+    | True =>
+      match b2 with
+      | True => True
+      | False => False
+      end
+    | False =>
+      match b2 with
+      | True => False
+      | False => True
+      end
+    end
+
+(* START: Events *)
+let eAdminSet =
+  fun(address: ByStr20) =>
+  fun(isApproved: Bool) =>
+    {_eventname: "AdminSet"; address: address; isApproved: isApproved}
+
+let eError = {_eventname: "Error"}
+(* END: Events *)
+
+(* The 'contract' pragma tells scilla that the contract body starts *)
+contract Holding
+
+(initialAdmin: ByStr20, registry: ByStr20)
+
+field registrar: ByStr20 = zeroByStr20
+
+field admins: List ByStr20 = Cons {ByStr20} initialAdmin nilByStr20
+
+(* Adds or removes the given address as the contract admin based on isApproved flag *)
+(* @ensures sender address is an admin *)
+(* @param address the address to be added as admin *)
+(* @param isApproved when true the address is added to admins, otherwise the address removed from admins *)
+(* @emits adminSet with address and isApproved flag when the new admin was assigned or removed *)
+(* @emits Error when sender address has no permission for this operation *)
+transition setAdmin(address: ByStr20, isApproved: Bool)
+  currentAdmins <- admins;
+
+  isSenderAdmin = listByStr20Contains currentAdmins _sender;
+
+  match isSenderAdmin with
+  | True =>
+    needsToChange = 
+      let b = listByStr20Excludes currentAdmins address in xandb b isApproved;
+
+    match needsToChange with
+    | True =>
+      newAdmins = match isApproved with
+        | True => Cons {ByStr20} address currentAdmins
+        | False => listByStr20FilterOut currentAdmins address
+        end;
+
+      admins := newAdmins;
+
+      e = eAdminSet address isApproved;
+      event e
+    | _ => (* Q?: Should I put an event here *)
+    end
+  | False =>
+    event eError
+  end
+end
+
+transition transfer(node: ByStr20, owner: ByStr20)
+  currentAdmins <- admins;
+
+  isSenderAdmin = listByStr20Contains currentAdmins _sender;
+
+  match isSenderAdmin with
+  | True =>
+    msgs = 
+      let m = {_tag: "transfer"; _recipient: registry; _amount: Uint128 0; 
+               node: node; owner: owner} in 
+      oneMsg m;
+    send msgs
+  | False =>
+    event eError
+  end
+end
+
+transition onTransferSuccess(node: ByStr32, owner: ByStr20) end
+transition onTransferFailure(node: ByStr32, owner: ByStr20) end

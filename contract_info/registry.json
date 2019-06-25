@@ -2,7 +2,10 @@
   "contract_info": {
     "scilla_major_version": "0",
     "vname": "Registry",
-    "params": [ { "vname": "initialOwner", "type": "ByStr20" } ],
+    "params": [
+      { "vname": "initialOwner", "type": "ByStr20" },
+      { "vname": "rootNode", "type": "ByStr32" }
+    ],
     "fields": [
       { "vname": "records", "type": "Map (ByStr32) (Record)" },
       { "vname": "registrar", "type": "ByStr20" },
@@ -65,7 +68,6 @@
       {
         "vname": "bestow",
         "params": [
-          { "vname": "parent", "type": "ByStr32" },
           { "vname": "label", "type": "String" },
           { "vname": "owner", "type": "ByStr20" },
           { "vname": "resolver", "type": "ByStr20" }
@@ -90,10 +92,7 @@
     "events": [
       {
         "vname": "Error",
-        "params": [
-          { "vname": "msg", "type": "String" },
-          { "vname": "code", "type": "Uint32" }
-        ]
+        "params": [ { "vname": "msg", "type": "String" } ]
       },
       {
         "vname": "Configured",

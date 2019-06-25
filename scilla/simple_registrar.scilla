@@ -17,9 +17,9 @@ let eRegister =
   fun(price: Uint128) =>
     {_eventname: "Register"; node: node; owner: owner; price: price}
 
-let eLiPricePerUSDSet =
+let eQaPricePerUSDSet =
   fun(price: Uint128) =>
-    {_eventname: "LiPricePerUSDSet"; price: price}
+    {_eventname: "QaPricePerUSDSet"; price: price}
 
 let eDefaultPriceUSDSet =
   fun(price: Uint128) =>
@@ -44,39 +44,38 @@ contract SimpleRegistrar(
   ownedNode: ByStr32,
   owner: ByStr20,
   initialDefaultPrice: Uint128,
-  initialLiPerUSD: Uint128
+  initialQaPerUSD: Uint128
 )
-
-(* Defines a currency conversion between USD and Li (a subunit of ZIL) *)
-field liPerUSD: Uint128 = initialLiPerUSD
-(* Defines a default price for all domains in USD *)
+(* Defines a currency conversion between USD and Qa (a subunit of ZIL) *)
+field qaPerUSD: Uint128 = initialQaPerUSD
+(* Defines a default initial price for all domains in USD *)
 field defaultPriceUSD: Uint128 = initialDefaultPrice
-(* Defines a custom price in USD for all domains with specific length *)
+(* Defines a custom initial price in USD for all domains with specific length *)
 (* Prices defined by this field have higher priority than defaultPriceUSD *)
 (* e.g {2 => 10, 3 => 15} would define that all two-symbol domains will be sold for 10 USD *)
 (* and three-symbol domains for 15 USD *)
 (* a key is used to specify the number of symbols in domain name *)
 (* a value defines a price for the given length *)
 field lengthPricesUSD: Map Uint32 Uint128 = Emp Uint32 Uint128
-(* Defines a custom price a custom premium domain *)
+(* Defines a custom initial price a custom premium domain *)
 (* Prices defined by this field have higher priority than any other definition field *)
 (* a key is a name of the domain *)
 (* a value defines a price for the given name *)
 field customPricesUSD: Map ByStr32 Uint128 = Emp ByStr32 Uint128
 
-(* Sets liPerUSD field *)
+(* Sets qaPerUSD field *)
 (* @ensures sender is an owner of the contract *)
 (* @param newPrice a new value for the field *)
-(* @emits LiPricePerUSDSet if the field was updated successfully *)
-transition setLiPricePerUSD(newPrice: Uint128)
+(* @emits QaPricePerUSDSet if the field was updated successfully *)
+transition setQaPricePerUSD(newPrice: Uint128)
   isOkSender = builtin eq _sender owner;
 
   match isOkSender with
   | True =>
-    e = eLiPricePerUSDSet newPrice;
+    e = eQaPricePerUSDSet newPrice;
     event e;
 
-    liPerUSD := newPrice
+    qaPerUSD := newPrice
   | _ =>
   end
 end
@@ -103,7 +102,7 @@ end
 (* @param length number of symbols in the domain name *)
 (* @param newPrice a price for domains of the give length *)
 (* @emits LengthPriceUSDSet if the price was updated successfully *)
-transition setLengthPriceInUSD(length: Uint32, newPrice: Uint128)
+transition setLengthPriceUSD(length: Uint32, newPrice: Uint128)
   isOkSender = builtin eq _sender owner;
 
   match isOkSender with
@@ -111,7 +110,13 @@ transition setLengthPriceInUSD(length: Uint32, newPrice: Uint128)
     e = eLengthPriceUSDSet length newPrice;
     event e;
 
-    lengthPricesUSD[length] := newPrice
+    isNewPriceZero = let n = Uint128 0 in builtin eq newPrice n;
+    match isNewPriceZero with
+    | True =>
+      delete lengthPricesUSD[length] 
+    | False =>
+      lengthPricesUSD[length] := newPrice
+    end
   | _ =>
   end
 end
@@ -121,7 +126,7 @@ end
 (* @param node domain node address *)
 (* @param newPrice a new fixed price for the domain *)
 (* @emits CustomPriceUSDSet if the price was updated successfully *)
-transition setCustomPriceInUSD(node: ByStr32, newPrice: Uint128)
+transition setCustomPriceUSD(node: ByStr32, newPrice: Uint128)
   isOkSender = builtin eq _sender owner;
 
   match isOkSender with
@@ -129,7 +134,13 @@ transition setCustomPriceInUSD(node: ByStr32, newPrice: Uint128)
     e = eCustomPriceUSDSet node newPrice;
     event e;
 
-    customPricesUSD[node] := newPrice
+    isNewPriceZero = let n = Uint128 0 in builtin eq newPrice n;
+    match isNewPriceZero with
+    | True =>
+      delete customPricesUSD[node]
+    | False =>
+      customPricesUSD[node] := newPrice
+    end
   | _ =>
   end
 end
@@ -158,7 +169,7 @@ transition register(
   labelLen = builtin strlen label;
   maybeLengthPriceUSD <- lengthPricesUSD[labelLen];
   currentDefaultPriceUSD <- defaultPriceUSD;
-  currentLiPerUSD <- liPerUSD;
+  currentQaPerUSD <- qaPerUSD;
 
   price =
     let priceUSD = 
@@ -170,7 +181,7 @@ transition register(
         | None => currentDefaultPriceUSD
         end
       end in
-      builtin mul priceUSD currentLiPerUSD;
+      builtin mul priceUSD currentQaPerUSD;
 
   isOk = 
     let isOkParent = builtin eq ownedNode parent in
@@ -182,6 +193,8 @@ transition register(
   match isOk with
   | True => 
     e = eRegister node origin price;
+
+    event e;
 
     msgs = 
       let msg = {_tag: "bestow"; _recipient: registry; _amount: Uint128 0; 
@@ -209,7 +222,7 @@ transition withdraw(address: ByStr20, amount: Uint128)
 
   match isOkSender with
   | True =>
-    msgs = let msg = {_tag: ""; _recipient: address; _amount: _amount} in 
+    msgs = let msg = {_tag: ""; _recipient: address; _amount: amount} in 
       oneMsg msg;
     send msgs
   | _ =>
