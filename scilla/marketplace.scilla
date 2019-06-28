@@ -136,7 +136,7 @@ transition onTransferSuccess(node: ByStr32, owner: ByStr20)
     balance <- _balance;
 
     msgs =
-      let m = {_tag: ""; _recipient: seller; _amount: balance} in oneMsg m;
+      let m = {_tag: "onRefund"; _recipient: seller; _amount: balance} in oneMsg m;
     send msgs
   | False => 
   end
@@ -162,7 +162,7 @@ transition onTransferFailure(node: ByStr32, owner: ByStr20)
       end;
 
     msgs =
-      let m = {_tag: ""; _recipient: buyer; _amount: price} in oneMsg m;
+      let m = {_tag: "onRefund"; _recipient: buyer; _amount: price} in oneMsg m;
     send msgs
   | False => 
   end

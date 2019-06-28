@@ -206,7 +206,7 @@ transition register(
     e = let m = "Not valid parent, record owner, amount or sender" in eError m;
     event e;
 
-    msgs = let msg = {_tag: ""; _recipient: origin; _amount: _amount} in 
+    msgs = let msg = {_tag: "onRefund"; _recipient: origin; _amount: _amount} in 
       oneMsg msg;
     send msgs
   end
@@ -222,7 +222,7 @@ transition withdraw(address: ByStr20, amount: Uint128)
 
   match isOkSender with
   | True =>
-    msgs = let msg = {_tag: ""; _recipient: address; _amount: amount} in 
+    msgs = let msg = {_tag: "onWithdraw"; _recipient: address; _amount: amount} in 
       oneMsg msg;
     send msgs
   | _ =>

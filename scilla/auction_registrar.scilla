@@ -461,7 +461,7 @@ transition withdraw(address: ByStr20, amount: Uint128)
 
   match isOkSender with
   | True =>
-    msg = {_tag: "onRefund"; _recipient: address; _amount: amount};
+    msg = {_tag: "onWithdraw"; _recipient: address; _amount: amount};
     msgs = oneMsg msg;
     send msgs
   | _ =>
