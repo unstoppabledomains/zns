@@ -60,4 +60,4 @@ There are 3 ZNS contract variants.
 
 ## License
 
-ZNS is [MIT licensed](./LICENSE).
+
