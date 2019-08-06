@@ -70,13 +70,13 @@ function deployMarketplace(
 
 function deployRegistry(
   zilliqa: Zilliqa,
-  {initialOwner, _creation_block = '0'},
+  {initialOwner, rootNode, _creation_block = '0'},
   params: Partial<TxParams> = {},
 ) {
   return zilliqa.contracts
     .new(
       readFileSync('./scilla/registry.scilla', 'utf8'),
-      registryData.init({initialOwner}).concat({
+      registryData.init({initialOwner, rootNode}).concat({
         vname: '_creation_block',
         type: 'BNum',
         value: _creation_block.toString(),
@@ -92,7 +92,7 @@ function deploySimpleRegistrar(
     ownedNode,
     owner,
     initialDefaultPrice, // = 1,
-    initialLiPerUSD, // 0.017 * 10 ** 12,
+    initialQaPerUSD, // 0.017 * 10 ** 12,
     _creation_block = '0',
   },
   params: Partial<TxParams> = {},
@@ -106,7 +106,7 @@ function deploySimpleRegistrar(
           ownedNode,
           owner,
           initialDefaultPrice,
-          initialLiPerUSD,
+          initialQaPerUSD,
         })
         .concat({
           vname: '_creation_block',
@@ -363,11 +363,12 @@ describe('smart contracts', () => {
     it('should set and unset records', async () => {
       const zilliqa = new Zilliqa(null, provider)
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
-      const [, registry] = await deployRegistry(
+      const [registryTx, registry] = await deployRegistry(
         zilliqa,
-        {initialOwner: '0x' + address},
+        {initialOwner: '0x' + address, rootNode},
         {gasLimit: Long.fromNumber(100000)},
       )
+      expect(registryTx.isConfirmed()).toBeTruthy()
       const [resolverTx, resolver] = await deployResolver(
         zilliqa,
         { ...resolverInitState, registry: "0x" + registry.address, node: namehash('tld') },
@@ -484,11 +485,11 @@ describe('smart contracts', () => {
 
       const [registryTx, registry] = await deployRegistry(
         zilliqa,
-        {initialOwner: '0x' + address},
+        {initialOwner: '0x' + address, rootNode},
         {gasLimit: Long.fromNumber(100000)},
       )
       expect(registryTx.isConfirmed()).toBeTruthy()
-      expect(await registry.getInit()).toHaveLength(4)
+      expect(await registry.getInit()).toHaveLength(5)
     })
 
     it('should disallow onResolverConfigured call from unauthorized resources', async () => {
@@ -497,7 +498,7 @@ describe('smart contracts', () => {
 
       const [registryTx, registry] = await deployRegistry(
         zilliqa,
-        {initialOwner: '0x' + address},
+        {initialOwner: '0x' + address, rootNode},
         {gasLimit: Long.fromNumber(100000)},
       )
       expect(registryTx.isConfirmed()).toBeTruthy()
@@ -539,7 +540,7 @@ describe('smart contracts', () => {
 
       const [, registry] = await deployRegistry(
         zilliqa,
-        {initialOwner: '0x' + address},
+        {rootNode, initialOwner: '0x' + address},
         {gasLimit: Long.fromNumber(100000)},
       )
 
@@ -632,7 +633,7 @@ describe('smart contracts', () => {
 
       const [, registry] = await deployRegistry(
         zilliqa,
-        {initialOwner: '0x' + address},
+        {rootNode, initialOwner: '0x' + address},
         {gasLimit: Long.fromNumber(100000)},
       )
 
@@ -693,7 +694,7 @@ describe('smart contracts', () => {
 
       const [, registry] = await deployRegistry(
         zilliqa,
-        {initialOwner: '0x' + address},
+        {rootNode, initialOwner: '0x' + address},
         {gasLimit: Long.fromNumber(100000)},
       )
 
@@ -783,7 +784,7 @@ describe('smart contracts', () => {
 
       const [, registry] = await deployRegistry(
         zilliqa,
-        {initialOwner: '0x' + address},
+        {rootNode, initialOwner: '0x' + address},
         {gasLimit: Long.fromNumber(100000)},
       )
 
@@ -840,7 +841,7 @@ describe('smart contracts', () => {
 
       const [, registry] = await deployRegistry(
         zilliqa,
-        {initialOwner: '0x' + address},
+        {rootNode, initialOwner: '0x' + address},
         {gasLimit: Long.fromNumber(100000)},
       )
 
@@ -926,7 +927,7 @@ describe('smart contracts', () => {
 
       const [, registry] = await deployRegistry(
         zilliqa,
-        {initialOwner: '0x' + address},
+        {rootNode, initialOwner: '0x' + address},
         {gasLimit: Long.fromNumber(100000)},
       )
 
@@ -1010,7 +1011,7 @@ describe('smart contracts', () => {
 
       const [, registry] = await deployRegistry(
         zilliqa,
-        {initialOwner: '0x' + address},
+        {rootNode, initialOwner: '0x' + address},
         {gasLimit: Long.fromNumber(100000)},
       )
 
@@ -1056,7 +1057,7 @@ describe('smart contracts', () => {
           owner: '0x' + '0'.repeat(40),
           ownedNode: rootNode,
           initialDefaultPrice: '1',
-          initialLiPerUSD: '1',
+          initialQaPerUSD: '1',
         },
         {gasLimit: Long.fromNumber(100000)},
       )
@@ -1070,7 +1071,7 @@ describe('smart contracts', () => {
 
       const [, registry] = await deployRegistry(
         zilliqa,
-        {initialOwner: '0x' + address},
+        {rootNode, initialOwner: '0x' + address},
         {gasLimit: Long.fromNumber(100000)},
       )
 
@@ -1081,7 +1082,7 @@ describe('smart contracts', () => {
           owner: '0x' + address,
           ownedNode: rootNode,
           initialDefaultPrice: '1',
-          initialLiPerUSD: '1',
+          initialQaPerUSD: '1',
         },
         {gasLimit: Long.fromNumber(100000)},
       )
@@ -1204,7 +1205,7 @@ describe('smart contracts', () => {
 
       const [, registry] = await deployRegistry(
         zilliqa,
-        {initialOwner: '0x' + address},
+        {rootNode, initialOwner: '0x' + address},
         {gasLimit: Long.fromNumber(100000)},
       )
 
@@ -1404,7 +1405,7 @@ describe('smart contracts', () => {
 
       const [, registry] = await deployRegistry(
         zilliqa,
-        {initialOwner: '0x' + address},
+        {rootNode, initialOwner: '0x' + address},
         {gasLimit: Long.fromNumber(100000)},
       )
 
@@ -1689,7 +1690,7 @@ describe('smart contracts', () => {
 
       const [, registry] = await deployRegistry(
         zilliqa,
-        {initialOwner: '0x' + address},
+        {rootNode, initialOwner: '0x' + address},
         {gasLimit: Long.fromNumber(100000)},
       )
 
