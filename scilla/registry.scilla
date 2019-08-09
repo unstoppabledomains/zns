@@ -554,4 +554,3 @@ transition onResolverConfigured(node: ByStr32)
     end
   end
 end
-
