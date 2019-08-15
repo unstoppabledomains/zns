@@ -1,3 +1,4 @@
 bin
 node_modules
 runner
+yarn-error.log
