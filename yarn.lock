@@ -3060,9 +3060,9 @@ jws@^3.1.5:
     jwa "^1.4.1"
     safe-buffer "^5.0.1"
 
-kaya-cli@unstoppabledomains/kaya#0b5a5718f20ca953671806a9d44f334d0f30ef01:
+kaya-cli@unstoppabledomains/kaya#ac5df8b51232fa65abbe5ab47f04063b6504c9f3:
   version "0.2.9"
-  resolved "https://codeload.github.com/unstoppabledomains/kaya/tar.gz/0b5a5718f20ca953671806a9d44f334d0f30ef01"
+  resolved "https://codeload.github.com/unstoppabledomains/kaya/tar.gz/ac5df8b51232fa65abbe5ab47f04063b6504c9f3"
   dependencies:
     "@zilliqa-js/zilliqa" "^0.5.2"
     bn.js "^4.11.8"
