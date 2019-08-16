@@ -14,7 +14,6 @@ import {contract_info as registry_contract_info} from './contract_info/registry.
 import {contract_info as resolver_contract_info} from './contract_info/resolver.json'
 import {contract_info as simple_registrar_contract_info} from './contract_info/simple_registrar.json'
 import {generateMapperFromContractInfo} from './lib/params'
-import {checker} from './lib/scilla'
 
 kayaConfig.constants.smart_contract.SCILLA_RUNNER = `${__dirname}/runner/bin/scilla-runner`
 kayaConfig.constants.smart_contract.SCILLA_CHECKER = `${__dirname}/runner/bin/scilla-checker`
@@ -292,14 +291,6 @@ const approvalOf = async (registry, domain) => {
   return approval && approval.replace(/^0x/, '')
 }
 
-xdescribe('checks', () => {
-  for (const input of readdirSync(join(process.cwd(), 'scilla'))
-    .map(v => join(process.cwd(), 'scilla', v))
-    .filter(v => v.endsWith('.scilla'))) {
-    it(`should successfully type-check ${basename(input)}`, () =>
-      checker({input}))
-  }
-})
 
 describe('smart contracts', () => {
   let provider

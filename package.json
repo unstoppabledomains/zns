@@ -34,7 +34,7 @@
   "scripts": {
     "verify": "[ -x ./runner/bin/scilla-runner ] && [ -x ./runner/bin/scilla-checker ] && [ -d ./runner/src/stdlib ] || (echo 'Scilla libraries are not symlinked' && exit 1)",
     "contracts": "yarn verify && sh ./scripts/contractInfo.sh",
-    "test": "yarn verify && jest smart-contract.test.ts",
+    "test": "yarn contracts && jest smart-contract.test.ts",
     "update-snapshot": "jest -u -t",
     "firebase-auth": "firebase login"
   }
