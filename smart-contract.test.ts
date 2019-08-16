@@ -348,11 +348,8 @@ describe('smart contracts', () => {
     it('should set and unset records', async () => {
       const zilliqa = new Zilliqa(null, provider)
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
-      const registry = await deployRegistry(
-        zilliqa,
-        {initialOwner: '0x' + address, rootNode},
-        {gasLimit: Long.fromNumber(100000)},
-      )
+      const zns = await Zns.deploy(zilliqa, '0x'+address, undefined, {version})
+      const registry = await zns.getRegistryContract()
       const [resolverTx, resolver] = await deployResolver(zilliqa, {
         ...resolverInitState,
         registry: '0x' + registry.address,
@@ -469,11 +466,8 @@ describe('smart contracts', () => {
       const zilliqa = new Zilliqa(null, provider)
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
-      const registry = await deployRegistry(
-        zilliqa,
-        {initialOwner: '0x' + address, rootNode},
-        {gasLimit: Long.fromNumber(100000)},
-      )
+      const zns = await Zns.deploy(zilliqa, '0x'+address, undefined, {version})
+      const registry = await zns.getRegistryContract()
       expect(await registry.getInit()).toHaveLength(5)
     })
 
@@ -481,11 +475,8 @@ describe('smart contracts', () => {
       const zilliqa = new Zilliqa(null, provider)
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
-      const registry = await deployRegistry(
-        zilliqa,
-        {initialOwner: '0x' + address, rootNode},
-        {gasLimit: Long.fromNumber(100000)},
-      )
+      const zns = await Zns.deploy(zilliqa, '0x'+address, undefined, {version})
+      const registry = await zns.getRegistryContract()
 
       const bestowTx = await registry.call(
         'bestow',
@@ -521,11 +512,8 @@ describe('smart contracts', () => {
       const zilliqa = new Zilliqa(null, provider)
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
-      const registry = await deployRegistry(
-        zilliqa,
-        {rootNode, initialOwner: '0x' + address},
-        {gasLimit: Long.fromNumber(100000)},
-      )
+      const zns = await Zns.deploy(zilliqa, '0x'+address, undefined, {version})
+      const registry = await zns.getRegistryContract()
 
       //////////////////////////////////////////////////////////////////////////
       // approve normally
@@ -614,11 +602,8 @@ describe('smart contracts', () => {
       const zilliqa = new Zilliqa(null, provider)
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
-      const registry = await deployRegistry(
-        zilliqa,
-        {rootNode, initialOwner: '0x' + address},
-        {gasLimit: Long.fromNumber(100000)},
-      )
+      const zns = await Zns.deploy(zilliqa, '0x'+address, undefined, {version})
+      const registry = await zns.getRegistryContract()
 
       //////////////////////////////////////////////////////////////////////////
       // add admin
@@ -675,11 +660,8 @@ describe('smart contracts', () => {
       const zilliqa = new Zilliqa(null, provider)
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
-      const registry = await deployRegistry(
-        zilliqa,
-        {rootNode, initialOwner: '0x' + address},
-        {gasLimit: Long.fromNumber(100000)},
-      )
+      const zns = await Zns.deploy(zilliqa, '0x'+address, undefined, {version})
+      const registry = await zns.getRegistryContract()
 
       //////////////////////////////////////////////////////////////////////////
       // configure resolver
@@ -769,11 +751,8 @@ describe('smart contracts', () => {
       const zilliqa = new Zilliqa(null, provider)
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
-      const registry = await deployRegistry(
-        zilliqa,
-        {rootNode, initialOwner: '0x' + address},
-        {gasLimit: Long.fromNumber(100000)},
-      )
+      const zns = await Zns.deploy(zilliqa, '0x'+address, undefined, {version})
+      const registry = await zns.getRegistryContract()
 
       //////////////////////////////////////////////////////////////////////////
       // approve address to check transfer
@@ -826,11 +805,8 @@ describe('smart contracts', () => {
       const zilliqa = new Zilliqa(null, provider)
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
-      const registry = await deployRegistry(
-        zilliqa,
-        {rootNode, initialOwner: '0x' + address},
-        {gasLimit: Long.fromNumber(100000)},
-      )
+      const zns = await Zns.deploy(zilliqa, '0x'+address, undefined, {version})
+      const registry = await zns.getRegistryContract()
 
       //////////////////////////////////////////////////////////////////////////
       // assign subdomain
@@ -911,11 +887,8 @@ describe('smart contracts', () => {
       const zilliqa = new Zilliqa(null, provider)
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
-      const registry = await deployRegistry(
-        zilliqa,
-        {rootNode, initialOwner: '0x' + address},
-        {gasLimit: Long.fromNumber(100000)},
-      )
+      const zns = await Zns.deploy(zilliqa, '0x'+address, undefined, {version})
+      const registry = await zns.getRegistryContract()
 
       //////////////////////////////////////////////////////////////////////////
       // bestow name
@@ -992,11 +965,8 @@ describe('smart contracts', () => {
       const zilliqa = new Zilliqa(null, provider)
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
-      const registry = await deployRegistry(
-        zilliqa,
-        {rootNode, initialOwner: '0x' + address},
-        {gasLimit: Long.fromNumber(100000)},
-      )
+      const zns = await Zns.deploy(zilliqa, '0x'+address, undefined, {version})
+      const registry = await zns.getRegistryContract()
 
       //////////////////////////////////////////////////////////////////////////
       // set registrar address
@@ -1052,11 +1022,8 @@ describe('smart contracts', () => {
       const zilliqa = new Zilliqa(null, provider)
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
-      const registry = await deployRegistry(
-        zilliqa,
-        {rootNode, initialOwner: '0x' + address},
-        {gasLimit: Long.fromNumber(100000)},
-      )
+      const zns = await Zns.deploy(zilliqa, '0x'+address, undefined, {version})
+      const registry = await zns.getRegistryContract()
 
       const [, registrar] = await deploySimpleRegistrar(
         zilliqa,
@@ -1190,11 +1157,8 @@ describe('smart contracts', () => {
       const zilliqa = new Zilliqa(null, provider)
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
-      const registry = await deployRegistry(
-        zilliqa,
-        {rootNode, initialOwner: '0x' + address},
-        {gasLimit: Long.fromNumber(100000)},
-      )
+      const zns = await Zns.deploy(zilliqa, '0x'+address, undefined, {version})
+      const registry = await zns.getRegistryContract()
 
       const [, registrar] = await deployAuctionRegistrar(
         zilliqa,
@@ -1398,11 +1362,8 @@ describe('smart contracts', () => {
       const soldNode = namehash('domain')
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
-      const registry = await deployRegistry(
-        zilliqa,
-        {rootNode, initialOwner: '0x' + address},
-        {gasLimit: Long.fromNumber(100000)},
-      )
+      const zns = await Zns.deploy(zilliqa, '0x'+address, undefined, {version})
+      const registry = await zns.getRegistryContract()
 
       const [, marketplace] = await deployMarketplace(zilliqa, {
         registry: '0x' + registry.address,
@@ -1701,11 +1662,8 @@ describe('smart contracts', () => {
       const zilliqa = new Zilliqa(null, provider)
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
-      const registry = await deployRegistry(
-        zilliqa,
-        {rootNode, initialOwner: '0x' + address},
-        {gasLimit: Long.fromNumber(100000)},
-      )
+      const zns = await Zns.deploy(zilliqa, '0x'+address, undefined, {version})
+      const registry = await zns.getRegistryContract()
 
       for (const [, {names, zilAddress}] of Object.entries(users)) {
         for (const name of names) {
