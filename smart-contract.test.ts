@@ -555,7 +555,7 @@ describe('smart contracts', () => {
         'approveFor',
         registryData.f.approveFor({
           address: '0x' + address2,
-          isApproved: {constructor: 'True', argtypes: [], arguments: []},
+          isApproved: true,
         }),
         defaultParams,
       )
@@ -576,7 +576,7 @@ describe('smart contracts', () => {
         'approveFor',
         registryData.f.approveFor({
           address: '0x' + address2,
-          isApproved: {constructor: 'False', argtypes: [], arguments: []},
+          isApproved: false,
         }),
         defaultParams,
       )
@@ -604,7 +604,7 @@ describe('smart contracts', () => {
         'setAdmin',
         registryData.f.setAdmin({
           address: '0x' + address2,
-          isApproved: {constructor: 'True', argtypes: [], arguments: []},
+          isApproved: true,
         }),
         defaultParams,
       )
@@ -640,7 +640,7 @@ describe('smart contracts', () => {
           'setAdmin',
           registryData.f.setAdmin({
             address: '0x' + address2,
-            isApproved: {constructor: 'True', argtypes: [], arguments: []},
+            isApproved: true,
           }),
           defaultParams,
         )
@@ -1178,7 +1178,7 @@ describe('smart contracts', () => {
         'setAdmin',
         registryData.f.setAdmin({
           address: '0x' + registrar.address,
-          isApproved: {constructor: 'True', argtypes: [], arguments: []},
+          isApproved: true,
         }),
         defaultParams,
       )
@@ -1190,7 +1190,7 @@ describe('smart contracts', () => {
       await registrar.call(
         'setRunning',
         auctionRegistrarData.f.setRunning({
-          newRunning: {constructor: 'True', argtypes: [], arguments: []},
+          newRunning: true,
         }),
         defaultParams,
       )
@@ -1381,7 +1381,7 @@ describe('smart contracts', () => {
         'approveFor',
         registryData.f.approveFor({
           address: '0x' + marketplace.address,
-          isApproved: {constructor: 'True', argtypes: [], arguments: []},
+          isApproved: true,
         }),
         defaultParams,
       )
