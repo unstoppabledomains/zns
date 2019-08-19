@@ -47,7 +47,7 @@ abstract class Zns {
   static NULL_NODE = '0x00000'
   static Resolver = Resolver
 
-  static async deploy(zilliqa: Zilliqa, owner: Zns.Address, root: Zns.Node = Zns.NULL_NODE): Promise<Zns> {
+  static async deployRegistry(zilliqa: Zilliqa, owner: Zns.Address, root: Zns.Node = Zns.NULL_NODE): Promise<Zns> {
     return {} as Zns
   }
   static namehash(domain: Zns.Domain): Zns.Node {
@@ -66,8 +66,7 @@ abstract class Zns {
   abstract getResolverAddress(domain: Zns.Domain): Promise<Zns.Address>
   abstract getResolver(domain: Zns.Domain): Promise<Zns.Resolver>
   abstract getResolution(domain: Zns.Domain): Promise<Zns.Resolution>
-  abstract deployResolver(domain, addresses: {[key: string]: string}): Promise<Zns.Resolver>
-  abstract setResolver(domain: Zns.Domain, resolver: Zns.Address | Zns.Resolver): Promise<Zns.Record>
+  abstract setResolver(domain: Zns.Domain, resolver: Zns.Address | Zns.Resolver | Zns.Resolution): Promise<Zns.Record>
   //override existing resolution by deploying a new resolver
   abstract setResolution(domain: Zns.Domain, resolution: Zns.Resolution): Promise<Zns.Resolver>
   //update existing resolver by setting new records

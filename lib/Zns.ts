@@ -9,7 +9,9 @@ import {contract_info as registryContractInfo} from '../contract_info/registry.j
 import {generateMapperFromContractInfo} from './params'
 
 type Address = string
+type Domain = string
 type Node = string
+type Resolution = any
 
 const registryData = generateMapperFromContractInfo(registryContractInfo)
 
@@ -44,15 +46,18 @@ export default class Zns {
   txParams: Partial<TxParams>
   contract: Contract
 
-  static async deploy(
+  static async deployRegistry(
     zilliqa: Zilliqa,
-    owner: Address,
-    contractParams: {root: Node} = {root: Zns.NULL_NODE},
+    contractParams: {owner: Address, root: Node} =
+      {owner: zilliqa.wallet.defaultAccount && '0x' + zilliqa.wallet.defaultAccount.address, root: Zns.NULL_NODE},
     txParams: Partial<TxParams> = {}
   ): Promise<Zns> {
+    if (!contractParams.owner) {
+      throw new ZnsError("owner is not specified")
+    }
     let contract = zilliqa.contracts.new(
       Zns.contractSourceCode('registry'),
-      registryData.init({initialOwner: owner, rootNode: contractParams.root}),
+      registryData.init({initialOwner: contractParams.owner, rootNode: contractParams.root}),
     )
     let fullTxParams = {...Zns.DEFAULT_TX_PARAMS, ...txParams} as TxParams
     let [registryTx, registry] = await contract.deploy(fullTxParams)
@@ -61,6 +66,10 @@ export default class Zns {
     } else {
       throw new ZnsError("Failed to deploy the registry")
     }
+  }
+
+  static deployResolver(domain: Domain, resolution: Resolution) {
+
   }
 
   static contractSourceCode(name: string): string {
