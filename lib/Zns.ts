@@ -35,6 +35,7 @@ export default class Zns {
     gasPrice: new BN(1000000000),
     gasLimit: Long.fromNumber(25000),
   }
+  static REUSABLE_TX_PARAMS = ['version', 'gasPrice', 'gasLimit']
 
 
   zilliqa: Zilliqa
@@ -46,12 +47,11 @@ export default class Zns {
   static async deploy(
     zilliqa: Zilliqa,
     owner: Address,
-    contractParams: {root: Node, _creation_block: number} = {root: Zns.NULL_NODE, _creation_block: 0},
+    contractParams: {root: Node, _creation_block: number | string} = {root: Zns.NULL_NODE, _creation_block: 0},
     txParams: Partial<TxParams> = {}
   ): Promise<Zns> {
-    let contract = zilliqa.contracts
-    .new(
-      fs.readFileSync('./scilla/registry.scilla', 'utf8'),
+    let contract = zilliqa.contracts.new(
+      Zns.contractSourceCode('registry'),
       registryData.init({initialOwner: owner, rootNode: contractParams.root}).concat({
         vname: '_creation_block',
         type: 'BNum',
@@ -61,10 +61,14 @@ export default class Zns {
     let fullTxParams = {...Zns.DEFAULT_TX_PARAMS, ...txParams} as TxParams
     let [registryTx, registry] = await contract.deploy(fullTxParams)
     if (registryTx.isConfirmed()) {
-      return new Zns(zilliqa, registry, _.pick(txParams))
+      return new Zns(zilliqa, registry, _.pick(txParams, ...Zns.REUSABLE_TX_PARAMS))
     } else {
       throw new ZnsError("Failed to deploy the registry")
     }
+  }
+
+  static contractSourceCode(name: string): string {
+    return fs.readFileSync(__dirname + `/../scilla/${name}.scilla`, 'utf8')
   }
 
   constructor(zilliqa: Zilliqa, registry: Address | Contract, txParams: Partial<TxParams>) {
@@ -75,7 +79,7 @@ export default class Zns {
       this.contract = registry
       this.address = registry.address
     }
-    this.txParams = txParams
+    this.txParams = {...Zns.DEFAULT_TX_PARAMS, ...txParams}
   }
 
   async getRegistryContract(): Promise<Contract> {

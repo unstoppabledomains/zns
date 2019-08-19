@@ -58,15 +58,6 @@ function deployMarketplace(
     .deploy({...defaultParams, ...params})
 }
 
-async function deployRegistry(
-  zilliqa: Zilliqa,
-  {initialOwner, rootNode, _creation_block = '0'},
-  params: Partial<TxParams> = {},
-) {
-  let zns = await Zns.deploy(zilliqa, initialOwner, undefined, {version, ...params})
-  return await zns.getRegistryContract()
-}
-
 function deploySimpleRegistrar(
   zilliqa: Zilliqa,
   {
