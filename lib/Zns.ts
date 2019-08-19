@@ -47,16 +47,12 @@ export default class Zns {
   static async deploy(
     zilliqa: Zilliqa,
     owner: Address,
-    contractParams: {root: Node, _creation_block: number | string} = {root: Zns.NULL_NODE, _creation_block: 0},
+    contractParams: {root: Node} = {root: Zns.NULL_NODE},
     txParams: Partial<TxParams> = {}
   ): Promise<Zns> {
     let contract = zilliqa.contracts.new(
       Zns.contractSourceCode('registry'),
-      registryData.init({initialOwner: owner, rootNode: contractParams.root}).concat({
-        vname: '_creation_block',
-        type: 'BNum',
-        value: contractParams._creation_block.toString(),
-      }),
+      registryData.init({initialOwner: owner, rootNode: contractParams.root}),
     )
     let fullTxParams = {...Zns.DEFAULT_TX_PARAMS, ...txParams} as TxParams
     let [registryTx, registry] = await contract.deploy(fullTxParams)

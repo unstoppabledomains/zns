@@ -43,17 +43,13 @@ const defaultParams: TxParams = {
 
 function deployMarketplace(
   zilliqa: Zilliqa,
-  {registry, seller, zone, _creation_block = '0'},
+  {registry, seller, zone},
   params: Partial<TxParams> = {},
 ) {
   return zilliqa.contracts
     .new(
       readFileSync('./scilla/marketplace.scilla', 'utf8'),
-      marketplaceData.init({registry, seller, zone}).concat({
-        vname: '_creation_block',
-        type: 'BNum',
-        value: _creation_block.toString(),
-      }),
+      marketplaceData.init({registry, seller, zone}),
     )
     .deploy({...defaultParams, ...params})
 }
@@ -66,7 +62,6 @@ function deploySimpleRegistrar(
     owner,
     initialDefaultPrice, // = 1,
     initialQaPerUSD, // 0.017 * 10 ** 12,
-    _creation_block = '0',
   },
   params: Partial<TxParams> = {},
 ) {
@@ -80,11 +75,6 @@ function deploySimpleRegistrar(
           owner,
           initialDefaultPrice,
           initialQaPerUSD,
-        })
-        .concat({
-          vname: '_creation_block',
-          type: 'BNum',
-          value: _creation_block.toString(),
         }),
     )
     .deploy({...defaultParams, ...params})
@@ -103,7 +93,6 @@ function deployAuctionRegistrar(
     bidIncrementDenominator,
     initialPricePerQa,
     initialMaxPriceUSD,
-    _creation_block = '0',
   },
   params: Partial<TxParams> = {},
 ) {
@@ -122,11 +111,6 @@ function deployAuctionRegistrar(
           bidIncrementDenominator,
           initialPricePerQa,
           initialMaxPriceUSD,
-        })
-        .concat({
-          vname: '_creation_block',
-          type: 'BNum',
-          value: _creation_block.toString(),
         }),
     )
     .deploy({...defaultParams, ...params})
@@ -153,7 +137,6 @@ const resolverInitState = {
   xlm: '',
   xrp: '',
   zil: '',
-  _creation_block: '0',
 }
 
 function deployResolver(
@@ -169,7 +152,6 @@ function deployResolver(
     xlm,
     xrp,
     zil,
-    _creation_block = '0',
   } = resolverInitState,
   params: Partial<TxParams> = {},
 ) {
@@ -178,11 +160,6 @@ function deployResolver(
       readFileSync('./scilla/resolver.scilla', 'utf8'),
       resolverData
         .init({owner, registry, node, ada, btc, eos, eth, xlm, xrp, zil})
-        .concat({
-          vname: '_creation_block',
-          type: 'BNum',
-          value: _creation_block.toString(),
-        }),
     )
     .deploy({...defaultParams, ...params})
 }
@@ -322,7 +299,6 @@ describe('smart contracts', () => {
         xlm: '0x5555',
         xrp: '0x6666',
         zil: '0x7777',
-        _creation_block: '0',
       })
       expect(resolverTx.isConfirmed()).toBeTruthy()
 
