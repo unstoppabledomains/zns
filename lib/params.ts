@@ -32,7 +32,7 @@ let defaultValues = {
   _creation_block: 0,
 }
 
-function generateMapperFromContractInfo(info) {
+export function generateMapperFromContractInfo(info) {
   const initMapper = generateMapperForParams(info.params.concat(defaultParams))
 
   return {
@@ -46,5 +46,3 @@ function generateMapperFromContractInfo(info) {
   }
 }
 
-module.exports.generateMapperForParams = generateMapperForParams
-module.exports.generateMapperFromContractInfo = generateMapperFromContractInfo
