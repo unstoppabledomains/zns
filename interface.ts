@@ -88,7 +88,6 @@ abstract class Zns {
       addAdmin(address: Zns.Address): Promise<boolean>
       removeAdmin(address: Zns.Address): Promise<boolean>
 
-      removeAdmin(address: Zns.Address)
       bestow(domain, owner: Zns.Address, resolver?: Zns.Address)
       bestow(domain, owner: Zns.Address, resolution?: Zns.Resolution)
       setRegistrar(address: Zns.Address)

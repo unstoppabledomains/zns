@@ -137,7 +137,7 @@ class Resolver {
     const tx = await this.contract.call(
       'set',
       resolverData.f.set({key, value}),
-      {...this.registry.defaultTxParams, ...txParams} as TxParams,
+      this.fullTxParams(txParams),
     )
     ensureTxConfirmed(tx)
     this.records[key] = value
@@ -149,7 +149,7 @@ class Resolver {
     const tx = await this.contract.call(
       'unset',
       resolverData.f.unset({key}),
-      {...this.registry.defaultTxParams, ...txParams} as TxParams,
+      this.fullTxParams(txParams),
     )
     ensureTxConfirmed(tx)
     delete this.records[key]
@@ -158,7 +158,8 @@ class Resolver {
 
   //TODO convert into property
   get resolution(): Resolution {
-    return _.reduce(this.records, (result, value, key) => _.set(result, key, value), {})
+    return _.reduce(this.records,
+      (result, value, key) => _.set(result, key, value), {})
   }
 
   get node(): Node {
@@ -172,6 +173,10 @@ class Resolver {
       owner: this.owner,
       resolver: this.address,
     }
+  }
+
+  private fullTxParams(txParams: Partial<TxParams>): TxParams {
+      return {...this.registry.defaultTxParams, ...txParams} as TxParams
   }
 }
 
