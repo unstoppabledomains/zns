@@ -1,5 +1,5 @@
 import * as hashjs from 'hash.js'
-import {TxParams} from '@zilliqa-js/account'
+import {Transaction, TxParams} from '@zilliqa-js/account'
 import {Zilliqa} from '@zilliqa-js/zilliqa'
 import {Contract} from '@zilliqa-js/contract'
 import {BN, bytes, Long} from '@zilliqa-js/util'
@@ -91,6 +91,14 @@ let getContract = (zilliqa: Zilliqa, address: Address): Contract => {
   return zilliqa.contracts.at(normalizeAddress(address).slice(2))
 }
 
+//TODO improve message
+let ensureTxConfirmed = (tx: Transaction, message: string = "Transaction is not confirmed"): Transaction => {
+  if (!tx.isConfirmed()) {
+    throw new ZnsError(message)
+  }
+  return tx
+}
+
 class ZnsError extends Error {
   constructor(message: string) {
     super(message)
@@ -140,13 +148,23 @@ class Resolver {
   }
 
   //TODO
-  async set(key: string, value: string): Promise<this> {
-    return this
+  async set(key: string, value: string, txParams?: Partial<TxParams>): Promise<Transaction> {
+    const tx = await this.contract.call(
+      'set',
+      resolverData.f.set({key, value}),
+      {...this.registry.defaultTxParams, ...txParams} as TxParams,
+    )
+    return ensureTxConfirmed(tx)
   }
 
   //TODO
-  async unset(key: string): Promise<this> {
-    return this
+  async unset(key: string, txParams?: Partial<TxParams>): Promise<Transaction> {
+    const tx = await this.contract.call(
+      'unset',
+      resolverData.f.unset({key}),
+      {...this.registry.defaultTxParams, ...txParams} as TxParams,
+    )
+    return ensureTxConfirmed(tx)
   }
 
   //TODO convert into property
@@ -207,11 +225,8 @@ export default class Zns {
     )
     let fullTxParams = {...Zns.DEFAULT_TX_PARAMS, ...txParams} as TxParams
     let [registryTx, registry] = await contract.deploy(fullTxParams)
-    if (registryTx.isConfirmed()) {
-      return new Zns(zilliqa, registry, _.pick(txParams, ...Zns.REUSABLE_TX_PARAMS))
-    } else {
-      throw new ZnsError("Failed to deploy the registry")
-    }
+    ensureTxConfirmed(registryTx, "Failed to deploy the registry")
+    return new Zns(zilliqa, registry, _.pick(txParams, ...Zns.REUSABLE_TX_PARAMS))
   }
 
   static contractSourceCode(name: string): string {
@@ -258,9 +273,7 @@ export default class Zns {
         .init({owner, registry: this.address, node, ...addresses})
       )
       .deploy({...this.defaultTxParams, ...txParams} as TxParams)
-    if (!tx.isConfirmed()) {
-      throw new ZnsError('Failed to deploy resolver')
-    }
+    ensureTxConfirmed(tx, 'Failed to deploy resolver')
     return new Resolver(this, contract, domain, owner, resolution)
   }
 

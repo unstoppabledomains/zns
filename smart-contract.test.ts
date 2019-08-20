@@ -302,38 +302,21 @@ describe('smart contracts', () => {
 
       await resolver.reload()
       expect(resolver.records()).toEqual({})
-      //////////////////////////////////////////////////////////////////////////
-      // set record
-      //////////////////////////////////////////////////////////////////////////
 
-      const setTx = await contract.call(
-        'set',
-        resolverData.f.set({key: 'crypto.ADA.address', value: '0x7357'}),
-        defaultParams,
-      )
-
+      const setTx = await resolver.set('crypto.ADA.address', '0x7357')
       const configuredEvent = {
         _eventname: 'Configured',
         node: namehash('tld'),
         owner: '0x' + address,
         resolver: resolver.address,
       }
-
       await resolver.reload()
       expect(resolver.records()).toEqual({
         'crypto.ADA.address': '0x7357',
       })
       expect(await transactionEvents(setTx)).toEqual([configuredEvent])
 
-      //////////////////////////////////////////////////////////////////////////
-      // unset record
-      //////////////////////////////////////////////////////////////////////////
-
-      const unsetTx = await contract.call(
-        'unset',
-        resolverData.f.unset({key: 'crypto.ADA.address'}),
-        defaultParams,
-      )
+      const unsetTx = await resolver.unset('crypto.ADA.address')
       expect(await transactionEvents(unsetTx)).toEqual([configuredEvent])
       await resolver.reload()
       expect(resolver.records()).toEqual({})
@@ -354,11 +337,7 @@ describe('smart contracts', () => {
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey2))
 
       await expectUnchangedState(contract, async () => {
-        await contract.call(
-          'set',
-          resolverData.f.set({key: 'test', value: '0x7357'}),
-          defaultParams,
-        )
+        await resolver.set('test', '0x7357')
       })
 
       //////////////////////////////////////////////////////////////////////////
@@ -367,22 +346,14 @@ describe('smart contracts', () => {
 
       zilliqa.wallet.setDefault(address)
 
-      await contract.call(
-        'set',
-        resolverData.f.set({key: 'test', value: '0x7357'}),
-        defaultParams,
-      )
+      await resolver.set('test', '0x7357')
 
       expect(await resolverRecords(contract)).toEqual({test: '0x7357'})
 
       zilliqa.wallet.setDefault(address2)
 
       await expectUnchangedState(contract, async () => {
-        await contract.call(
-          'unset',
-          resolverData.f.unset({key: 'test'}),
-          defaultParams,
-        )
+        await resolver.unset('test')
       })
     })
 
