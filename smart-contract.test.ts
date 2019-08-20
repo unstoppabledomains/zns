@@ -139,37 +139,6 @@ const resolverInitState = {
   zil: '',
 }
 
-async function deployResolver(
-  zilliqa: Zilliqa,
-  {
-    owner,
-    registry,
-    node,
-    ada,
-    btc,
-    eos,
-    eth,
-    xlm,
-    xrp,
-    zil,
-  } = resolverInitState,
-  params: Partial<TxParams> = {},
-) {
-  let zns = new Zns(zilliqa, registry, {version})
-  let resolver = await zns.deployResolver(node, {
-    crypto: {
-      ADA: {address: ada},
-      BTC: {address: btc},
-      EOS: {address: eos},
-      ETH: {address: eth},
-      XLM: {address: xlm},
-      XRP: {address: xrp},
-      ZIL: {address: zil},
-    }
-  })
-  return resolver.contract
-}
-
 function sha256(buffer) {
   return Buffer.from(
     hashjs
@@ -373,7 +342,10 @@ describe('smart contracts', () => {
     it('should fail to set and unset records if sender not owner', async () => {
       const zilliqa = new Zilliqa(null, provider)
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
-      const resolver = await deployResolver(zilliqa)
+      let zns = new Zns(zilliqa, address, {version})
+      let resolver = await zns.deployResolver('hello.zil')
+      let {contract} = resolver
+
 
       //////////////////////////////////////////////////////////////////////////
       // fail to set record using bad address
@@ -381,8 +353,8 @@ describe('smart contracts', () => {
 
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey2))
 
-      await expectUnchangedState(resolver, async () => {
-        await resolver.call(
+      await expectUnchangedState(contract, async () => {
+        await contract.call(
           'set',
           resolverData.f.set({key: 'test', value: '0x7357'}),
           defaultParams,
@@ -395,18 +367,18 @@ describe('smart contracts', () => {
 
       zilliqa.wallet.setDefault(address)
 
-      await resolver.call(
+      await contract.call(
         'set',
         resolverData.f.set({key: 'test', value: '0x7357'}),
         defaultParams,
       )
 
-      expect(await resolverRecords(resolver)).toEqual({test: '0x7357'})
+      expect(await resolverRecords(contract)).toEqual({test: '0x7357'})
 
       zilliqa.wallet.setDefault(address2)
 
-      await expectUnchangedState(resolver, async () => {
-        await resolver.call(
+      await expectUnchangedState(contract, async () => {
+        await contract.call(
           'unset',
           resolverData.f.unset({key: 'test'}),
           defaultParams,
@@ -417,10 +389,11 @@ describe('smart contracts', () => {
     it("should gracefully fail to unset records if they don't exist", async () => {
       const zilliqa = new Zilliqa(null, provider)
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
-      const resolver = await deployResolver(zilliqa)
+      let zns = new Zns(zilliqa, address, {version})
+      const contract = (await zns.deployResolver('hello.zil')).contract
 
-      await expectUnchangedState(resolver, async () => {
-        await resolver.call(
+      await expectUnchangedState(contract, async () => {
+        await contract.call(
           'unset',
           resolverData.f.unset({key: 'does_not_exist'}),
           defaultParams,
@@ -1493,198 +1466,5 @@ describe('smart contracts', () => {
     expect(
       await contractMapValue(marketplace, 'offers', namehash('value.zil')),
     ).toEqual('1000000000000')
-  })
-
-  xdescribe('integration and pre-configuration', () => {
-    const records = {
-      // null: null,
-      // empty: {},
-      // emptyfields: {
-      //   ADA: '',
-      //   BCH: '',
-      //   BTC: '',
-      //   EOS: '',
-      //   ETH: '',
-      //   LTC: '',
-      //   XLM: '',
-      //   XRP: '',
-      //   ZIL: '',
-      // },
-      partial: {
-        ADA:
-          'DL4pHtsfecWgzp5PQdzFs21sM4rhtFzCqtR25aAyrieSFzzXM8X4Cqw3JvdQaQLdLUbr5K4ZtHNbKNcrdV41X5tewCqdrAFmPEJDQU9G',
-        BTC: '1PZGBAB8ZwXb5i8gp3GCfnmqVTseUVEM5g',
-        ETH: '0x7cf734b3ebb3c580895b2dcd924f59482308d34b',
-        LTC: 'LM26kiNqvnDkeqhno8Kdz8VLJmXdg4wrr9',
-        ZIL: '0x5b2db3ebb3c5808cd924f59482308d7cf734934b',
-      },
-      onlyzil: {
-        ZIL: '0xd924f59482308d7c5b2db3ebb3c5808cf734934b',
-      },
-      full: {
-        ADA: 'Ae2tdPwUZuDdLb8UPEZEfFiSoXYGQAYSSZeShobxMEihLM6ewWvVV8NyGrX',
-        BCH: '1McTmk6CqPWMkgzdkUiVSx6mwiWVixVrx8',
-        BTC: '1Ej6SdCyfacpvpRGsiSWmfNaFxnVzgsjyk',
-        EOS: 'EOS7dsws9He6jM8FQGPNmFr3xj8UtFCGtb1eEm5gaTAagMAWZhUme',
-        ETH: '0xE5b4528144d22C395D42d8a212E70a8F90F8ba7f',
-        LTC: 'LUknCgSJtq3iwuhtK886Jie5iMbhocfxBT',
-        XLM: 'GACJCWYIUHQ6FLVNF45MNYE4WOEXOLWVFHBP5SIMUN3UWZJNOZRR5YZA',
-        XRP: 'rUZ8iNVUY96YuCfGEv2Ntm6oK9PEG8gZZa',
-        ZIL: '0x7cbff0c4b4cDCC94cdf9f97d0D05e774424f81AE',
-      },
-    }
-
-    const randomAddress = () =>
-      '0x' +
-      new Array(40)
-        .fill('')
-        .map(() => Math.floor(Math.random() * 16).toString(16))
-        .join('')
-
-    const users = {
-      1: {
-        names: Object.keys(records).slice(0, 2),
-        zilAddress: randomAddress(),
-        resolverAddress: null,
-      },
-      2: {
-        names: Object.keys(records).slice(2),
-        zilAddress: randomAddress(),
-        resolverAddress: null,
-      },
-    }
-
-    xit('should deploy and pre-configure correctly', async () => {
-      // 1. deploy registry.scilla
-      //      Easy enough
-      // 2. pre-configure owners to be on admin addresses.
-      //      See code generation in pre-configured-resolver.
-      // https://github.com/Zilliqa/Zilliqa-JavaScript-Library/tree/dev/packages/zilliqa-js-crypto#tobech32addressaddress-string-string
-      // 4. set-up endpoint where user supplies Zilliqa address, we set owner on
-      //    resolver to be correct ZIL address
-
-      // 5. dust for backup. operators etc...
-
-      // This is pseudo code for the endpoint
-
-      /* for (const name of user.names) {
-        const node = namehash(name)
-
-        // This actually needs to be a call to the tx processor
-        await registry.call(
-          'configureNode',
-          registryData.f.configureNode({
-            owner: zilClaimAdderss,
-            resolver: user.resolver,
-            node,
-          }),
-          defaultParams,
-        )
-
-        // Something like this
-        return res.json({
-          id: await txProcessor.send(
-            'zil',
-            zilliqa.transactions.new({
-              ...defaultParams,
-              toAddr: registry.address,
-              data: {
-                _tag: 'configureNode',
-                params: registryData.f.configureNode({
-                  owner: zilClaimAdderss,
-                  resolver: user.resolver,
-                  node,
-                }),
-              },
-            }),
-          ),
-        })
-      } */
-
-      // Tenative table for deployment
-      // id | description | ctime | status
-
-      // txQueue
-      //   .send(
-      //     'zil',
-      //     zilliqa.wallet.signWith(
-      //       zilliqa.transactions.new({
-      //         // bla bla bla
-      //       }),
-      //       address,
-      //     ),
-      //   )
-      //   .on('error', error => {
-      //     //
-      //   })
-      //   .on('pending', tx => {
-      //     //
-      //   })
-      //   .on('busy', tx => {
-      //     //
-      //   })
-      //   .on('success', tx => {
-      //     //
-      //   })
-
-      const zilliqa = new Zilliqa(null, provider)
-      zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
-
-      const zns = await Zns.deployRegistry(zilliqa, undefined, {version})
-      const registry = await zns.getRegistryContract()
-
-      for (const [, {names, zilAddress}] of Object.entries(users)) {
-        for (const name of names) {
-          if (records[name] /* && Object.keys(records[name]).length > 0 */) {
-            const resolver = await deployResolver(zilliqa)
-
-            console.log('resolver.address', resolver.address)
-
-            const fullName = name + '.zil'
-            const node = namehash(fullName)
-
-            await registry.call(
-              'bestow',
-              registryData.f.bestow({
-                label: name,
-                owner: zilAddress,
-                resolver: '0x' + resolver.address,
-              }),
-              defaultParams,
-            )
-
-            for (const [ticker, value] of Object.entries(records[name])) {
-              console.log('value:', value)
-              await resolver.call(
-                'set',
-                resolverData.f.set({
-                  node,
-                  key: `crypto.${ticker}.address`,
-                  value:
-                    '0x' + Buffer.from(value as any, 'utf8').toString('hex'),
-                }),
-                defaultParams,
-              )
-            }
-
-            console.log(
-              '%s: %o',
-              fullName,
-              await contractMapValue(registry, 'records', node),
-            )
-
-            console.log('%s: %o', fullName, await resolver.getState())
-          }
-        }
-
-        // await resolver.call(
-        //   'setOwner',
-        //   resolverData.f.setOwner({newOwner: zilAddress}),
-        //   defaultParams,
-        // )
-      }
-
-      // console.log('%o', await contractField(registry, 'records'))
-    })
   })
 })

@@ -139,14 +139,17 @@ class Resolver {
     return this
   }
 
+  //TODO
   async set(key: string, value: string): Promise<this> {
     return this
   }
 
+  //TODO
   async unset(key: string): Promise<this> {
     return this
   }
 
+  //TODO convert into property
   records(): Records {
     return resolutionToRecords(this.resolution)
   }
