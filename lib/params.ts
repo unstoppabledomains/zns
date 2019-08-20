@@ -2,9 +2,7 @@ function normalizeValue(value) {
   switch(typeof(value)) {
     case "number": return value.toString()
     case "boolean":
-      value = value.toString()
-      value = value.charAt(0).toUpperCase() + value.slice(1)
-      return {constructor: value, argtypes: [], arguments: []}
+      return {constructor: value ? "True" : "False", argtypes: [], arguments: []}
     case "object": return value
     default:       return value.toString()
   }
