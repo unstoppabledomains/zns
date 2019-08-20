@@ -300,22 +300,20 @@ describe('smart contracts', () => {
       expect(resolver.records).toEqual({})
 
       const setTx = await resolver.set('crypto.ADA.address', '0x7357')
-      const configuredEvent = {
-        _eventname: 'Configured',
-        node: namehash('tld'),
-        owner: '0x' + address,
-        resolver: resolver.address,
-      }
+      expect(resolver.records).toEqual({
+        'crypto.ADA.address': '0x7357',
+      })
       await resolver.reload()
       expect(resolver.records).toEqual({
         'crypto.ADA.address': '0x7357',
       })
-      expect(await transactionEvents(setTx)).toEqual([configuredEvent])
+      expect(await transactionEvents(setTx)).toEqual([resolver.configuredEvent])
 
       const unsetTx = await resolver.unset('crypto.ADA.address')
-      expect(await transactionEvents(unsetTx)).toEqual([configuredEvent])
+      expect(resolver.records).toEqual({})
       await resolver.reload()
       expect(resolver.records).toEqual({})
+      expect(await transactionEvents(unsetTx)).toEqual([resolver.configuredEvent])
     })
 
     it('should fail to set and unset records if sender not owner', async () => {

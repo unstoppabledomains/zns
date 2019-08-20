@@ -64,30 +64,6 @@ let defaultWalletAddress = (zilliqa: Zilliqa): Address => {
   return zilliqa.wallet.defaultAccount && normalizeAddress(zilliqa.wallet.defaultAccount.address)
 }
 
-let recordsToResolution = (records: Records): Resolution => {
-  return _.reduce(records, (result, value, key) => _.set(result, key, value), {})
-}
-
-let resolutionToRecords = (resolution: Resolution, result: object = {}): Records => {
-    let customResolution = _.cloneDeep(resolution)
-    return _(DEFAULT_CURRENCIES).map(currency => {
-      let key = `crypto.${currency.toUpperCase()}.address`
-      let value = _.get(resolution, key)
-      if (value) {
-        _.unset(customResolution, key)
-      }
-      return value ? [key, value] : null
-    }).compact().fromPairs().value()
-    //TODO ensure no custom data in resolution
-    //if (!_.isEmpty(customResolution)) {
-      //throw new ZnsError(`Can not deploy ${JSON.stringify(customResolution)} as initial resolution`)
-    //}
-}
-
-let initRecords = (addresses: {[key: string]: string}): Records => {
-  return _(addresses).map((value, key) => [`crypto.${key}.address`, value]).fromPairs().value()
-}
-
 let getContract = (zilliqa: Zilliqa, address: Address): Contract => {
   return zilliqa.contracts.at(normalizeAddress(address).slice(2))
 }
@@ -128,7 +104,6 @@ class Resolver {
   address: Address
   contract: Contract
   domain: Domain
-  node: Node
   owner: Address
   registry: Zns
   records: Records
@@ -144,7 +119,6 @@ class Resolver {
     let [address, contract] = normalizeContractAddress(registry.zilliqa, resolver)
     this.address = address
     this.contract = contract
-    this.node = Zns.namehash(domain)
     this.owner = owner
     this.registry = registry
     this.records = records
@@ -165,7 +139,9 @@ class Resolver {
       resolverData.f.set({key, value}),
       {...this.registry.defaultTxParams, ...txParams} as TxParams,
     )
-    return ensureTxConfirmed(tx)
+    ensureTxConfirmed(tx)
+    this.records[key] = value
+    return tx
   }
 
   //TODO
@@ -175,12 +151,27 @@ class Resolver {
       resolverData.f.unset({key}),
       {...this.registry.defaultTxParams, ...txParams} as TxParams,
     )
-    return ensureTxConfirmed(tx)
+    ensureTxConfirmed(tx)
+    delete this.records[key]
+    return tx
   }
 
   //TODO convert into property
   get resolution(): Resolution {
-    return recordsToResolution(this.records)
+    return _.reduce(this.records, (result, value, key) => _.set(result, key, value), {})
+  }
+
+  get node(): Node {
+    return Zns.namehash(this.domain)
+  }
+
+  get configuredEvent() {
+    return {
+      _eventname: 'Configured',
+      node: this.node,
+      owner: this.owner,
+      resolver: this.address,
+    }
   }
 }
 
