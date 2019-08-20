@@ -101,11 +101,11 @@ class PermissionError extends ZnsError {
 
 let DEFAULT_CURRENCIES = ['ADA', 'BTC', 'EOS', 'ETH', 'XLM', 'XRP', 'ZIL']
 class Resolver {
-  address: Address
+  readonly address: Address
   contract: Contract
-  domain: Domain
+  readonly domain: Domain
   owner: Address
-  registry: Zns
+  readonly registry: Zns
   records: Records
 
   constructor(
@@ -190,11 +190,11 @@ export default class Zns {
   static REUSABLE_TX_PARAMS = ['version', 'gasPrice', 'gasLimit']
 
 
-  zilliqa: Zilliqa
-  address: Address
+  readonly zilliqa: Zilliqa
+  readonly address: Address
+  readonly contract: Contract
+  readonly owner: Address
   defaultTxParams: Partial<TxParams>
-  contract: Contract
-  owner: Address
 
   static namehash(name: Domain): Node {
     if (name.match(/^(0x)?[0-9a-f]+$/i)) {
