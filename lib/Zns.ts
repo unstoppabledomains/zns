@@ -244,11 +244,6 @@ export default class Zns {
     this.defaultTxParams = {...Zns.DEFAULT_TX_PARAMS, ...txParams}
   }
 
-  async getRegistryContract(): Promise<Contract> {
-    this.contract = this.contract || getContract(this.zilliqa, this.address)
-    return this.contract
-  }
-
   async deployResolver(domain: Domain, resolution: Resolution = {}, txParams: Partial<TxParams> = {}) {
     let node = Zns.namehash(domain)
     let owner = this.owner
