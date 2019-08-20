@@ -216,11 +216,6 @@ const resolverOf = async (registry, domain) => {
   return record && record.arguments[1].replace(/^0x/, '')
 }
 
-const resolverRecords = async resolver => {
-  const records = await contractField(resolver, 'records')
-  return records.reduce((a, v) => ({...a, [v.key]: v.val}), {})
-}
-
 const approvalOf = async (registry, domain) => {
   const node = namehash(domain)
   const approval = await contractMapValue(registry, 'approvals', node)
@@ -256,7 +251,8 @@ describe('smart contracts', () => {
 
       const resolver = await (new Zns(zilliqa, address, {version})).deployResolver('test')
 
-      expect(await resolverRecords(resolver.contract)).toEqual({})
+      await resolver.reload()
+      expect(resolver.records).toEqual({})
     })
     it('should deploy non-blank initial state', async () => {
       const zilliqa = new Zilliqa(null, provider)
@@ -280,8 +276,8 @@ describe('smart contracts', () => {
         'crypto.XRP.address': '0x6666',
         'crypto.ZIL.address': '0x7777',
       }
-      expect(resolver.records()).toEqual(records)
-      expect((await resolver.reload()).records()).toEqual(records)
+      expect(resolver.records).toEqual(records)
+      expect((await resolver.reload()).records).toEqual(records)
     })
     it('should set and unset records', async () => {
       const zilliqa = new Zilliqa(null, provider)
@@ -301,7 +297,7 @@ describe('smart contracts', () => {
       )
 
       await resolver.reload()
-      expect(resolver.records()).toEqual({})
+      expect(resolver.records).toEqual({})
 
       const setTx = await resolver.set('crypto.ADA.address', '0x7357')
       const configuredEvent = {
@@ -311,7 +307,7 @@ describe('smart contracts', () => {
         resolver: resolver.address,
       }
       await resolver.reload()
-      expect(resolver.records()).toEqual({
+      expect(resolver.records).toEqual({
         'crypto.ADA.address': '0x7357',
       })
       expect(await transactionEvents(setTx)).toEqual([configuredEvent])
@@ -319,7 +315,7 @@ describe('smart contracts', () => {
       const unsetTx = await resolver.unset('crypto.ADA.address')
       expect(await transactionEvents(unsetTx)).toEqual([configuredEvent])
       await resolver.reload()
-      expect(resolver.records()).toEqual({})
+      expect(resolver.records).toEqual({})
     })
 
     it('should fail to set and unset records if sender not owner', async () => {
@@ -348,7 +344,8 @@ describe('smart contracts', () => {
 
       await resolver.set('test', '0x7357')
 
-      expect(await resolverRecords(contract)).toEqual({test: '0x7357'})
+      await resolver.reload()
+      expect(resolver.records).toEqual({test: '0x7357'})
 
       zilliqa.wallet.setDefault(address2)
 

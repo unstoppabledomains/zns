@@ -51,9 +51,10 @@ let normalizeAddress = (address: Address) => {
   return address
 }
 
-let normalizeContractAddress = (argument: Address | Contract): [Address, Contract] => {
+let normalizeContractAddress = (zilliqa: Zilliqa, argument: Address | Contract): [Address, Contract] => {
     if (typeof(argument) == "string") {
-      return [normalizeAddress(argument), null]
+      let address = normalizeAddress(argument)
+      return [address, getContract(zilliqa, address)]
     } else {
       return [normalizeAddress(argument.address), argument]
     }
@@ -67,7 +68,7 @@ let recordsToResolution = (records: Records): Resolution => {
   return _.reduce(records, (result, value, key) => _.set(result, key, value), {})
 }
 
-let resolutionToRecords = (resolution: Resolution): Records => {
+let resolutionToRecords = (resolution: Resolution, result: object = {}): Records => {
     let customResolution = _.cloneDeep(resolution)
     return _(DEFAULT_CURRENCIES).map(currency => {
       let key = `crypto.${currency.toUpperCase()}.address`
@@ -91,6 +92,18 @@ let getContract = (zilliqa: Zilliqa, address: Address): Contract => {
   return zilliqa.contracts.at(normalizeAddress(address).slice(2))
 }
 
+let isInitResolution = (resolution: Resolution): boolean => {
+  let keys = Object.keys(resolution)
+  return _.difference(keys, ['crypto']) == [] &&
+    _.difference(_.keys(resolution.crypto), DEFAULT_CURRENCIES) == [] &&
+    _.every(_.values(resolution.crypto), v => _.difference(_.keys(v), ['address']) == [])
+
+}
+
+let addressKey = (currency: string): string => {
+  return `crypto.${currency.toUpperCase()}.address`
+}
+
 //TODO improve message
 let ensureTxConfirmed = (tx: Transaction, message: string = "Transaction is not confirmed"): Transaction => {
   if (!tx.isConfirmed()) {
@@ -110,7 +123,7 @@ class PermissionError extends ZnsError {
 
 }
 
-let DEFAULT_CURRENCIES = ['ada', 'btc', 'eos', 'eth', 'xlm', 'xrp', 'zil']
+let DEFAULT_CURRENCIES = ['ADA', 'BTC', 'EOS', 'ETH', 'XLM', 'XRP', 'ZIL']
 class Resolver {
   address: Address
   contract: Contract
@@ -118,31 +131,29 @@ class Resolver {
   node: Node
   owner: Address
   registry: Zns
-  resolution: Resolution
+  records: Records
 
   constructor(
     registry: Zns,
     resolver: Address | Contract,
     domain: Domain,
     owner: Address,
-    resolution: Resolution
+    records: Records
   ) {
     this.domain = domain
-    let [address, contract] = normalizeContractAddress(resolver)
+    let [address, contract] = normalizeContractAddress(registry.zilliqa, resolver)
     this.address = address
     this.contract = contract
     this.node = Zns.namehash(domain)
     this.owner = owner
     this.registry = registry
-    this.resolution = resolution
+    this.records = records
   }
 
   async reload(): Promise<this> {
     this.contract = getContract(this.registry.zilliqa, this.address)
-    const records = await contractField(this.contract, 'records') as any
-    this.resolution = recordsToResolution(
-      records.reduce((a, v) => ({...a, [v.key]: v.val}), {})
-    )
+    this.records = (await contractField(this.contract, 'records') as any)
+      .reduce((a, v) => ({...a, [v.key]: v.val}), {})
     this.owner = normalizeAddress(await contractField(this.contract, 'owner', true) as Address)
     return this
   }
@@ -168,8 +179,8 @@ class Resolver {
   }
 
   //TODO convert into property
-  records(): Records {
-    return resolutionToRecords(this.resolution)
+  get resolution(): Resolution {
+    return recordsToResolution(this.records)
   }
 }
 
@@ -235,7 +246,7 @@ export default class Zns {
 
   constructor(zilliqa: Zilliqa, registry: Address | Contract, txParams?: Partial<TxParams>) {
     this.zilliqa = zilliqa
-    let [address, contract] = normalizeContractAddress(registry)
+    let [address, contract] = normalizeContractAddress(zilliqa, registry)
     this.address = address
     this.contract = contract
     this.owner = defaultWalletAddress(zilliqa)
@@ -247,26 +258,20 @@ export default class Zns {
     return this.contract
   }
 
-
   async deployResolver(domain: Domain, resolution: Resolution = {}, txParams: Partial<TxParams> = {}) {
     let node = Zns.namehash(domain)
     let owner = this.owner
 
-    let customResolution = _.cloneDeep(resolution)
-    let addresses = _(DEFAULT_CURRENCIES).map(currency => {
-      let key = `crypto.${currency.toUpperCase()}.address`
-      let value = _.get(resolution, key)
-      if (value) {
-        _.unset(customResolution, key)
-      }
-      return [currency, value || '']
-    }).fromPairs().value()
-    //TODO ensure no custom data in resolution
-    //if (!_.isEmpty(customResolution)) {
-      //throw new ZnsError(`Can not deploy ${JSON.stringify(customResolution)} as initial resolution`)
+    //TODO
+    //if (!isInitResolution(resolution)) {
+      //throw new ZnsError("Resolver can not be initialized with non-standard resolution")
     //}
+    let addresses = _(DEFAULT_CURRENCIES).map(currency => {
+      return [currency.toLowerCase(), _.get(resolution, addressKey(currency)) || '']
+    }).fromPairs().value()
+    let records = _.mapKeys(addresses, (v, k) => addressKey(k))
 
-    let [tx, contract] =  await this.zilliqa.contracts
+    let [tx, contract] = await this.zilliqa.contracts
       .new(
         Zns.contractSourceCode('resolver'),
         resolverData
@@ -274,7 +279,6 @@ export default class Zns {
       )
       .deploy({...this.defaultTxParams, ...txParams} as TxParams)
     ensureTxConfirmed(tx, 'Failed to deploy resolver')
-    return new Resolver(this, contract, domain, owner, resolution)
+    return new Resolver(this, contract, domain, owner, records)
   }
-
 }
