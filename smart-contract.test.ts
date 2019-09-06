@@ -284,7 +284,6 @@ describe('smart contracts', () => {
       const zilliqa = new Zilliqa(null, provider)
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
       const zns = await Zns.deployRegistry(zilliqa, undefined, {version})
-      const registry = zns.contract
       const resolver = await zns.deployResolver('tld')
       await zns.bestow('tld', address, resolver.address)
       expect(await resolver.isLive()).toBeTruthy()
@@ -368,8 +367,7 @@ describe('smart contracts', () => {
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
       const zns = await Zns.deployRegistry(zilliqa, undefined, {version})
-      const registry = zns.contract
-      expect(await registry.getInit()).toHaveLength(5)
+      expect(await zns.contract.getInit()).toHaveLength(5)
     })
 
     it('should disallow onResolverConfigured call from unauthorized resources', async () => {
@@ -816,7 +814,7 @@ describe('smart contracts', () => {
       await expectUnchangedState(registry, async () => {
         await expect(
           zns.bestow('tld', address2, address2)
-        ).rejects.toThrow('Failed to bestow a domain')
+        ).rejects.toThrow('Transaction is not confirmed: Sender admin')
       })
 
       //////////////////////////////////////////////////////////////////////////
@@ -827,7 +825,7 @@ describe('smart contracts', () => {
 
       await expectUnchangedState(registry, async () => {
         await expect(zns.bestow('other-tld', address2, address2))
-          .rejects.toThrow('Failed to bestow a domain')
+          .rejects.toThrow('Transaction is not confirmed: Sender admin')
       })
     })
 
@@ -1242,15 +1240,6 @@ describe('smart contracts', () => {
       })
 
       await zns.bestow(soldDomain, address, nullAddress)
-      //await registry.call(
-        //'bestow',
-        //registryData.f.bestow({
-          //label: soldDomain,
-          //owner: '0x' + address,
-          //resolver: '0x' + nullAddress,
-        //}),
-        //defaultParams,
-      //)
       expect(await ownerOf(registry, soldDomain)).toBe(address)
 
       //////////////////////////////////////////////////////////////////////////

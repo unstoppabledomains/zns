@@ -17,6 +17,8 @@ type Resolution = {[key: string]: NestedResolution}
 type NestedResolution = string | null | undefined | {[key: string]: NestedResolution} | {[key: number]: NestedResolution}
 type Records = {[key: string]: string}
 
+type TransactionEvent = {_eventname: string, [key: string]: string};
+
 const registryData = generateMapperFromContractInfo(registryContractInfo)
 const resolverData = generateMapperFromContractInfo(resolverContractInfo)
 
@@ -80,11 +82,15 @@ let ensureTxConfirmed = (tx: Transaction, message: string = "Transaction is not 
   if (!tx.isConfirmed()) {
     throw new ZnsTxError(message, tx)
   }
+  let errorEvent = transactionEvent(tx, "Error")
+  if (errorEvent) {
+    throw new ZnsTxError(`${message}: ${errorEvent.msg}`, tx)
+  }
   return tx
 }
 let ensureTxEvent = (tx: Transaction, name: string, message: string): Transaction => {
   ensureTxConfirmed(tx);
-  let event = transactionEvents(tx).find(e => e._eventname == name);
+  let event = transactionEvent(tx, name)
   if (!event) {
     throw new ZnsTxError(message, tx);
   }
@@ -103,12 +109,16 @@ let ensureAnyTxEvent = (tx: Transaction, names: string[], message: string) => {
 const asHash = params => {
   return params.reduce((a, v) => ({...a, [v.vname]: v.value}), {})
 }
-const transactionEvents = (tx: Transaction): {[key: string]: string}[] => {
+const transactionEvents = (tx: Transaction): TransactionEvent[] => {
   const events = tx.txParams.receipt.event_logs || []
   // Following the original reverse order of events
   return events.map(event => {
     return {_eventname: event._eventname, ...asHash(event.params)}
   })
+}
+
+const transactionEvent = (tx: Transaction, name: string): TransactionEvent | undefined => {
+  return transactionEvents(tx).find(e => e._eventname == name);
 }
 
 class ZnsError extends Error {
@@ -123,6 +133,10 @@ class ZnsTxError extends ZnsError {
   constructor(message: string, tx: Transaction) {
     super(message)
     this.tx = tx
+  }
+
+  get errorEvent(): TransactionEvent | undefined {
+    return transactionEvent(this.tx, 'Error')
   }
 }
 
@@ -338,6 +352,19 @@ export default class Zns {
       this.fullTxParams(txParams)
     )
     ensureTxEvent(tx, "Configured", 'Failed to bestow a domain')
+    return tx;
+  }
+
+  async setApprovedAddress(domain: Domain, address: Address, txParams: Partial<TxParams> = {}): Promise<Transaction> {
+    let tx =  await this.contract.call(
+      'approve',
+      registryData.f.approve({
+        node: Zns.namehash(domain),
+        address: normalizeAddress(address),
+      }),
+      this.fullTxParams(txParams),
+    )
+    ensureTxConfirmed(tx, "Approved address is not set")
     return tx;
   }
 
