@@ -29,8 +29,11 @@ function sha256(buffer) {
   )
 }
 
-let contractField = async (contract: Contract, name: string, init: boolean = false) => {
+let contractField = async (contract: Contract, name: string, init: boolean = false): Promise<any> => {
   let state = init ? await contract.getInit() : await contract.getState()
+  if (!state) {
+    return null;
+  }
   const field = state.find(v => v.vname === name)
   if (!field) {
     throw new Error(`Unknown contract field ${name}`)
@@ -154,7 +157,7 @@ class Resolver {
 
   async reload(): Promise<this> {
     this.contract = getContract(this.registry.zilliqa, this.address)
-    this.records = (await contractField(this.contract, 'records') as any)
+    this.records = (await contractField(this.contract, 'records'))
       .reduce((a, v) => ({...a, [v.key]: v.val}), {})
     this.owner = normalizeAddress(await contractField(this.contract, 'owner', true) as Address)
     return this
@@ -199,6 +202,19 @@ class Resolver {
       owner: this.owner,
       resolver: this.address,
     }
+  }
+
+  async isLive(): Promise<boolean> {
+    let records = await contractField(this.registry.contract, "records");
+    let record = (records || []).find(r => r.key == this.node);
+    if (!record) {
+      return false;
+    }
+    return this.address == normalizeAddress(record.val.arguments[1]);
+  }
+
+  async isDetached(): Promise<boolean> {
+    return !await this.isLive();
   }
 
   private fullTxParams(txParams: Partial<TxParams>): TxParams {
@@ -265,6 +281,7 @@ export default class Zns {
   static contractSourceCode(name: string): string {
     return fs.readFileSync(__dirname + `/../scilla/${name}.scilla`, 'utf8')
   }
+
   static isInitResolution(resolution: Resolution): boolean {
     if (_.isEmpty(resolution)) {
       return true;
@@ -273,7 +290,6 @@ export default class Zns {
       !_.difference(_.keys(resolution.crypto), DEFAULT_CURRENCIES).length &&
       _.every(_.values(resolution.crypto), v => _.isEqual(_.keys(v), ['address']));
   }
-
 
   constructor(zilliqa: Zilliqa, registry: Address | Contract, txParams?: Partial<TxParams>) {
     this.zilliqa = zilliqa
@@ -310,9 +326,6 @@ export default class Zns {
   async bestow(domain: Domain, owner: Address, resolver: Address, txParams: Partial<TxParams> = {}) {
 
     let tokens = domain.split('.')
-    if (_.last(tokens) != 'zil' || tokens.length > 2) {
-      throw new ZnsError(`Domain ${domain} can not be bestowed`)
-    }
     let tx = await this.contract.call(
       'bestow',
       registryData.f.bestow({
@@ -323,7 +336,7 @@ export default class Zns {
       this.fullTxParams(txParams)
     )
     ensureTxEvent(tx, "Configured", 'Failed to bestow a domain')
-
+    return tx;
   }
 
   private fullTxParams(txParams: Partial<TxParams>): TxParams {

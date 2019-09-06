@@ -278,6 +278,7 @@ describe('smart contracts', () => {
       }
       expect(resolver.records).toEqual(records)
       expect((await resolver.reload()).records).toEqual(records)
+      expect(await resolver.isLive()).toBeFalsy()
     })
     it('should set and unset records', async () => {
       const zilliqa = new Zilliqa(null, provider)
@@ -285,16 +286,9 @@ describe('smart contracts', () => {
       const zns = await Zns.deployRegistry(zilliqa, undefined, {version})
       const registry = zns.contract
       const resolver = await zns.deployResolver('tld')
-      const contract = resolver.contract
-      const bestowTx = await registry.call(
-        'bestow',
-        registryData.f.bestow({
-          label: 'tld',
-          owner: '0x' + address,
-          resolver: resolver.address,
-        }),
-        defaultParams,
-      )
+      await zns.bestow('tld', address, resolver.address)
+      expect(await resolver.isLive()).toBeTruthy()
+      expect(await resolver.isDetached()).toBeFalsy()
 
       await resolver.reload()
       expect(resolver.records).toEqual({})
