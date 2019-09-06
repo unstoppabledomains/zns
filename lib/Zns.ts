@@ -241,7 +241,7 @@ export default class Zns {
   readonly address: Address
   readonly contract: Contract
   readonly owner: Address
-  defaultTxParams: Partial<TxParams>
+  readonly defaultTxParams: Partial<TxParams>
 
   static namehash(name: Domain): Node {
     if (name.match(/^(0x)?[0-9a-f]+$/i)) {
@@ -259,6 +259,7 @@ export default class Zns {
 
     return normalizeAddress(node.toString('hex'))
   }
+
   static async deployRegistry(
     zilliqa: Zilliqa,
     contractParams: {owner: Address, root: Node} =
@@ -326,6 +327,7 @@ export default class Zns {
   async bestow(domain: Domain, owner: Address, resolver: Address, txParams: Partial<TxParams> = {}) {
 
     let tokens = domain.split('.')
+    //TODO: ensure domain is a subnode of registry root
     let tx = await this.contract.call(
       'bestow',
       registryData.f.bestow({

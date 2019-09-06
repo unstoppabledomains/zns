@@ -379,15 +379,7 @@ describe('smart contracts', () => {
       const zns = await Zns.deployRegistry(zilliqa, undefined, {version})
       const registry = zns.contract
 
-      const bestowTx = await registry.call(
-        'bestow',
-        registryData.f.bestow({
-          label: 'tld',
-          owner: '0x' + address,
-          resolver: '0x' + address2,
-        }),
-        defaultParams,
-      )
+      await zns.bestow('tld', address, address2)
 
       const onResolverConfiguredTx = await registry.call(
         'onResolverConfigured',
@@ -795,17 +787,7 @@ describe('smart contracts', () => {
       // bestow name
       //////////////////////////////////////////////////////////////////////////
 
-      const bestowTx = await registry.call(
-        'bestow',
-        registryData.f.bestow({
-          label: 'tld',
-          owner: '0x' + address,
-          resolver: '0x' + address,
-        }),
-        defaultParams,
-      )
-
-      expect(bestowTx.isConfirmed()).toBeTruthy
+      const bestowTx = await zns.bestow('tld', address, address)
       expect(await transactionEvents(bestowTx)).toEqual([
         {
           _eventname: 'Configured',
@@ -832,15 +814,9 @@ describe('smart contracts', () => {
       //////////////////////////////////////////////////////////////////////////
 
       await expectUnchangedState(registry, async () => {
-        await registry.call(
-          'bestow',
-          registryData.f.bestow({
-            label: 'tld',
-            owner: '0x' + address2,
-            resolver: '0x' + address2,
-          }),
-          defaultParams,
-        )
+        await expect(
+          zns.bestow('tld', address2, address2)
+        ).rejects.toThrow('Failed to bestow a domain')
       })
 
       //////////////////////////////////////////////////////////////////////////
@@ -850,15 +826,8 @@ describe('smart contracts', () => {
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey2))
 
       await expectUnchangedState(registry, async () => {
-        await registry.call(
-          'bestow',
-          registryData.f.bestow({
-            label: 'other-tld',
-            owner: '0x' + address2,
-            resolver: '0x' + address2,
-          }),
-          defaultParams,
-        )
+        await expect(zns.bestow('other-tld', address2, address2))
+          .rejects.toThrow('Failed to bestow a domain')
       })
     })
 
@@ -1272,15 +1241,16 @@ describe('smart contracts', () => {
         zone: rootNode,
       })
 
-      await registry.call(
-        'bestow',
-        registryData.f.bestow({
-          label: soldDomain,
-          owner: '0x' + address,
-          resolver: '0x' + nullAddress,
-        }),
-        defaultParams,
-      )
+      await zns.bestow(soldDomain, address, nullAddress)
+      //await registry.call(
+        //'bestow',
+        //registryData.f.bestow({
+          //label: soldDomain,
+          //owner: '0x' + address,
+          //resolver: '0x' + nullAddress,
+        //}),
+        //defaultParams,
+      //)
       expect(await ownerOf(registry, soldDomain)).toBe(address)
 
       //////////////////////////////////////////////////////////////////////////
