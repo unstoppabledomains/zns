@@ -331,7 +331,7 @@ describe('smart contracts', () => {
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey2))
 
       await expectUnchangedState(contract, async () => {
-        await resolver.set('test', '0x7357')
+        try { await resolver.set('test', '0x7357') } catch {}
       })
 
       //////////////////////////////////////////////////////////////////////////
@@ -348,7 +348,7 @@ describe('smart contracts', () => {
       zilliqa.wallet.setDefault(address2)
 
       await expectUnchangedState(contract, async () => {
-        await resolver.unset('test')
+        try { await resolver.unset('test') } catch {}
       })
     })
 

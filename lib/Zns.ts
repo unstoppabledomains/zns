@@ -73,18 +73,53 @@ let addressKey = (currency: string): string => {
   return `crypto.${currency.toUpperCase()}.address`
 }
 
-//TODO improve message
 let ensureTxConfirmed = (tx: Transaction, message: string = "Transaction is not confirmed"): Transaction => {
   if (!tx.isConfirmed()) {
-    throw new ZnsError(message)
+    throw new ZnsTxError(message, tx)
   }
   return tx
+}
+let ensureTxEvent = (tx: Transaction, name: string, message: string): Transaction => {
+  ensureTxConfirmed(tx);
+  let event = transactionEvents(tx).find(e => e._eventname == name);
+  if (!event) {
+    throw new ZnsTxError(message, tx);
+  }
+  return tx;
+}
+let ensureAnyTxEvent = (tx: Transaction, names: string[], message: string) => {
+  for(let name of names) {
+    try {
+      ensureTxEvent(tx, name, message)
+      return
+    } catch {}
+  }
+  ensureTxEvent(tx, names[0], message)
+}
+
+const asHash = params => {
+  return params.reduce((a, v) => ({...a, [v.vname]: v.value}), {})
+}
+const transactionEvents = (tx: Transaction): {[key: string]: string}[] => {
+  const events = tx.txParams.receipt.event_logs || []
+  // Following the original reverse order of events
+  return events.map(event => {
+    return {_eventname: event._eventname, ...asHash(event.params)}
+  })
 }
 
 class ZnsError extends Error {
   constructor(message: string) {
     super(message)
     this.name = this.constructor.name
+  }
+}
+
+class ZnsTxError extends ZnsError {
+  readonly tx: Transaction
+  constructor(message: string, tx: Transaction) {
+    super(message)
+    this.tx = tx
   }
 }
 
@@ -125,31 +160,29 @@ class Resolver {
     return this
   }
 
-  //TODO
   async set(key: string, value: string, txParams?: Partial<TxParams>): Promise<Transaction> {
     const tx = await this.contract.call(
       'set',
       resolverData.f.set({key, value}),
       this.fullTxParams(txParams),
     )
-    ensureTxConfirmed(tx)
+    ensureAnyTxEvent(tx, ["Configured", "RecordSet"], "Resolver record is not set")
+
     this.records[key] = value
     return tx
   }
 
-  //TODO
   async unset(key: string, txParams?: Partial<TxParams>): Promise<Transaction> {
     const tx = await this.contract.call(
       'unset',
       resolverData.f.unset({key}),
       this.fullTxParams(txParams),
     )
-    ensureTxConfirmed(tx)
+    ensureAnyTxEvent(tx, ["Configured", "RecordUnset"], "Resolver record is not unset")
     delete this.records[key]
     return tx
   }
 
-  //TODO convert into property
   get resolution(): Resolution {
     return _.reduce(this.records,
       (result, value, key) => _.set(result, key, value), {})
@@ -251,7 +284,7 @@ export default class Zns {
     this.defaultTxParams = {...Zns.DEFAULT_TX_PARAMS, ...txParams}
   }
 
-  async deployResolver(domain: Domain, resolution: Resolution | Records = {}, txParams: Partial<TxParams> = {}) {
+  async deployResolver(domain: Domain, resolution: Resolution = {}, txParams: Partial<TxParams> = {}): Promise<Resolver> {
     let node = Zns.namehash(domain)
     let owner = this.owner
 
@@ -263,7 +296,7 @@ export default class Zns {
     }).fromPairs().value()
     let records = _.mapKeys(addresses, (v, k) => addressKey(k))
 
-    let [tx, contract] = await this.zilliqa.contracts
+    let [tx, resolver] = await this.zilliqa.contracts
       .new(
         Zns.contractSourceCode('resolver'),
         resolverData
@@ -271,6 +304,29 @@ export default class Zns {
       )
       .deploy({...this.defaultTxParams, ...txParams} as TxParams)
     ensureTxConfirmed(tx, 'Failed to deploy resolver')
-    return new Resolver(this, contract, domain, owner, records)
+    return new Resolver(this, resolver, domain, owner, records)
+  }
+
+  async bestow(domain: Domain, owner: Address, resolver: Address, txParams: Partial<TxParams> = {}) {
+
+    let tokens = domain.split('.')
+    if (_.last(tokens) != 'zil' || tokens.length > 2) {
+      throw new ZnsError(`Domain ${domain} can not be bestowed`)
+    }
+    let tx = await this.contract.call(
+      'bestow',
+      registryData.f.bestow({
+        label: tokens[0],
+        owner: normalizeAddress(owner),
+        resolver: normalizeAddress(resolver),
+      }),
+      this.fullTxParams(txParams)
+    )
+    ensureTxEvent(tx, "Configured", 'Failed to bestow a domain')
+
+  }
+
+  private fullTxParams(txParams: Partial<TxParams>): TxParams {
+    return {...this.defaultTxParams, ...txParams} as TxParams
   }
 }
