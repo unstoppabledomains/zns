@@ -7,17 +7,18 @@ import * as fs from 'fs'
 import * as _ from 'lodash'
 
 import {contract_info as registryContractInfo} from '../contract_info/registry.json'
-import {contract_info as resolver_contract_info} from '../contract_info/resolver.json'
+import {contract_info as resolverContractInfo} from '../contract_info/resolver.json'
 import {generateMapperFromContractInfo} from './params'
 
 type Address = string
 type Domain = string
 type Node = string
-type Resolution = any
+type Resolution = {[key: string]: NestedResolution}
+type NestedResolution = string | null | undefined | {[key: string]: NestedResolution} | {[key: number]: NestedResolution}
 type Records = {[key: string]: string}
 
 const registryData = generateMapperFromContractInfo(registryContractInfo)
-const resolverData = generateMapperFromContractInfo(resolver_contract_info)
+const resolverData = generateMapperFromContractInfo(resolverContractInfo)
 
 function sha256(buffer) {
   return Buffer.from(
@@ -66,14 +67,6 @@ let defaultWalletAddress = (zilliqa: Zilliqa): Address => {
 
 let getContract = (zilliqa: Zilliqa, address: Address): Contract => {
   return zilliqa.contracts.at(normalizeAddress(address).slice(2))
-}
-
-let isInitResolution = (resolution: Resolution): boolean => {
-  let keys = Object.keys(resolution)
-  return _.difference(keys, ['crypto']) == [] &&
-    _.difference(_.keys(resolution.crypto), DEFAULT_CURRENCIES) == [] &&
-    _.every(_.values(resolution.crypto), v => _.difference(_.keys(v), ['address']) == [])
-
 }
 
 let addressKey = (currency: string): string => {
@@ -239,6 +232,15 @@ export default class Zns {
   static contractSourceCode(name: string): string {
     return fs.readFileSync(__dirname + `/../scilla/${name}.scilla`, 'utf8')
   }
+  static isInitResolution(resolution: Resolution): boolean {
+    if (_.isEmpty(resolution)) {
+      return true;
+    }
+    return _.isEqual(_.keys(resolution), ['crypto']) &&
+      !_.difference(_.keys(resolution.crypto), DEFAULT_CURRENCIES).length &&
+      _.every(_.values(resolution.crypto), v => _.isEqual(_.keys(v), ['address']));
+  }
+
 
   constructor(zilliqa: Zilliqa, registry: Address | Contract, txParams?: Partial<TxParams>) {
     this.zilliqa = zilliqa
@@ -249,14 +251,13 @@ export default class Zns {
     this.defaultTxParams = {...Zns.DEFAULT_TX_PARAMS, ...txParams}
   }
 
-  async deployResolver(domain: Domain, resolution: Resolution = {}, txParams: Partial<TxParams> = {}) {
+  async deployResolver(domain: Domain, resolution: Resolution | Records = {}, txParams: Partial<TxParams> = {}) {
     let node = Zns.namehash(domain)
     let owner = this.owner
 
-    //TODO
-    //if (!isInitResolution(resolution)) {
-      //throw new ZnsError("Resolver can not be initialized with non-standard resolution")
-    //}
+    if (!Zns.isInitResolution(resolution)) {
+      throw new ZnsError("Resolver can not be initialized with non-standard resolution")
+    }
     let addresses = _(DEFAULT_CURRENCIES).map(currency => {
       return [currency.toLowerCase(), _.get(resolution, addressKey(currency)) || '']
     }).fromPairs().value()
