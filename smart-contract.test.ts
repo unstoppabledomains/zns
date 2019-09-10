@@ -311,14 +311,11 @@ describe('smart contracts', () => {
       const zilliqa = new Zilliqa(null, provider)
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
       let zns = new Zns(zilliqa, address, {version})
-      const contract = (await zns.deployResolver('hello.zil')).contract
+      const resolver = await zns.deployResolver('hello.zil')
 
-      await expectUnchangedState(contract, async () => {
-        await contract.call(
-          'unset',
-          resolverData.f.unset({key: 'does_not_exist'}),
-          defaultParams,
-        )
+      await expectUnchangedState(resolver.contract, async () => {
+        await expect(resolver.unset('does_not_exist'))
+          .rejects.toThrow('Resolver record is not removed: Sender not owner or key does not exist')
       })
     })
   })
@@ -467,7 +464,7 @@ describe('smart contracts', () => {
         'setAdmin',
         registryData.f.setAdmin({
           address: address2,
-          isApproved: {constructor: 'False', argtypes: [], arguments: []},
+          isApproved: false,
         }),
         defaultParams,
       )
@@ -833,7 +830,7 @@ describe('smart contracts', () => {
       const [, registrar] = await deploySimpleRegistrar(
         zilliqa,
         {
-          registry: '0x' + registry.address,
+          registry: zns.address,
           owner: address,
           ownedNode: rootNode,
           initialDefaultPrice: '1',
@@ -969,7 +966,7 @@ describe('smart contracts', () => {
         zilliqa,
         {
           owner: address,
-          registry: '0x' + registry.address,
+          registry: zns.address,
           ownedNode: rootNode,
           initialAuctionLength: '3',
           minimumAuctionLength: '2',
@@ -1171,7 +1168,7 @@ describe('smart contracts', () => {
       const registry = zns.contract
 
       const [, marketplace] = await deployMarketplace(zilliqa, {
-        registry: '0x' + registry.address,
+        registry: zns.address,
         seller: address,
         zone: rootNode,
       })
