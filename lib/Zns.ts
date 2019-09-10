@@ -43,6 +43,13 @@ let contractField = async (contract: Contract, name: string, init: boolean = fal
   return field.value
 }
 
+let contractMapField = async(contract: Contract, name: string): Promise<{[key: string]: any}> => {
+  let value = await contractField(contract, name) as {key: string, val: any}[]
+  if (!value) {
+    return {};
+  }
+  return value.reduce((a, v) => ({...a, [v.key]: v.val}), {})
+}
 let isDefaultResolution = (resolution: Resolution) => {
 }
 
@@ -143,10 +150,6 @@ class ZnsTxError extends ZnsError {
   }
 }
 
-class PermissionError extends ZnsError {
-
-}
-
 let DEFAULT_CURRENCIES = ['ADA', 'BTC', 'EOS', 'ETH', 'XLM', 'XRP', 'ZIL']
 class Resolver {
   readonly address: Address
@@ -174,8 +177,7 @@ class Resolver {
 
   async reload(): Promise<this> {
     this.contract = getContract(this.registry.zilliqa, this.address)
-    this.records = (await contractField(this.contract, 'records'))
-      .reduce((a, v) => ({...a, [v.key]: v.val}), {})
+    this.records = await contractMapField(this.contract, 'records')
     this.owner = normalizeAddress(await contractField(this.contract, 'owner', true) as Address)
     return this
   }
@@ -259,7 +261,7 @@ export default class Zns {
   readonly owner: Address
   readonly defaultTxParams: Partial<TxParams>
 
-  static namehash(name: Domain): Node {
+  static namehash(name: Domain | Node): Node {
     if (name.match(/^(0x)?[0-9a-f]+$/i)) {
       return normalizeAddress(name)
     }
@@ -357,7 +359,7 @@ export default class Zns {
     return tx;
   }
 
-  async setApprovedAddress(domain: Domain, address: Address, txParams: Partial<TxParams> = {}): Promise<Transaction> {
+  async setApprovedAddress(domain: Domain | Node, address: Address, txParams: Partial<TxParams> = {}): Promise<Transaction> {
     let tx =  await this.contract.call(
       'approve',
       registryData.f.approve({
@@ -368,6 +370,25 @@ export default class Zns {
     )
     ensureTxConfirmed(tx, "Approved address is not set")
     return tx;
+  }
+
+  async getRegistryRecord(domain: Domain | Node): Promise<[Address, Address] | []> {
+    let records = await contractMapField(this.contract, 'records')
+    let record = records[Zns.namehash(domain)]
+    return record ? record.arguments.map(normalizeAddress) : []
+  }
+
+  async getOwnerAddress(domain: Domain | Node): Promise<Address> {
+    return (await this.getRegistryRecord(domain))[0];
+  }
+
+  async getResolverAddress(domain: Domain | Node): Promise<Address> {
+    return (await this.getRegistryRecord(domain))[1];
+  }
+
+  async getApprovedAddress(domain: Domain | Node): Promise<Address> {
+    let approvals = await contractMapField(this.contract, 'approvals')
+    return approvals[Zns.namehash(domain)]
   }
 
   private fullTxParams(txParams: Partial<TxParams>): TxParams {
