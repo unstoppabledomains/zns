@@ -78,13 +78,13 @@ let addressKey = (currency: string): string => {
   return `crypto.${currency.toUpperCase()}.address`
 }
 
-let ensureTxConfirmed = (tx: Transaction, message: string = "Transaction is not confirmed"): Transaction => {
+let ensureTxConfirmed = (tx: Transaction, message?: string): Transaction => {
   if (!tx.isConfirmed()) {
-    throw new ZnsTxError(message, tx)
+    throw new ZnsTxError(message ||  "Transaction is not confirmed", tx)
   }
   let errorEvent = transactionEvent(tx, "Error")
   if (errorEvent) {
-    throw new ZnsTxError(`${message}: ${errorEvent.msg}`, tx)
+    throw new ZnsTxError(message || "Transaction threw an Error event", tx)
   }
   return tx
 }
@@ -118,6 +118,7 @@ const transactionEvents = (tx: Transaction): TransactionEvent[] => {
 }
 
 const transactionEvent = (tx: Transaction, name: string): TransactionEvent | undefined => {
+
   return transactionEvents(tx).find(e => e._eventname == name);
 }
 
@@ -130,13 +131,15 @@ class ZnsError extends Error {
 
 class ZnsTxError extends ZnsError {
   readonly tx: Transaction
+  readonly eventErrorMessage: string | undefined
   constructor(message: string, tx: Transaction) {
     super(message)
     this.tx = tx
-  }
-
-  get errorEvent(): TransactionEvent | undefined {
-    return transactionEvent(this.tx, 'Error')
+    let errorEvent = transactionEvent(this.tx, 'Error');
+    this.eventErrorMessage = errorEvent.msg || errorEvent.message;
+    if (this.eventErrorMessage) {
+      this.message += `: ${this.eventErrorMessage}`
+    }
   }
 }
 
@@ -183,8 +186,7 @@ class Resolver {
       resolverData.f.set({key, value}),
       this.fullTxParams(txParams),
     )
-    ensureAnyTxEvent(tx, ["Configured", "RecordSet"], "Resolver record is not set")
-
+    ensureTxConfirmed(tx,  "Resolver record is not set")
     this.records[key] = value
     return tx
   }
@@ -195,7 +197,7 @@ class Resolver {
       resolverData.f.unset({key}),
       this.fullTxParams(txParams),
     )
-    ensureAnyTxEvent(tx, ["Configured", "RecordUnset"], "Resolver record is not unset")
+    ensureTxConfirmed(tx,  "Resolver record is not removed")
     delete this.records[key]
     return tx
   }
@@ -232,7 +234,7 @@ class Resolver {
   }
 
   private fullTxParams(txParams: Partial<TxParams>): TxParams {
-      return {...this.registry.defaultTxParams, ...txParams} as TxParams
+    return {...this.registry.defaultTxParams, ...txParams} as TxParams
   }
 }
 

@@ -129,7 +129,7 @@ const nullAddress = '0'.repeat(40)
 const resolverInitState = {
   owner: '0x' + address,
   registry: '0x' + address,
-  node: namehash('test'),
+  node: Zns.namehash('test'),
   ada: '',
   btc: '',
   eos: '',
@@ -146,26 +146,6 @@ function sha256(buffer) {
       .update(buffer)
       .digest(),
   )
-}
-
-function namehash(name) {
-  if (name.match(/^(0x)?[0-9a-f]+$/i)) {
-    if (!name.startsWith('0x')) {
-      name = '0x' + name
-    }
-    return name
-  }
-  let node = Buffer.alloc(32, 0)
-
-  if (name) {
-    let labels = name.split('.')
-
-    for (let i = labels.length - 1; i >= 0; i--) {
-      node = sha256(Buffer.concat([node, sha256(labels[i])]))
-    }
-  }
-
-  return '0x' + node.toString('hex')
 }
 
 const asHash = params => {
@@ -202,7 +182,7 @@ const transactionEvents = tx => {
 }
 
 const getRegistryRecord = async (registry, domain) => {
-  const node = namehash(domain)
+  const node = Zns.namehash(domain)
   return await contractMapValue(registry, 'records', node)
 }
 
@@ -217,7 +197,7 @@ const resolverOf = async (registry, domain) => {
 }
 
 const approvalOf = async (registry, domain) => {
-  const node = namehash(domain)
+  const node = Zns.namehash(domain)
   const approval = await contractMapValue(registry, 'approvals', node)
   return approval && approval.replace(/^0x/, '')
 }
@@ -324,7 +304,9 @@ describe('smart contracts', () => {
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey2))
 
       await expectUnchangedState(contract, async () => {
-        try { await resolver.set('test', '0x7357') } catch {}
+        await expect(
+          resolver.set('test', '0x7357')
+        ).rejects.toThrow('Resolver record is not set')
       })
 
       //////////////////////////////////////////////////////////////////////////
@@ -341,7 +323,9 @@ describe('smart contracts', () => {
       zilliqa.wallet.setDefault(address2)
 
       await expectUnchangedState(contract, async () => {
-        try { await resolver.unset('test') } catch {}
+        await expect(
+          resolver.unset('test')
+        ).rejects.toThrow('Resolver record is not removed: Sender not owner or key does not exist')
       })
     })
 
@@ -382,7 +366,7 @@ describe('smart contracts', () => {
       const onResolverConfiguredTx = await registry.call(
         'onResolverConfigured',
         registryData.f.onResolverConfigured({
-          node: namehash('tld'),
+          node: Zns.namehash('tld'),
         }),
         defaultParams,
       )
@@ -391,7 +375,7 @@ describe('smart contracts', () => {
       const onResolverConfiguredTx2 = await registry.call(
         'onResolverConfigured',
         registryData.f.onResolverConfigured({
-          node: namehash('unknown'),
+          node: Zns.namehash('unknown'),
         }),
         defaultParams,
       )
@@ -440,7 +424,7 @@ describe('smart contracts', () => {
         await registry.call(
           'approve',
           registryData.f.approve({
-            node: namehash('node-owned-by-someone-else'),
+            node: Zns.namehash('node-owned-by-someone-else'),
             address: '0x' + address2,
           }),
           defaultParams,
@@ -722,7 +706,7 @@ describe('smart contracts', () => {
       expect(await transactionEvents(assignTx)).toEqual([
         {
           _eventname: 'Configured',
-          node: namehash('tld'),
+          node: Zns.namehash('tld'),
           owner: '0x' + address,
           resolver: '0x' + nullAddress,
         },
@@ -789,7 +773,7 @@ describe('smart contracts', () => {
       expect(await transactionEvents(bestowTx)).toEqual([
         {
           _eventname: 'Configured',
-          node: namehash('tld'),
+          node: Zns.namehash('tld'),
           owner: '0x' + address,
           resolver: '0x' + address,
         },
@@ -814,7 +798,7 @@ describe('smart contracts', () => {
       await expectUnchangedState(registry, async () => {
         await expect(
           zns.bestow('tld', address2, address2)
-        ).rejects.toThrow('Transaction is not confirmed: Sender admin')
+        ).rejects.toThrow('Transaction threw an Error event: Sender admin')
       })
 
       //////////////////////////////////////////////////////////////////////////
@@ -825,7 +809,7 @@ describe('smart contracts', () => {
 
       await expectUnchangedState(registry, async () => {
         await expect(zns.bestow('other-tld', address2, address2))
-          .rejects.toThrow('Transaction is not confirmed: Sender admin')
+          .rejects.toThrow('Transaction threw an Error event: Sender admin')
       })
     })
 
@@ -928,7 +912,7 @@ describe('smart contracts', () => {
       expect(await transactionEvents(registerTx)).toEqual([
         {
           _eventname: 'Configured',
-          node: namehash('name'),
+          node: Zns.namehash('name'),
           owner: '0x' + address,
           resolver: '0x' + nullAddress,
         },
@@ -982,7 +966,7 @@ describe('smart contracts', () => {
         await registrar.call(
           'register',
           simpleRegistrarData.f.register({
-            node: namehash('bad-sender'),
+            node: Zns.namehash('bad-sender'),
             parent: rootNode,
             label: 'bad-sender',
             origin: '0x' + address,
@@ -1098,7 +1082,7 @@ describe('smart contracts', () => {
       expect(await resolverOf(registry, 'name')).toEqual(nullAddress)
 
       expect(
-        await contractMapValue(registrar, 'auctions', namehash('name')),
+        await contractMapValue(registrar, 'auctions', Zns.namehash('name')),
       ).toMatchObject({
         constructor: 'Auction',
         argtypes: [],
@@ -1116,12 +1100,12 @@ describe('smart contracts', () => {
 
       await registrar.call(
         'bid',
-        auctionRegistrarData.f.bid({node: namehash('name')}),
+        auctionRegistrarData.f.bid({node: Zns.namehash('name')}),
         {...defaultParams, amount: new BN(300)},
       )
 
       expect(
-        await contractMapValue(registrar, 'auctions', namehash('name')),
+        await contractMapValue(registrar, 'auctions', Zns.namehash('name')),
       ).toMatchObject({
         constructor: 'Auction',
         argtypes: [],
@@ -1144,7 +1128,7 @@ describe('smart contracts', () => {
 
       await registrar.call(
         'close',
-        auctionRegistrarData.f.close({node: namehash('name')}),
+        auctionRegistrarData.f.close({node: Zns.namehash('name')}),
         defaultParams,
       )
 
@@ -1190,7 +1174,7 @@ describe('smart contracts', () => {
 
       await registrar.call(
         'bid',
-        auctionRegistrarData.f.bid({node: namehash('bid-name')}),
+        auctionRegistrarData.f.bid({node: Zns.namehash('bid-name')}),
         {...defaultParams, amount: new BN(2000)},
       )
 
@@ -1198,7 +1182,7 @@ describe('smart contracts', () => {
 
       await registrar.call(
         'close',
-        auctionRegistrarData.f.close({node: namehash('bid-name')}),
+        auctionRegistrarData.f.close({node: Zns.namehash('bid-name')}),
         defaultParams,
       )
 
@@ -1227,7 +1211,7 @@ describe('smart contracts', () => {
     it('should enable buying and selling of names', async () => {
       const zilliqa = new Zilliqa(null, provider)
       const soldDomain = 'domain'
-      const soldNode = namehash('domain')
+      const soldNode = Zns.namehash('domain')
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
       const zns = await Zns.deployRegistry(zilliqa, undefined, {version})
@@ -1328,7 +1312,7 @@ describe('smart contracts', () => {
       let tx = await expectUnchangedState(marketplace, async () => {
         return await marketplace.call(
           'buy',
-          marketplaceData.f.buy({node: namehash('not-offered')}),
+          marketplaceData.f.buy({node: Zns.namehash('not-offered')}),
           {
             ...defaultParams,
             amount: new BN('1000000000000'),
@@ -1357,13 +1341,13 @@ describe('smart contracts', () => {
     const [, marketplace] = await deployMarketplace(zilliqa, {
       registry: '0x' + nullAddress,
       seller: '0x' + address,
-      zone: namehash('zil'),
+      zone: Zns.namehash('zil'),
     })
 
     await marketplace.call(
       'offer',
       marketplaceData.f.offer({
-        parent: namehash('com'),
+        parent: Zns.namehash('com'),
         label: 'value',
         price: '1000000000000',
       }),
@@ -1372,7 +1356,7 @@ describe('smart contracts', () => {
     await marketplace.call(
       'offer',
       marketplaceData.f.offer({
-        parent: namehash('zil'),
+        parent: Zns.namehash('zil'),
         label: 'value',
         price: '1000000000000',
       }),
@@ -1380,10 +1364,10 @@ describe('smart contracts', () => {
     )
 
     expect(
-      await contractMapValue(marketplace, 'offers', namehash('value.com')),
+      await contractMapValue(marketplace, 'offers', Zns.namehash('value.com')),
     ).toEqual(null)
     expect(
-      await contractMapValue(marketplace, 'offers', namehash('value.zil')),
+      await contractMapValue(marketplace, 'offers', Zns.namehash('value.zil')),
     ).toEqual('1000000000000')
   })
 })
