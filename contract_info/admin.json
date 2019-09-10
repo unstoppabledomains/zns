@@ -1,14 +1,13 @@
 {
   "contract_info": {
     "scilla_major_version": "0",
-    "vname": "Holding",
+    "vname": "Admin",
     "params": [
       { "vname": "initialAdmin", "type": "ByStr20" },
       { "vname": "registry", "type": "ByStr20" }
     ],
     "fields": [
-      { "vname": "registrar", "type": "ByStr20", "depth": 0 },
-      { "vname": "admins", "type": "List (ByStr20)", "depth": 0 }
+      { "vname": "admins", "type": "Map (ByStr20) (Bool)", "depth": 1 }
     ],
     "transitions": [
       {
@@ -19,24 +18,11 @@
         ]
       },
       {
-        "vname": "transfer",
+        "vname": "bestow",
         "params": [
-          { "vname": "node", "type": "ByStr20" },
-          { "vname": "owner", "type": "ByStr20" }
-        ]
-      },
-      {
-        "vname": "onTransferSuccess",
-        "params": [
-          { "vname": "node", "type": "ByStr32" },
-          { "vname": "owner", "type": "ByStr20" }
-        ]
-      },
-      {
-        "vname": "onTransferFailure",
-        "params": [
-          { "vname": "node", "type": "ByStr32" },
-          { "vname": "owner", "type": "ByStr20" }
+          { "vname": "label", "type": "String" },
+          { "vname": "owner", "type": "ByStr20" },
+          { "vname": "resolver", "type": "ByStr20" }
         ]
       }
     ],

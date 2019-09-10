@@ -15,13 +15,21 @@
       { "vname": "initialMaxPriceUSD", "type": "Uint128" }
     ],
     "fields": [
-      { "vname": "running", "type": "Bool" },
-      { "vname": "auctions", "type": "Map (ByStr32) (Auction)" },
-      { "vname": "qaPerUSD", "type": "Uint128" },
-      { "vname": "defaultPriceUSD", "type": "Uint128" },
-      { "vname": "lengthPricesUSD", "type": "Map (Uint32) (Uint128)" },
-      { "vname": "customPricesUSD", "type": "Map (ByStr32) (Uint128)" },
-      { "vname": "maxPriceUSD", "type": "Uint128" }
+      { "vname": "running", "type": "Bool", "depth": 0 },
+      { "vname": "auctions", "type": "Map (ByStr32) (Auction)", "depth": 1 },
+      { "vname": "qaPerUSD", "type": "Uint128", "depth": 0 },
+      { "vname": "defaultPriceUSD", "type": "Uint128", "depth": 0 },
+      {
+        "vname": "lengthPricesUSD",
+        "type": "Map (Uint32) (Uint128)",
+        "depth": 1
+      },
+      {
+        "vname": "customPricesUSD",
+        "type": "Map (ByStr32) (Uint128)",
+        "depth": 1
+      },
+      { "vname": "maxPriceUSD", "type": "Uint128", "depth": 0 }
     ],
     "transitions": [
       {

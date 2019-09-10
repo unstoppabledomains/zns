@@ -290,8 +290,7 @@ transition register(
 
         msgs = 
           let m = {_tag: "bestow"; _recipient: registry; _amount: Uint128 0; 
-                  parent: ownedNode; label: label; owner: origin; 
-                  resolver: zeroByStr20} in
+                  label: label; owner: origin; resolver: zeroByStr20} in
           oneMsg m;
         send msgs
       | False => 
@@ -306,8 +305,7 @@ transition register(
 
         msgs = 
           let m = {_tag: "bestow"; _recipient: registry; _amount: Uint128 0; 
-                  parent: ownedNode; label: label; owner: _this_address; 
-                  resolver: zeroByStr20} in
+                  label: label; owner: _this_address; resolver: zeroByStr20} in
           oneMsg m;
         send msgs
       end

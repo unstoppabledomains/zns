@@ -10,10 +10,18 @@
       { "vname": "initialQaPerUSD", "type": "Uint128" }
     ],
     "fields": [
-      { "vname": "qaPerUSD", "type": "Uint128" },
-      { "vname": "defaultPriceUSD", "type": "Uint128" },
-      { "vname": "lengthPricesUSD", "type": "Map (Uint32) (Uint128)" },
-      { "vname": "customPricesUSD", "type": "Map (ByStr32) (Uint128)" }
+      { "vname": "qaPerUSD", "type": "Uint128", "depth": 0 },
+      { "vname": "defaultPriceUSD", "type": "Uint128", "depth": 0 },
+      {
+        "vname": "lengthPricesUSD",
+        "type": "Map (Uint32) (Uint128)",
+        "depth": 1
+      },
+      {
+        "vname": "customPricesUSD",
+        "type": "Map (ByStr32) (Uint128)",
+        "depth": 1
+      }
     ],
     "transitions": [
       {
