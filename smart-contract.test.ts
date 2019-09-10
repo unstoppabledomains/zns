@@ -119,7 +119,7 @@ function deployAuctionRegistrar(
 const address = 'd90f2e538ce0df89c8273cad3b63ec44a3c4ed82'
 const privateKey =
   'e53d1c3edaffc7a7bab5418eb836cf75819a82872b4a1a0f1c7fcf5c3e020b89'
-const address2 = '2f4f79ef6abfc0368f5a7e2c2df82e1afdfe7204'
+const address2 = '0x2f4f79ef6abfc0368f5a7e2c2df82e1afdfe7204'
 const privateKey2 =
   '1234567890123456789012345678901234567890123456789012345678901234'
 
@@ -215,7 +215,7 @@ describe('smart contracts', () => {
       {
         // 1,000,000,000 ZIL
         [address]: {privateKey, amount: '100000000000000', nonce: 0},
-        [address2]: {
+        [address2.replace('0x', '')]: {
           privateKey: privateKey2,
           amount: '100000000000000',
           nonce: 0,
@@ -320,7 +320,7 @@ describe('smart contracts', () => {
       await resolver.reload()
       expect(resolver.records).toEqual({test: '0x7357'})
 
-      zilliqa.wallet.setDefault(address2)
+      zilliqa.wallet.setDefault(address2.replace("0x", ""))
 
       await expectUnchangedState(contract, async () => {
         await expect(
@@ -395,7 +395,7 @@ describe('smart contracts', () => {
       //////////////////////////////////////////////////////////////////////////
 
       await zns.setApprovedAddress(rootNode, address2)
-      expect(await approvalOf(registry, rootNode)).toEqual(address2)
+      expect(await zns.getApprovedAddress(rootNode)).toEqual(address2)
 
       //////////////////////////////////////////////////////////////////////////
       // approve null address
@@ -421,7 +421,7 @@ describe('smart contracts', () => {
       await registry.call(
         'approveFor',
         registryData.f.approveFor({
-          address: '0x' + address2,
+          address: address2,
           isApproved: true,
         }),
         defaultParams,
@@ -442,7 +442,7 @@ describe('smart contracts', () => {
       await registry.call(
         'approveFor',
         registryData.f.approveFor({
-          address: '0x' + address2,
+          address: address2,
           isApproved: false,
         }),
         defaultParams,
@@ -470,14 +470,14 @@ describe('smart contracts', () => {
       await registry.call(
         'setAdmin',
         registryData.f.setAdmin({
-          address: '0x' + address2,
+          address: address2,
           isApproved: true,
         }),
         defaultParams,
       )
 
       expect(await contractField(registry, 'admins')).toEqual([
-        '0x' + address2,
+        address2,
         '0x' + address,
       ])
 
@@ -488,7 +488,7 @@ describe('smart contracts', () => {
       await registry.call(
         'setAdmin',
         registryData.f.setAdmin({
-          address: '0x' + address2,
+          address: address2,
           isApproved: {constructor: 'False', argtypes: [], arguments: []},
         }),
         defaultParams,
@@ -506,7 +506,7 @@ describe('smart contracts', () => {
         await registry.call(
           'setAdmin',
           registryData.f.setAdmin({
-            address: '0x' + address2,
+            address: address2,
             isApproved: true,
           }),
           defaultParams,
@@ -529,7 +529,7 @@ describe('smart contracts', () => {
         'configureResolver',
         registryData.f.configureResolver({
           node: rootNode,
-          resolver: '0x' + address2,
+          resolver: address2,
         }),
         defaultParams,
       )
@@ -540,11 +540,11 @@ describe('smart contracts', () => {
           _eventname: 'Configured',
           node: rootNode,
           owner: '0x' + address,
-          resolver: '0x' + address2,
+          resolver: address2,
         },
       ])
 
-      expect(await resolverOf(registry, rootNode)).toEqual(address2)
+      expect(await zns.getResolverAddress(rootNode)).toEqual(address2)
       expect(await ownerOf(registry, rootNode)).toEqual(address)
 
       //////////////////////////////////////////////////////////////////////////
@@ -555,8 +555,8 @@ describe('smart contracts', () => {
         'configureNode',
         registryData.f.configureNode({
           node: rootNode,
-          owner: '0x' + address2,
-          resolver: '0x' + address2,
+          owner: address2,
+          resolver: address2,
         }),
         defaultParams,
       )
@@ -565,13 +565,13 @@ describe('smart contracts', () => {
         {
           _eventname: 'Configured',
           node: rootNode,
-          owner: '0x' + address2,
-          resolver: '0x' + address2,
+          owner: address2,
+          resolver: address2,
         },
       ])
 
-      expect(await resolverOf(registry, rootNode)).toEqual(address2)
-      expect(await ownerOf(registry, rootNode)).toEqual(address2)
+      expect(await zns.getResolverAddress(rootNode)).toEqual(address2)
+      expect(await zns.getOwnerAddress(rootNode)).toEqual(address2)
 
       //////////////////////////////////////////////////////////////////////////
       // fail to configure resolver using bad address
@@ -622,7 +622,7 @@ describe('smart contracts', () => {
         'transfer',
         registryData.f.transfer({
           node: rootNode,
-          owner: '0x' + address2,
+          owner: address2,
         }),
         defaultParams,
       )
@@ -631,12 +631,12 @@ describe('smart contracts', () => {
         {
           _eventname: 'Configured',
           node: rootNode,
-          owner: '0x' + address2,
+          owner: address2,
           resolver: nullAddress,
         },
       ])
 
-      expect(await ownerOf(registry, rootNode)).toEqual(address2)
+      expect(await zns.getOwnerAddress(rootNode)).toEqual(address2)
       expect(await zns.getResolverAddress(rootNode)).toEqual(nullAddress)
 
       //////////////////////////////////////////////////////////////////////////
@@ -705,13 +705,13 @@ describe('smart contracts', () => {
         registryData.f.assign({
           parent: rootNode,
           label: 'tld',
-          owner: '0x' + address2,
+          owner: address2,
         }),
         defaultParams,
       )
       expect(await ownerOf(registry, rootNode)).toEqual(address)
       expect(await zns.getResolverAddress(rootNode)).toEqual(nullAddress)
-      expect(await ownerOf(registry, 'tld')).toEqual(address2)
+      expect(await zns.getOwnerAddress('tld')).toEqual(address2)
       expect(await zns.getResolverAddress('tld')).toEqual(nullAddress)
 
       //////////////////////////////////////////////////////////////////////////
@@ -801,12 +801,12 @@ describe('smart contracts', () => {
 
       await registry.call(
         'setRegistrar',
-        registryData.f.setRegistrar({address: '0x' + address2}),
+        registryData.f.setRegistrar({address: address2}),
         defaultParams,
       )
 
       expect(await contractField(registry, 'registrar')).toEqual(
-        '0x' + address2,
+        address2,
       )
 
       //////////////////////////////////////////////////////////////////////////
@@ -1274,7 +1274,7 @@ describe('smart contracts', () => {
       //   Number(address1BalancePost.result.balance),
       // )
 
-      expect(await ownerOf(registry, soldDomain)).toBe(address2)
+      expect(await zns.getOwnerAddress(soldDomain)).toBe(address2)
       expect(await contractMapValue(marketplace, 'offers', soldNode)).toBeNull()
 
       //////////////////////////////////////////////////////////////////////////
