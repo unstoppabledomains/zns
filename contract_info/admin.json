@@ -6,9 +6,7 @@
       { "vname": "initialAdmin", "type": "ByStr20" },
       { "vname": "registry", "type": "ByStr20" }
     ],
-    "fields": [
-      { "vname": "admins", "type": "Map (ByStr20) (Bool)", "depth": 1 }
-    ],
+    "fields": [ { "vname": "admins", "type": "Map (ByStr20) (Bool)" } ],
     "transitions": [
       {
         "vname": "setAdmin",

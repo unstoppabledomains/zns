@@ -15,8 +15,8 @@
       { "vname": "zil", "type": "String" }
     ],
     "fields": [
-      { "vname": "owner", "type": "ByStr20", "depth": 0 },
-      { "vname": "records", "type": "Map (String) (String)", "depth": 1 }
+      { "vname": "owner", "type": "ByStr20" },
+      { "vname": "records", "type": "Map (String) (String)" }
     ],
     "transitions": [
       {

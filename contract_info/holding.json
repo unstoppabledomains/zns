@@ -7,8 +7,8 @@
       { "vname": "registry", "type": "ByStr20" }
     ],
     "fields": [
-      { "vname": "registrar", "type": "ByStr20", "depth": 0 },
-      { "vname": "admins", "type": "List (ByStr20)", "depth": 0 }
+      { "vname": "registrar", "type": "ByStr20" },
+      { "vname": "admins", "type": "List (ByStr20)" }
     ],
     "transitions": [
       {

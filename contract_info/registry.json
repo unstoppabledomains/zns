@@ -7,15 +7,11 @@
       { "vname": "rootNode", "type": "ByStr32" }
     ],
     "fields": [
-      { "vname": "records", "type": "Map (ByStr32) (Record)", "depth": 1 },
-      { "vname": "registrar", "type": "ByStr20", "depth": 0 },
-      { "vname": "approvals", "type": "Map (ByStr32) (ByStr20)", "depth": 1 },
-      {
-        "vname": "operators",
-        "type": "Map (ByStr20) (List (ByStr20))",
-        "depth": 1
-      },
-      { "vname": "admins", "type": "List (ByStr20)", "depth": 0 }
+      { "vname": "records", "type": "Map (ByStr32) (Record)" },
+      { "vname": "registrar", "type": "ByStr20" },
+      { "vname": "approvals", "type": "Map (ByStr32) (ByStr20)" },
+      { "vname": "operators", "type": "Map (ByStr20) (List (ByStr20))" },
+      { "vname": "admins", "type": "List (ByStr20)" }
     ],
     "transitions": [
       {

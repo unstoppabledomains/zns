@@ -2,10 +2,11 @@
   "contract_info": {
     "scilla_major_version": "0",
     "vname": "Admin",
-    "params": [ { "vname": "initialAdmin", "type": "ByStr20" } ],
-    "fields": [
-      { "vname": "admins", "type": "Map (ByStr20) (Bool)", "depth": 1 }
+    "params": [
+      { "vname": "initialAdmin", "type": "ByStr20" },
+      { "vname": "registry", "type": "ByStr20" }
     ],
+    "fields": [ { "vname": "admins", "type": "Map (ByStr20) (Bool)" } ],
     "transitions": [
       {
         "vname": "setAdmin",
@@ -33,6 +34,28 @@
         "vname": "setOwner",
         "params": [
           { "vname": "address", "type": "ByStr20" },
+          { "vname": "owner", "type": "ByStr20" }
+        ]
+      },
+      {
+        "vname": "configureNode",
+        "params": [
+          { "vname": "node", "type": "ByStr32" },
+          { "vname": "owner", "type": "ByStr20" },
+          { "vname": "resolver", "type": "ByStr20" }
+        ]
+      },
+      {
+        "vname": "configureResolver",
+        "params": [
+          { "vname": "node", "type": "ByStr32" },
+          { "vname": "resolver", "type": "ByStr20" }
+        ]
+      },
+      {
+        "vname": "transfer",
+        "params": [
+          { "vname": "node", "type": "ByStr32" },
           { "vname": "owner", "type": "ByStr20" }
         ]
       }
