@@ -1,4 +1,4 @@
-import {TxParams} from '@zilliqa-js/account'
+import {Transaction, TxParams} from '@zilliqa-js/account'
 import {BN, bytes, Long} from '@zilliqa-js/util'
 import {Zilliqa} from '@zilliqa-js/zilliqa'
 import {readFileSync} from 'fs'
@@ -30,7 +30,30 @@ const simpleRegistrarData = generateMapperFromContractInfo(
   simple_registrar_contract_info,
 )
 
-const version = bytes.pack(111, 1)
+const blockchainNodeParams = {
+    chainId: 111,
+    msgVersion: 1,
+    url: null,
+    getProvider: () => {
+        const id = uuid()
+        return new KayaProvider(
+            {dataPath: `/tmp/kaya_${id}_`},
+            {
+                // 1,000,000,000 ZIL
+                [address]: {privateKey, amount: '100000000000000', nonce: 0},
+                [address2]: {
+                    privateKey: privateKey2,
+                    amount: '100000000000000',
+                    nonce: 0,
+                },
+            },
+        )
+    },
+}
+
+const getZilliqa = () => new Zilliqa(blockchainNodeParams.url, blockchainNodeParams.getProvider())
+
+const version = bytes.pack(blockchainNodeParams.chainId, blockchainNodeParams.msgVersion)
 
 const defaultParams: TxParams = {
   version,
@@ -257,7 +280,7 @@ const contractMapValue = async (contract, field, key) => {
   return record && record.val
 }
 
-const transactionEvents = tx => {
+const transactionEvents = (tx: Transaction): Array<object> => {
   const events = tx.txParams.receipt.event_logs || []
   // Following the original reverse order of events
   return events.map(event => {
@@ -293,29 +316,13 @@ const approvalOf = async (registry, domain) => {
 
 
 describe('smart contracts', () => {
-  let provider
   beforeEach(() => {
     jest.resetModules()
-
-    const id = uuid()
-
-    provider = new KayaProvider(
-      {dataPath: `/tmp/kaya_${id}_`},
-      {
-        // 1,000,000,000 ZIL
-        [address]: {privateKey, amount: '100000000000000', nonce: 0},
-        [address2]: {
-          privateKey: privateKey2,
-          amount: '100000000000000',
-          nonce: 0,
-        },
-      },
-    )
   })
 
   describe('resolver.scilla', () => {
     it('should deploy', async () => {
-      const zilliqa = new Zilliqa(null, provider)
+      const zilliqa = getZilliqa()
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
       const [resolverTx, resolver] = await deployResolver(zilliqa)
@@ -324,7 +331,7 @@ describe('smart contracts', () => {
       expect(await resolverRecords(resolver)).toEqual({})
     })
     it('should deploy non-blank initial state', async () => {
-      const zilliqa = new Zilliqa(null, provider)
+      const zilliqa = getZilliqa()
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
       const [resolverTx, resolver] = await deployResolver(zilliqa, {
@@ -353,7 +360,7 @@ describe('smart contracts', () => {
       })
     })
     it('should set and unset records', async () => {
-      const zilliqa = new Zilliqa(null, provider)
+      const zilliqa = getZilliqa()
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
       const [registryTx, registry] = await deployRegistry(
         zilliqa,
@@ -382,9 +389,11 @@ describe('smart contracts', () => {
       // set record
       //////////////////////////////////////////////////////////////////////////
 
+      const keyForSetTx = 'crypto.ADA.address';
+      const valueForSetTx = '0x7357';
       const setTx = await resolver.call(
         'set',
-        resolverData.f.set({key: 'crypto.ADA.address', value: '0x7357'}),
+        resolverData.f.set({key: keyForSetTx, value: valueForSetTx}),
         defaultParams,
       )
 
@@ -396,7 +405,7 @@ describe('smart contracts', () => {
       }
 
       expect(await resolverRecords(resolver)).toEqual({
-        'crypto.ADA.address': '0x7357',
+        [keyForSetTx]: valueForSetTx,
       })
       expect(await transactionEvents(setTx)).toEqual([configuredEvent])
 
@@ -414,7 +423,7 @@ describe('smart contracts', () => {
     })
 
     it('should fail to set and unset records if sender not owner', async () => {
-      const zilliqa = new Zilliqa(null, provider)
+      const zilliqa = getZilliqa()
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
       const [, resolver] = await deployResolver(zilliqa)
 
@@ -458,7 +467,7 @@ describe('smart contracts', () => {
     })
 
     it("should gracefully fail to unset records if they don't exist", async () => {
-      const zilliqa = new Zilliqa(null, provider)
+      const zilliqa = getZilliqa()
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
       const [, resolver] = await deployResolver(zilliqa)
 
@@ -474,7 +483,7 @@ describe('smart contracts', () => {
 
   describe('registry.scilla', () => {
     it('should deploy', async () => {
-      const zilliqa = new Zilliqa(null, provider)
+      const zilliqa = getZilliqa()
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
       const [registryTx, registry] = await deployRegistry(
@@ -487,7 +496,7 @@ describe('smart contracts', () => {
     })
 
     it('should disallow onResolverConfigured call from unauthorized resources', async () => {
-      const zilliqa = new Zilliqa(null, provider)
+      const zilliqa = getZilliqa()
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
       const [registryTx, registry] = await deployRegistry(
@@ -528,7 +537,7 @@ describe('smart contracts', () => {
     })
 
     it('should approve addresses and set and unset operators for addresses', async () => {
-      const zilliqa = new Zilliqa(null, provider)
+      const zilliqa = getZilliqa()
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
       const [, registry] = await deployRegistry(
@@ -621,7 +630,7 @@ describe('smart contracts', () => {
     })
 
     it('should add and remove admins if currently admin', async () => {
-      const zilliqa = new Zilliqa(null, provider)
+      const zilliqa = getZilliqa()
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
       const [, registry] = await deployRegistry(
@@ -682,7 +691,7 @@ describe('smart contracts', () => {
     })
 
     it('should freely configure names properly', async () => {
-      const zilliqa = new Zilliqa(null, provider)
+      const zilliqa = getZilliqa()
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
       const [, registry] = await deployRegistry(
@@ -776,7 +785,7 @@ describe('smart contracts', () => {
     })
 
     it('should freely transfer names properly', async () => {
-      const zilliqa = new Zilliqa(null, provider)
+      const zilliqa = getZilliqa()
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
       const [, registry] = await deployRegistry(
@@ -833,7 +842,7 @@ describe('smart contracts', () => {
     })
 
     it('should freely assign names properly', async () => {
-      const zilliqa = new Zilliqa(null, provider)
+      const zilliqa = getZilliqa()
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
       const [, registry] = await deployRegistry(
@@ -918,7 +927,7 @@ describe('smart contracts', () => {
     })
 
     it('should freely bestow names properly', async () => {
-      const zilliqa = new Zilliqa(null, provider)
+      const zilliqa = getZilliqa()
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
       const [, registry] = await deployRegistry(
@@ -999,7 +1008,7 @@ describe('smart contracts', () => {
     })
 
     it('should allow admins to set registrar', async () => {
-      const zilliqa = new Zilliqa(null, provider)
+      const zilliqa = getZilliqa()
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
       const [, registry] = await deployRegistry(
@@ -1040,7 +1049,7 @@ describe('smart contracts', () => {
 
   describe('simple_registrar.scilla', () => {
     it('should deploy', async () => {
-      const zilliqa = new Zilliqa(null, provider)
+      const zilliqa = getZilliqa()
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
       const [registrarTx, registrar] = await deploySimpleRegistrar(
@@ -1059,7 +1068,7 @@ describe('smart contracts', () => {
     })
 
     it('should register name', async () => {
-      const zilliqa = new Zilliqa(null, provider)
+      const zilliqa = getZilliqa()
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
       const [, registry] = await deployRegistry(
@@ -1173,7 +1182,7 @@ describe('smart contracts', () => {
 
   describe('auction_registrar.scilla', () => {
     it('should deploy', async () => {
-      const zilliqa = new Zilliqa(null, provider)
+      const zilliqa = getZilliqa()
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
       const [registrarTx, registrar] = await deployAuctionRegistrar(
@@ -1197,7 +1206,7 @@ describe('smart contracts', () => {
     })
 
     it('should start, bid and end auction', async () => {
-      const zilliqa = new Zilliqa(null, provider)
+      const zilliqa = getZilliqa()
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
       const [, registry] = await deployRegistry(
@@ -1397,7 +1406,7 @@ describe('smart contracts', () => {
 
   describe('marketplace.scilla', () => {
     it('should deploy', async () => {
-      const zilliqa = new Zilliqa(null, provider)
+      const zilliqa = getZilliqa()
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
       const [marketplaceTx, marketplace] = await deployMarketplace(zilliqa, {
@@ -1411,7 +1420,7 @@ describe('smart contracts', () => {
     })
 
     it('should enable buying and selling of names', async () => {
-      const zilliqa = new Zilliqa(null, provider)
+      const zilliqa = getZilliqa()
       const soldDomain = 'domain'
       const soldNode = namehash('domain.zil')
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
@@ -1548,7 +1557,7 @@ describe('smart contracts', () => {
   })
 
   it('should disallow to sell domain outside the zone', async () => {
-    const zilliqa = new Zilliqa(null, provider)
+    const zilliqa = getZilliqa()
     zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
     const [, marketplace] = await deployMarketplace(zilliqa, {
@@ -1716,7 +1725,7 @@ describe('smart contracts', () => {
       //     //
       //   })
 
-      const zilliqa = new Zilliqa(null, provider)
+      const zilliqa = getZilliqa()
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
       const [, registry] = await deployRegistry(
