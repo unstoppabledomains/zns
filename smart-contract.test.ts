@@ -284,7 +284,7 @@ describe('smart contracts', () => {
       await expectUnchangedState(contract, async () => {
         await expect(
           resolver.set('test', '0x7357')
-        ).rejects.toThrow('Resolver record is not set')
+        ).rejects.toThrow('Transaction threw an Error event: Sender not owner')
       })
 
       //////////////////////////////////////////////////////////////////////////
@@ -303,7 +303,7 @@ describe('smart contracts', () => {
       await expectUnchangedState(contract, async () => {
         await expect(
           resolver.unset('test')
-        ).rejects.toThrow('Resolver record is not removed: Sender not owner or key does not exist')
+        ).rejects.toThrow('Transaction threw an Error event: Sender not owner or key does not exist')
       })
     })
 
@@ -315,7 +315,7 @@ describe('smart contracts', () => {
 
       await expectUnchangedState(resolver.contract, async () => {
         await expect(resolver.unset('does_not_exist'))
-          .rejects.toThrow('Resolver record is not removed: Sender not owner or key does not exist')
+          .rejects.toThrow('Transaction threw an Error event: Sender not owner or key does not exist')
       })
     })
   })
@@ -386,7 +386,7 @@ describe('smart contracts', () => {
       await expectUnchangedState(registry, async () => {
         await expect(
           zns.setApprovedAddress('node-owned-by-someone-else', address2)
-        ).rejects.toThrow("Approved address is not set: Sender not node owner")
+        ).rejects.toThrow("Transaction threw an Error event: Sender not node owner")
       })
 
       //////////////////////////////////////////////////////////////////////////
@@ -849,14 +849,7 @@ describe('smart contracts', () => {
       // register name
       //////////////////////////////////////////////////////////////////////////
 
-      const registerTx = await registry.call(
-        'register',
-        registryData.f.register({parent: rootNode, label: 'name'}),
-        {
-          ...defaultParams,
-          amount: new BN(1),
-        },
-      )
+      const registerTx = await zns.register('name', 1)
 
       expect(registerTx.isConfirmed()).toBeTruthy()
       expect(await transactionEvents(registerTx)).toEqual([
@@ -883,14 +876,8 @@ describe('smart contracts', () => {
       //////////////////////////////////////////////////////////////////////////
 
       await expectUnchangedState(registry, async () => {
-        await registry.call(
-          'register',
-          registryData.f.register({
-            parent: rootNode,
-            label: 'not-enough-funds',
-          }),
-          defaultParams,
-        )
+        await expect(zns.register('example', 0))
+          .rejects.toThrow('Transaction threw an Error event: Not valid parent, record owner, amount or sender')
       })
 
       //////////////////////////////////////////////////////////////////////////
@@ -898,14 +885,8 @@ describe('smart contracts', () => {
       //////////////////////////////////////////////////////////////////////////
 
       await expectUnchangedState(registry, async () => {
-        await registry.call(
-          'register',
-          registryData.f.register({parent: rootNode, label: 'name'}),
-          {
-            ...defaultParams,
-            amount: new BN(1),
-          },
-        )
+        await expect(zns.register('name', 1))
+          .rejects.toThrow('Transaction did not register a domain')
       })
 
       //////////////////////////////////////////////////////////////////////////
@@ -1016,14 +997,7 @@ describe('smart contracts', () => {
       // open an auction
       //////////////////////////////////////////////////////////////////////////
 
-      await registry.call(
-        'register',
-        registryData.f.register({parent: rootNode, label: 'name'}),
-        {
-          ...defaultParams,
-          amount: new BN(200),
-        },
-      )
+      await zns.register('name', 200)
 
       expect(await zns.getOwnerAddress(rootNode)).toEqual(address)
       expect(await zns.getResolverAddress(rootNode)).toEqual(nullAddress)
@@ -1093,14 +1067,7 @@ describe('smart contracts', () => {
       // close an auction on register
       //////////////////////////////////////////////////////////////////////////
 
-      await registry.call(
-        'register',
-        registryData.f.register({parent: rootNode, label: 'registered-name'}),
-        {
-          ...defaultParams,
-          amount: new BN(2000),
-        },
-      )
+      await zns.register('registered-name', 2000)
 
       expect(await zns.getOwnerAddress(rootNode)).toEqual(address)
       expect(await zns.getResolverAddress(rootNode)).toEqual(nullAddress)
@@ -1113,14 +1080,7 @@ describe('smart contracts', () => {
       // close an auction on bid
       //////////////////////////////////////////////////////////////////////////
 
-      await registry.call(
-        'register',
-        registryData.f.register({parent: rootNode, label: 'bid-name'}),
-        {
-          ...defaultParams,
-          amount: new BN(200),
-        },
-      )
+      await zns.register('bid-name', 200)
 
       await registrar.call(
         'bid',

@@ -64,6 +64,15 @@ let normalizeAddress = (address: Address) => {
   return address
 }
 
+let tokenize = (domain: Domain): [Node, string] => {
+  let tokens = domain.split('.')
+  let label = tokens.shift()
+  let parent = tokens.length
+    ? Zns.namehash(tokens.join('.'))
+    : Zns.NULL_NODE;
+  return [parent, label]
+}
+
 let normalizeContractAddress = (zilliqa: Zilliqa, argument: Address | Contract): [Address, Contract] => {
     if (typeof(argument) == "string") {
       let address = normalizeAddress(argument)
@@ -117,7 +126,7 @@ const asHash = params => {
   return params.reduce((a, v) => ({...a, [v.vname]: v.value}), {})
 }
 const transactionEvents = (tx: Transaction): TransactionEvent[] => {
-  const events = tx.txParams.receipt.event_logs || []
+  const events = tx.txParams.receipt ? tx.txParams.receipt.event_logs || [] : []
   // Following the original reverse order of events
   return events.map(event => {
     return {_eventname: event._eventname, ...asHash(event.params)}
@@ -143,7 +152,9 @@ class ZnsTxError extends ZnsError {
     super(message)
     this.tx = tx
     let errorEvent = transactionEvent(this.tx, 'Error');
-    this.eventErrorMessage = errorEvent.msg || errorEvent.message;
+    if (errorEvent) {
+      this.eventErrorMessage = errorEvent.msg || errorEvent.message;
+    }
     if (this.eventErrorMessage) {
       this.message += `: ${this.eventErrorMessage}`
     }
@@ -183,23 +194,13 @@ class Resolver {
   }
 
   async set(key: string, value: string, txParams?: Partial<TxParams>): Promise<Transaction> {
-    const tx = await this.contract.call(
-      'set',
-      resolverData.f.set({key, value}),
-      this.fullTxParams(txParams),
-    )
-    ensureTxConfirmed(tx,  "Resolver record is not set")
+    let tx = await this.callTransition('set', {key, value})
     this.records[key] = value
     return tx
   }
 
   async unset(key: string, txParams?: Partial<TxParams>): Promise<Transaction> {
-    const tx = await this.contract.call(
-      'unset',
-      resolverData.f.unset({key}),
-      this.fullTxParams(txParams),
-    )
-    ensureTxConfirmed(tx,  "Resolver record is not removed")
+    const tx = await this.callTransition('unset', {key})
     delete this.records[key]
     return tx
   }
@@ -235,8 +236,14 @@ class Resolver {
     return !await this.isLive();
   }
 
-  private fullTxParams(txParams: Partial<TxParams>): TxParams {
-    return {...this.registry.defaultTxParams, ...txParams} as TxParams
+  private async callTransition(name: string, args: object, txParams: Partial<TxParams> = {}): Promise<Transaction> {
+    let tx = await this.contract.call(
+      name,
+      resolverData.f[name](args),
+      {...this.registry.defaultTxParams, ...txParams} as TxParams,
+    )
+    ensureTxConfirmed(tx)
+    return tx
   }
 }
 
@@ -342,34 +349,53 @@ export default class Zns {
     return new Resolver(this, resolver, domain, owner, records)
   }
 
-  async bestow(domain: Domain, owner: Address, resolver: Address, txParams: Partial<TxParams> = {}) {
+  async bestow(domain: Domain, owner: Address, resolver: Address = Zns.NULL_ADDRESS, txParams: Partial<TxParams> = {}) {
 
-    let tokens = domain.split('.')
+    let [, label] = tokenize(domain)
     //TODO: ensure domain is a subnode of registry root
-    let tx = await this.contract.call(
+    let tx = await this.callTransition(
       'bestow',
-      registryData.f.bestow({
-        label: tokens[0],
+      {
+        label,
         owner: normalizeAddress(owner),
         resolver: normalizeAddress(resolver),
-      }),
-      this.fullTxParams(txParams)
+      },
     )
     ensureTxEvent(tx, "Configured", 'Failed to bestow a domain')
     return tx;
   }
 
-  async setApprovedAddress(domain: Domain | Node, address: Address, txParams: Partial<TxParams> = {}): Promise<Transaction> {
-    let tx =  await this.contract.call(
+  async setApprovedAddress(
+    domain: Domain | Node,
+    address: Address,
+    txParams: Partial<TxParams> = {}
+  ): Promise<Transaction> {
+    let tx =  await this.callTransition(
       'approve',
-      registryData.f.approve({
+      {
         node: Zns.namehash(domain),
         address: normalizeAddress(address),
-      }),
-      this.fullTxParams(txParams),
+      },
     )
-    ensureTxConfirmed(tx, "Approved address is not set")
     return tx;
+  }
+
+  async register(
+    domain: Domain,
+    amount: BN | number,
+    txParams: Partial<TxParams> = {}
+  ): Promise<Transaction> {
+    if (typeof amount == "number") {
+      amount = new BN(amount);
+    }
+    let [parent, label] = tokenize(domain)
+    let tx = await this.callTransition(
+      'register',
+      {parent, label},
+      {amount},
+    )
+    ensureTxEvent(tx, "Configured", "Transaction did not register a domain")
+    return tx
   }
 
   async getRegistryRecord(domain: Domain | Node): Promise<[Address, Address] | []> {
@@ -391,7 +417,13 @@ export default class Zns {
     return approvals[Zns.namehash(domain)]
   }
 
-  private fullTxParams(txParams: Partial<TxParams>): TxParams {
-    return {...this.defaultTxParams, ...txParams} as TxParams
+  private async callTransition(name: string, args: object, txParams: Partial<TxParams> = {}): Promise<Transaction> {
+    let tx = await this.contract.call(
+      name,
+      registryData.f[name](args),
+      {...this.defaultTxParams, ...txParams} as TxParams,
+    )
+    ensureTxConfirmed(tx)
+    return tx
   }
 }
