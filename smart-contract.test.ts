@@ -241,7 +241,7 @@ describe('smart contracts', () => {
     it('should set and unset records', async () => {
       const zilliqa = new Zilliqa(null, provider)
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
-      const zns = await Zns.deployRegistry(zilliqa, undefined, {version})
+      const zns = await Zns.deployRegistry(zilliqa, undefined, undefined, {version})
       const resolver = await zns.deployResolver('tld')
       await zns.bestow('tld', address, resolver.address)
       expect(await resolver.isLive()).toBeTruthy()
@@ -325,7 +325,7 @@ describe('smart contracts', () => {
       const zilliqa = new Zilliqa(null, provider)
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
-      const zns = await Zns.deployRegistry(zilliqa, undefined, {version})
+      const zns = await Zns.deployRegistry(zilliqa, undefined, undefined, {version})
       expect(await zns.contract.getInit()).toHaveLength(5)
     })
 
@@ -333,7 +333,7 @@ describe('smart contracts', () => {
       const zilliqa = new Zilliqa(null, provider)
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
-      const zns = await Zns.deployRegistry(zilliqa, undefined, {version})
+      const zns = await Zns.deployRegistry(zilliqa, undefined, undefined, {version})
       const registry = zns.contract
 
       await zns.bestow('tld', address, address2)
@@ -362,7 +362,7 @@ describe('smart contracts', () => {
       const zilliqa = new Zilliqa(null, provider)
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
-      const zns = await Zns.deployRegistry(zilliqa, undefined, {version})
+      const zns = await Zns.deployRegistry(zilliqa, undefined, undefined, {version})
       const registry = zns.contract
 
       //////////////////////////////////////////////////////////////////////////
@@ -435,7 +435,7 @@ describe('smart contracts', () => {
       const zilliqa = new Zilliqa(null, provider)
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
-      const zns = await Zns.deployRegistry(zilliqa, undefined, {version})
+      const zns = await Zns.deployRegistry(zilliqa, undefined, undefined, {version})
       const registry = zns.contract
 
       //////////////////////////////////////////////////////////////////////////
@@ -493,7 +493,7 @@ describe('smart contracts', () => {
       const zilliqa = new Zilliqa(null, provider)
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
-      const zns = await Zns.deployRegistry(zilliqa, undefined, {version})
+      const zns = await Zns.deployRegistry(zilliqa, undefined, undefined, {version})
       const registry = zns.contract
 
       //////////////////////////////////////////////////////////////////////////
@@ -584,7 +584,7 @@ describe('smart contracts', () => {
       const zilliqa = new Zilliqa(null, provider)
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
-      const zns = await Zns.deployRegistry(zilliqa, undefined, {version})
+      const zns = await Zns.deployRegistry(zilliqa, undefined, undefined, {version})
       const registry = zns.contract
 
       //////////////////////////////////////////////////////////////////////////
@@ -634,7 +634,7 @@ describe('smart contracts', () => {
       const zilliqa = new Zilliqa(null, provider)
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
-      const zns = await Zns.deployRegistry(zilliqa, undefined, {version})
+      const zns = await Zns.deployRegistry(zilliqa, undefined, undefined, {version})
       const registry = zns.contract
 
       //////////////////////////////////////////////////////////////////////////
@@ -712,7 +712,7 @@ describe('smart contracts', () => {
       const zilliqa = new Zilliqa(null, provider)
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
-      const zns = await Zns.deployRegistry(zilliqa, undefined, {version})
+      const zns = await Zns.deployRegistry(zilliqa, undefined, undefined, {version})
       const registry = zns.contract
 
       //////////////////////////////////////////////////////////////////////////
@@ -767,7 +767,7 @@ describe('smart contracts', () => {
       const zilliqa = new Zilliqa(null, provider)
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
-      const zns = await Zns.deployRegistry(zilliqa, undefined, {version})
+      const zns = await Zns.deployRegistry(zilliqa, undefined, undefined, {version})
       const registry = zns.contract
 
       //////////////////////////////////////////////////////////////////////////
@@ -824,7 +824,7 @@ describe('smart contracts', () => {
       const zilliqa = new Zilliqa(null, provider)
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
-      const zns = await Zns.deployRegistry(zilliqa, undefined, {version})
+      const zns = await Zns.deployRegistry(zilliqa, undefined, undefined, {version})
       const registry = zns.contract
 
       const [, registrar] = await deploySimpleRegistrar(
@@ -940,7 +940,7 @@ describe('smart contracts', () => {
       const zilliqa = new Zilliqa(null, provider)
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
-      const zns = await Zns.deployRegistry(zilliqa, undefined, {version})
+      const zns = await Zns.deployRegistry(zilliqa, undefined, undefined, {version})
       const registry = zns.contract
 
       const [, registrar] = await deployAuctionRegistrar(
@@ -1124,7 +1124,7 @@ describe('smart contracts', () => {
       const soldNode = Zns.namehash('domain')
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
-      const zns = await Zns.deployRegistry(zilliqa, undefined, {version})
+      const zns = await Zns.deployRegistry(zilliqa, undefined, undefined, {version})
       const registry = zns.contract
 
       const [, marketplace] = await deployMarketplace(zilliqa, {

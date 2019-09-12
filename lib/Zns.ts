@@ -287,16 +287,16 @@ export default class Zns {
 
   static async deployRegistry(
     zilliqa: Zilliqa,
-    contractParams: {owner: Address, root: Node} =
-      {owner: defaultWalletAddress(zilliqa), root: Zns.NULL_NODE},
+    owner: Address = defaultWalletAddress(zilliqa),
+    root: Node = Zns.NULL_NODE,
     txParams: Partial<TxParams> = {}
   ): Promise<Zns> {
-    if (!contractParams.owner) {
+    if (!owner) {
       throw new ZnsError("owner is not specified")
     }
     let contract = zilliqa.contracts.new(
       Zns.contractSourceCode('registry'),
-      registryData.init({initialOwner: contractParams.owner, rootNode: contractParams.root}),
+      registryData.init({initialOwner: owner, rootNode: root}),
     )
     let fullTxParams = {...Zns.DEFAULT_TX_PARAMS, ...txParams} as TxParams
     let [registryTx, registry] = await contract.deploy(fullTxParams)
