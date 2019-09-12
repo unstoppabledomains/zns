@@ -77,6 +77,20 @@
           { "vname": "address", "type": "ByStr20" },
           { "vname": "amount", "type": "Uint128" }
         ]
+      },
+      {
+        "vname": "onTransferSuccess",
+        "params": [
+          { "vname": "node", "type": "ByStr32" },
+          { "vname": "owner", "type": "ByStr20" }
+        ]
+      },
+      {
+        "vname": "onTransferFailure",
+        "params": [
+          { "vname": "node", "type": "ByStr32" },
+          { "vname": "owner", "type": "ByStr20" }
+        ]
       }
     ],
     "events": [
@@ -191,5 +205,26 @@
       }
     ]
   },
-  "warnings": []
+  "warnings": [
+    {
+      "warning_message": "Name owner shadows a contract parameter.",
+      "start_location": {
+        "file": "./scilla/auction_registrar.scilla",
+        "line": 470,
+        "column": 45
+      },
+      "end_location": { "file": "", "line": 0, "column": 0 },
+      "warning_id": 2
+    },
+    {
+      "warning_message": "Name owner shadows a contract parameter.",
+      "start_location": {
+        "file": "./scilla/auction_registrar.scilla",
+        "line": 469,
+        "column": 45
+      },
+      "end_location": { "file": "", "line": 0, "column": 0 },
+      "warning_id": 2
+    }
+  ]
 }

@@ -465,3 +465,6 @@ transition withdraw(address: ByStr20, amount: Uint128)
   | _ =>
   end
 end
+
+transition onTransferSuccess(node: ByStr32, owner: ByStr20) end
+transition onTransferFailure(node: ByStr32, owner: ByStr20) end
