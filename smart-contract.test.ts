@@ -1261,7 +1261,6 @@ describe('smart contracts', () => {
       const domainForTest = `${labelForTest}.${rootDomain}`
       const nodeForTest = namehash(domainForTest)
       const labelForRegisterTest = 'registered-name'
-      const domainForRegisterTest = `${labelForRegisterTest}.${rootDomain}`
       const labelForBidTest = 'bid-name'
       const domainForBidTest = `${labelForBidTest}.${rootDomain}`
       const nodeForBidTest = namehash(domainForBidTest)
@@ -1329,7 +1328,6 @@ describe('smart contracts', () => {
       await zilliqa.provider.send('KayaMine')
       await zilliqa.provider.send('KayaMine') // {result: '4'}
 
-      // TODO: fix uncaught error with "onTransferSuccess" in transition transfer in registry.scilla
       await registrar.call(
         'close',
         auctionRegistrarData.f.close({node: nodeForTest}),
