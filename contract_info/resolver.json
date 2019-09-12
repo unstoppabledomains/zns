@@ -3,7 +3,7 @@
     "scilla_major_version": "0",
     "vname": "Resolver",
     "params": [
-      { "vname": "owner", "type": "ByStr20" },
+      { "vname": "initialOwner", "type": "ByStr20" },
       { "vname": "registry", "type": "ByStr20" },
       { "vname": "node", "type": "ByStr32" },
       { "vname": "ada", "type": "String" },
@@ -14,8 +14,15 @@
       { "vname": "xrp", "type": "String" },
       { "vname": "zil", "type": "String" }
     ],
-    "fields": [ { "vname": "records", "type": "Map (String) (String)" } ],
+    "fields": [
+      { "vname": "owner", "type": "ByStr20" },
+      { "vname": "records", "type": "Map (String) (String)" }
+    ],
     "transitions": [
+      {
+        "vname": "setOwner",
+        "params": [ { "vname": "address", "type": "ByStr20" } ]
+      },
       {
         "vname": "set",
         "params": [
@@ -31,10 +38,7 @@
     "events": [
       {
         "vname": "Error",
-        "params": [
-          { "vname": "code", "type": "Uint64" },
-          { "vname": "message", "type": "String" }
-        ]
+        "params": [ { "vname": "message", "type": "String" } ]
       },
       {
         "vname": "RecordUnset",
@@ -46,6 +50,10 @@
           { "vname": "key", "type": "String" },
           { "vname": "value", "type": "String" }
         ]
+      },
+      {
+        "vname": "OwnerSet",
+        "params": [ { "vname": "address", "type": "ByStr20" } ]
       }
     ],
     "ADTs": [
