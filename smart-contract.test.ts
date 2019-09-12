@@ -160,7 +160,7 @@ const rootNode = namehash('zil')
 const nullAddress = '0'.repeat(40)
 
 const resolverInitState = {
-  owner: '0x' + address,
+  initialOwner: '0x' + address,
   registry: '0x' + address,
   node: namehash('test'),
   ada: '',
@@ -176,7 +176,7 @@ const resolverInitState = {
 function deployResolver(
   zilliqa: Zilliqa,
   {
-    owner,
+    initialOwner,
     registry,
     node,
     ada,
@@ -194,7 +194,7 @@ function deployResolver(
     .new(
       readFileSync('./scilla/resolver.scilla', 'utf8'),
       resolverData
-        .init({owner, registry, node, ada, btc, eos, eth, xlm, xrp, zil})
+        .init({initialOwner, registry, node, ada, btc, eos, eth, xlm, xrp, zil})
         .concat({
           vname: '_creation_block',
           type: 'BNum',
@@ -337,7 +337,7 @@ describe('smart contracts', () => {
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
       const [resolverTx, resolver] = await deployResolver(zilliqa, {
-        owner: '0x' + address,
+        initialOwner: '0x' + address,
         registry: '0x' + address,
         node: namehash('hello'),
         ada: '0x1111',
