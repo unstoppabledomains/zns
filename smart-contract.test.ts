@@ -1254,13 +1254,23 @@ describe('smart contracts', () => {
         arguments: [],
       })
 
+      const rootDomain = 'zil'
+      const labelForTest = 'name'
+      const domainForTest = `${labelForTest}.${rootDomain}`
+      const nodeForTest = namehash(domainForTest)
+      const labelForRegisterTest = 'registered-name'
+      const domainForRegisterTest = `${labelForRegisterTest}.${rootDomain}`
+      const labelForBidTest = 'bid-name'
+      const domainForBidTest = `${labelForBidTest}.${rootDomain}`
+      const nodeForBidTest = namehash(domainForBidTest)
+
       //////////////////////////////////////////////////////////////////////////
       // open an auction
       //////////////////////////////////////////////////////////////////////////
 
       await registry.call(
         'register',
-        registryData.f.register({parent: rootNode, label: 'name'}),
+        registryData.f.register({parent: rootNode, label: labelForTest}),
         {
           ...defaultParams,
           amount: new BN(200),
@@ -1269,11 +1279,11 @@ describe('smart contracts', () => {
 
       expect(await ownerOf(registry, rootNode)).toEqual(address)
       expect(await resolverOf(registry, rootNode)).toEqual(nullAddress)
-      expect(await ownerOf(registry, 'name.zil')).toEqual(registrar.address)
-      expect(await resolverOf(registry, 'name.zil')).toEqual(nullAddress)
+      expect(await ownerOf(registry, domainForTest)).toEqual(registrar.address)
+      expect(await resolverOf(registry, domainForTest)).toEqual(nullAddress)
 
       expect(
-        await contractMapValue(registrar, 'auctions', namehash('name.zil')),
+        await contractMapValue(registrar, 'auctions', nodeForTest),
       ).toMatchObject({
         constructor: 'Auction',
         argtypes: [],
@@ -1281,7 +1291,7 @@ describe('smart contracts', () => {
           '0x' + address,
           '200',
           expect.stringMatching(/^\d+$/),
-          'name',
+          labelForTest,
         ],
       })
 
@@ -1291,12 +1301,12 @@ describe('smart contracts', () => {
 
       await registrar.call(
         'bid',
-        auctionRegistrarData.f.bid({node: namehash('name')}),
+        auctionRegistrarData.f.bid({node: nodeForTest}),
         {...defaultParams, amount: new BN(300)},
       )
 
       expect(
-        await contractMapValue(registrar, 'auctions', namehash('name')),
+        await contractMapValue(registrar, 'auctions', nodeForTest),
       ).toMatchObject({
         constructor: 'Auction',
         argtypes: [],
@@ -1304,7 +1314,7 @@ describe('smart contracts', () => {
           '0x' + address,
           '300',
           expect.stringMatching(/^\d*$/),
-          'name',
+          labelForTest,
         ],
       })
 
@@ -1317,16 +1327,17 @@ describe('smart contracts', () => {
       await zilliqa.provider.send('KayaMine')
       await zilliqa.provider.send('KayaMine') // {result: '4'}
 
+      // TODO: fix uncaught error with "onTransferSuccess" in transition transfer in registry.scilla
       await registrar.call(
         'close',
-        auctionRegistrarData.f.close({node: namehash('name')}),
+        auctionRegistrarData.f.close({node: nodeForTest}),
         defaultParams,
       )
 
       expect(await ownerOf(registry, rootNode)).toEqual(address)
       expect(await resolverOf(registry, rootNode)).toEqual(nullAddress)
-      expect(await ownerOf(registry, 'name')).toEqual(address)
-      expect(await resolverOf(registry, 'name')).toEqual(nullAddress)
+      expect(await ownerOf(registry, domainForTest)).toEqual(address)
+      expect(await resolverOf(registry, domainForTest)).toEqual(nullAddress)
 
       expect(await contractField(registrar, 'auctions')).toHaveLength(0)
 
@@ -1336,7 +1347,7 @@ describe('smart contracts', () => {
 
       await registry.call(
         'register',
-        registryData.f.register({parent: rootNode, label: 'registered-name'}),
+        registryData.f.register({parent: rootNode, label: labelForRegisterTest}),
         {
           ...defaultParams,
           amount: new BN(2000),
@@ -1345,10 +1356,10 @@ describe('smart contracts', () => {
 
       expect(await ownerOf(registry, rootNode)).toEqual(address)
       expect(await resolverOf(registry, rootNode)).toEqual(nullAddress)
-      expect(await ownerOf(registry, 'name')).toEqual(address)
-      expect(await resolverOf(registry, 'name')).toEqual(nullAddress)
-      expect(await ownerOf(registry, 'registered-name')).toEqual(address)
-      expect(await resolverOf(registry, 'registered-name')).toEqual(nullAddress)
+      expect(await ownerOf(registry, domainForTest)).toEqual(address)
+      expect(await resolverOf(registry, domainForTest)).toEqual(nullAddress)
+      expect(await ownerOf(registry, domainForRegisterTest)).toEqual(address)
+      expect(await resolverOf(registry, domainForRegisterTest)).toEqual(nullAddress)
 
       expect(await contractField(registrar, 'auctions')).toHaveLength(0)
 
@@ -1358,7 +1369,7 @@ describe('smart contracts', () => {
 
       await registry.call(
         'register',
-        registryData.f.register({parent: rootNode, label: 'bid-name'}),
+        registryData.f.register({parent: rootNode, label: labelForBidTest}),
         {
           ...defaultParams,
           amount: new BN(200),
@@ -1367,7 +1378,7 @@ describe('smart contracts', () => {
 
       await registrar.call(
         'bid',
-        auctionRegistrarData.f.bid({node: namehash('bid-name')}),
+        auctionRegistrarData.f.bid({node: nodeForBidTest}),
         {...defaultParams, amount: new BN(2000)},
       )
 
@@ -1375,12 +1386,12 @@ describe('smart contracts', () => {
 
       await registrar.call(
         'close',
-        auctionRegistrarData.f.close({node: namehash('bid-name')}),
+        auctionRegistrarData.f.close({node: nodeForBidTest}),
         defaultParams,
       )
 
-      expect(await ownerOf(registry, 'bid-name')).toEqual(address)
-      expect(await resolverOf(registry, 'bid-name')).toEqual(nullAddress)
+      expect(await ownerOf(registry, domainForBidTest)).toEqual(address)
+      expect(await resolverOf(registry, domainForBidTest)).toEqual(nullAddress)
 
       expect(await contractField(registrar, 'auctions')).toHaveLength(0)
     })
