@@ -38,25 +38,10 @@
         ]
       },
       {
-        "vname": "configureNode",
-        "params": [
-          { "vname": "node", "type": "ByStr32" },
-          { "vname": "owner", "type": "ByStr20" },
-          { "vname": "resolver", "type": "ByStr20" }
-        ]
-      },
-      {
         "vname": "configureResolver",
         "params": [
           { "vname": "node", "type": "ByStr32" },
           { "vname": "resolver", "type": "ByStr20" }
-        ]
-      },
-      {
-        "vname": "transfer",
-        "params": [
-          { "vname": "node", "type": "ByStr32" },
-          { "vname": "owner", "type": "ByStr20" }
         ]
       }
     ],
