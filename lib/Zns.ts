@@ -69,7 +69,7 @@ let tokenize = (domain: Domain): [Node, string] => {
   let label = tokens.shift()
   let parent = tokens.length
     ? Zns.namehash(tokens.join('.'))
-    : Zns.NULL_NODE;
+    : Zns.NullNode;
   return [parent, label]
 }
 
@@ -161,7 +161,7 @@ class ZnsTxError extends ZnsError {
   }
 }
 
-let DEFAULT_CURRENCIES = ['ADA', 'BTC', 'EOS', 'ETH', 'XLM', 'XRP', 'ZIL']
+let DefaultCurrencies = ['ADA', 'BTC', 'EOS', 'ETH', 'XLM', 'XRP', 'ZIL']
 class Resolver {
   readonly address: Address
   contract: Contract
@@ -249,17 +249,17 @@ class Resolver {
 
 
 export default class Zns {
-  static NULL_ADDRESS = '0x' + '0'.repeat(40)
-  static NULL_NODE = '0x' + '0'.repeat(64)
-  static DEFAULT_CHAIN_ID = 1
-  static DEFAULT_TX_PARAMS: Partial<TxParams> =  {
-    version: bytes.pack(Zns.DEFAULT_CHAIN_ID, 1),
-    toAddr: Zns.NULL_ADDRESS,
+  static NullAddress = '0x' + '0'.repeat(40)
+  static NullNode = '0x' + '0'.repeat(64)
+  static DefaultChainId = 1
+  static DefaultTxParams: Partial<TxParams> =  {
+    version: bytes.pack(Zns.DefaultChainId, 1),
+    toAddr: Zns.NullAddress,
     amount: new BN(0),
     gasPrice: new BN(1000000000),
     gasLimit: Long.fromNumber(25000),
   }
-  static REUSABLE_TX_PARAMS = ['version', 'gasPrice', 'gasLimit']
+  static ReusableTxParams = ['version', 'gasPrice', 'gasLimit']
 
 
   readonly zilliqa: Zilliqa
@@ -288,7 +288,7 @@ export default class Zns {
   static async deployRegistry(
     zilliqa: Zilliqa,
     owner: Address = defaultWalletAddress(zilliqa),
-    root: Node = Zns.NULL_NODE,
+    root: Node = Zns.NullNode,
     txParams: Partial<TxParams> = {}
   ): Promise<Zns> {
     if (!owner) {
@@ -298,10 +298,10 @@ export default class Zns {
       Zns.contractSourceCode('registry'),
       registryData.init({initialOwner: owner, rootNode: root}),
     )
-    let fullTxParams = {...Zns.DEFAULT_TX_PARAMS, ...txParams} as TxParams
+    let fullTxParams = {...Zns.DefaultTxParams, ...txParams} as TxParams
     let [registryTx, registry] = await contract.deploy(fullTxParams)
     ensureTxConfirmed(registryTx, "Failed to deploy the registry")
-    return new Zns(zilliqa, registry, _.pick(txParams, ...Zns.REUSABLE_TX_PARAMS))
+    return new Zns(zilliqa, registry, _.pick(txParams, ...Zns.ReusableTxParams))
   }
 
   static contractSourceCode(name: string): string {
@@ -313,7 +313,7 @@ export default class Zns {
       return true;
     }
     return _.isEqual(_.keys(resolution), ['crypto']) &&
-      !_.difference(_.keys(resolution.crypto), DEFAULT_CURRENCIES).length &&
+      !_.difference(_.keys(resolution.crypto), DefaultCurrencies).length &&
       _.every(_.values(resolution.crypto), v => _.isEqual(_.keys(v), ['address']));
   }
 
@@ -323,7 +323,7 @@ export default class Zns {
     this.address = address
     this.contract = contract
     this.owner = defaultWalletAddress(zilliqa)
-    this.defaultTxParams = {...Zns.DEFAULT_TX_PARAMS, ...txParams}
+    this.defaultTxParams = {...Zns.DefaultTxParams, ...txParams}
   }
 
   async deployResolver(domain: Domain, resolution: Resolution = {}, txParams: Partial<TxParams> = {}): Promise<Resolver> {
@@ -333,7 +333,7 @@ export default class Zns {
     if (!Zns.isInitResolution(resolution)) {
       throw new ZnsError("Resolver can not be initialized with non-standard resolution")
     }
-    let addresses = _(DEFAULT_CURRENCIES).map(currency => {
+    let addresses = _(DefaultCurrencies).map(currency => {
       return [currency.toLowerCase(), _.get(resolution, addressKey(currency)) || '']
     }).fromPairs().value()
     let records = _.mapKeys(addresses, (v, k) => addressKey(k))
@@ -349,7 +349,7 @@ export default class Zns {
     return new Resolver(this, resolver, domain, owner, records)
   }
 
-  async bestow(domain: Domain, owner: Address, resolver: Address = Zns.NULL_ADDRESS, txParams: Partial<TxParams> = {}) {
+  async bestow(domain: Domain, owner: Address, resolver: Address = Zns.NullAddress, txParams: Partial<TxParams> = {}) {
 
     let [, label] = tokenize(domain)
     //TODO: ensure domain is a subnode of registry root
