@@ -30,30 +30,63 @@ const simpleRegistrarData = generateMapperFromContractInfo(
   simple_registrar_contract_info,
 )
 
-const blockchainNodeParams = {
-    chainId: 111,
-    msgVersion: 1,
-    url: null,
-    getProvider: () => {
-        const id = uuid()
-        return new KayaProvider(
-            {dataPath: `/tmp/kaya_${id}_`},
-            {
-                // 1,000,000,000 ZIL
-                [address]: {privateKey, amount: '100000000000000', nonce: 0},
-                [address2]: {
-                    privateKey: privateKey2,
-                    amount: '100000000000000',
-                    nonce: 0,
-                },
-            },
-        )
-    },
+const getZilliqaNodeType = (): string => {
+  const environmentVariable = process.env.ZIL_NODE_TYPE // kaya, testnet
+  if (['kaya', 'testnet'].includes(environmentVariable)) {
+    return environmentVariable
+  }
+
+  console.warn('ZIL_NODE_TYPE environment variable should set as either \'kaya\' or \'testnet\'. \'kaya\' is set by default')
+  return 'kaya'
 }
 
-const getZilliqa = () => new Zilliqa(blockchainNodeParams.url, blockchainNodeParams.getProvider())
+const zilliqaNodeType = getZilliqaNodeType()
 
-const version = bytes.pack(blockchainNodeParams.chainId, blockchainNodeParams.msgVersion)
+const testParams = ({
+  kaya: {
+    jestTimeout: 5 * 1000,
+  },
+  testnet: {
+    jestTimeout: 15 * 60 * 1000,
+  }
+})[zilliqaNodeType]
+
+const zilliqaKayaNodeParams = {
+  chainId: 111,
+  msgVersion: 1,
+  url: null,
+  getProvider: () => {
+    const id = uuid()
+    return new KayaProvider(
+      {dataPath: `/tmp/kaya_${id}_`},
+      {
+        // 1,000,000,000 ZIL
+        [address]: {privateKey, amount: '100000000000000', nonce: 0},
+        [address2]: {
+          privateKey: privateKey2,
+          amount: '100000000000000',
+          nonce: 0,
+        },
+      },
+    )
+  },
+}
+
+const zilliqaTestnetNodeParams = {
+  chainId: 333,
+  msgVersion: 1,
+  url: 'https://dev-api.zilliqa.com',
+  getProvider: () => undefined,
+}
+
+const zilliqaNodeParams = ({
+  kaya: zilliqaKayaNodeParams,
+  testnet: zilliqaTestnetNodeParams
+})[zilliqaNodeType]
+
+const getZilliqa = () => new Zilliqa(zilliqaNodeParams.url, zilliqaNodeParams.getProvider())
+
+const version = bytes.pack(zilliqaNodeParams.chainId, zilliqaNodeParams.msgVersion)
 
 const defaultParams: TxParams = {
   version,
@@ -178,6 +211,7 @@ const address2 = '2f4f79ef6abfc0368f5a7e2c2df82e1afdfe7204'
 const privateKey2 =
   '1234567890123456789012345678901234567890123456789012345678901234'
 
+const rootDomain = 'zil'
 const rootNode = namehash('zil')
 const nullAddress = '0'.repeat(40)
 
@@ -316,6 +350,7 @@ const approvalOf = async (registry, domain) => {
 
 
 describe('smart contracts', () => {
+  jest.setTimeout(testParams.jestTimeout)
   beforeEach(() => {
     jest.resetModules()
   })
@@ -1180,7 +1215,7 @@ describe('smart contracts', () => {
     })
   })
 
-  describe('auction_registrar.scilla', () => {
+  ;(zilliqaNodeType === 'kaya' ? describe : describe.skip)('auction_registrar.scilla', () => {
     it('should deploy', async () => {
       const zilliqa = getZilliqa()
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
@@ -1265,7 +1300,6 @@ describe('smart contracts', () => {
         arguments: [],
       })
 
-      const rootDomain = 'zil'
       const labelForTest = 'name'
       const domainForTest = `${labelForTest}.${rootDomain}`
       const nodeForTest = namehash(domainForTest)
