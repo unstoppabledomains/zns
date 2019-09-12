@@ -1452,7 +1452,7 @@ describe('smart contracts', () => {
       expect(await marketplace.getInit()).toHaveLength(6)
     })
 
-    it('should enable buying and selling of names', async () => {
+    it.skip('should enable buying and selling of names', async () => {
       const zilliqa = getZilliqa()
       const soldDomain = 'domain'
       const soldNode = namehash(`${soldDomain}.${defaultRootDomain}`)
