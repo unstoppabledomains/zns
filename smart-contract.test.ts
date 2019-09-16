@@ -430,6 +430,12 @@ describe('smart contracts', () => {
         defaultParams,
       )
 
+      const setEvent = {
+        _eventname: 'RecordSet',
+        key: keyForSetTx,
+        value: valueForSetTx,
+      }
+
       const configuredEvent = {
         _eventname: 'Configured',
         node: namehash('tld.zil'),
@@ -440,18 +446,23 @@ describe('smart contracts', () => {
       expect(await resolverRecords(resolver)).toEqual({
         [keyForSetTx]: valueForSetTx,
       })
-      expect(await transactionEvents(setTx)).toEqual([configuredEvent])
+      expect(await transactionEvents(setTx)).toEqual([setEvent, configuredEvent])
 
       //////////////////////////////////////////////////////////////////////////
       // unset record
       //////////////////////////////////////////////////////////////////////////
 
+      const unsetEvent = {
+        _eventname: 'RecordUnset',
+        key: keyForSetTx,
+      }
+
       const unsetTx = await resolver.call(
         'unset',
-        resolverData.f.unset({key: 'crypto.ADA.address'}),
+        resolverData.f.unset({key: keyForSetTx}),
         defaultParams,
       )
-      expect(await transactionEvents(unsetTx)).toEqual([configuredEvent])
+      expect(await transactionEvents(unsetTx)).toEqual([unsetEvent, configuredEvent])
       expect(await resolverRecords(resolver)).toEqual({})
     })
 
@@ -637,7 +648,7 @@ describe('smart contracts', () => {
         await await contractMapValue(
           registry,
           'operators',
-          '0xd90f2e538ce0df89c8273cad3b63ec44a3c4ed82',
+          `0x${address}`,
         ),
       ).toEqual(['0x2f4f79ef6abfc0368f5a7e2c2df82e1afdfe7204'])
 
@@ -657,7 +668,7 @@ describe('smart contracts', () => {
         await contractMapValue(
           registry,
           'operators',
-          '0xd90f2e538ce0df89c8273cad3b63ec44a3c4ed82',
+          `0x${address}`,
         ),
       ).toEqual([])
     })
@@ -1102,6 +1113,7 @@ describe('smart contracts', () => {
 
     it('should register name', async () => {
       const domainToRegister = 'name'
+      const nodeToRegister = namehash(`${domainToRegister}.${defaultRootDomain}`)
       const zilliqa = getZilliqa()
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
@@ -1145,8 +1157,14 @@ describe('smart contracts', () => {
       expect(registerTx.isConfirmed()).toBeTruthy()
       expect(await transactionEvents(registerTx)).toEqual([
         {
+          _eventname: 'Register',
+          node: nodeToRegister,
+          owner: `0x${address}`,
+          price: '1',
+        },
+        {
           _eventname: 'Configured',
-          node: namehash(`${domainToRegister}.${defaultRootDomain}`),
+          node: nodeToRegister,
           owner: '0x' + address,
           resolver: '0x' + nullAddress,
         },

@@ -22,7 +22,7 @@
     "hash.js": "^1.1.7",
     "ioredis": "^4.11.1",
     "isomorphic-fetch": "^2.2.1",
-    "kaya-cli": "unstoppabledomains/kaya#0b5a5718f20ca953671806a9d44f334d0f30ef01",
+    "kaya-cli": "unstoppabledomains/kaya#75c8428ac73e3e7f9e3372e78369021bb914e9a4",
     "ts-jest": "^24.0.2",
     "tslib": "^1.9.3",
     "typescript": "^3.4.5",
