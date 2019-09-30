@@ -14,6 +14,8 @@ import {contract_info as resolver_contract_info} from './contract_info/resolver.
 import {contract_info as simple_registrar_contract_info} from './contract_info/simple_registrar.json'
 import {generateMapperFromContractInfo} from './lib/params'
 
+kayaConfig.scilla.remote = false
+kayaConfig.blockchain.blockInterval = 0
 kayaConfig.constants.smart_contract.SCILLA_RUNNER = `${__dirname}/runner/bin/scilla-runner`
 kayaConfig.constants.smart_contract.SCILLA_CHECKER = `${__dirname}/runner/bin/scilla-checker`
 
