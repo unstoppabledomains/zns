@@ -4,6 +4,7 @@ import {Zilliqa} from '@zilliqa-js/zilliqa'
 import {readFileSync} from 'fs'
 import * as hashjs from 'hash.js'
 import * as KayaProvider from 'kaya-cli/src/provider'
+import { loadAccounts } from 'kaya-cli/src/components/wallet/wallet'
 import * as kayaConfig from 'kaya-cli/src/config'
 import * as uuid from 'uuid/v4'
 import {contract_info as auction_registrar_contract_info} from './contract_info/auction_registrar.json'
@@ -55,18 +56,20 @@ const zilliqaKayaNodeParams = {
   url: null,
   getProvider: () => {
     const id = uuid()
-    return new KayaProvider(
-      {dataPath: `/tmp/kaya_${id}_`},
-      {
-        // 1,000,000,000 ZIL
-        [address]: {privateKey, amount: '100000000000000', nonce: 0},
-        [address2]: {
-          privateKey: privateKey2,
-          amount: '100000000000000',
-          nonce: 0,
-        },
+    loadAccounts({
+      // 1,000,000,000 ZIL
+      [address]: {
+        privateKey,
+        amount: '100000000000000',
+        nonce: 0
       },
-    )
+      [address2]: {
+        privateKey: privateKey2,
+        amount: '100000000000000',
+        nonce: 0,
+      },
+    });
+    return new KayaProvider({ dataPath: `/tmp/kaya_${id}_` })
   },
 }
 
