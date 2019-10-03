@@ -62,12 +62,12 @@ const zilliqaKayaNodeParams = {
       // 1,000,000,000 ZIL
       [address]: {
         privateKey,
-        amount: '100000000000000',
+        amount: '1000000000000000',
         nonce: 0
       },
       [address2]: {
         privateKey: privateKey2,
-        amount: '100000000000000',
+        amount: '1000000000000000',
         nonce: 0,
       },
     });
