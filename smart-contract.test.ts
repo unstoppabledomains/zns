@@ -316,7 +316,7 @@ describe('smart contracts', () => {
       await expectUnchangedState(contract, async () => {
         await expect(
           resolver.set('test', '0x7357')
-        ).rejects.toThrow('Transaction threw an Error event: Sender not owner')
+        ).rejects.toThrow(/Sender not owner/)
       })
 
       //////////////////////////////////////////////////////////////////////////
@@ -335,7 +335,7 @@ describe('smart contracts', () => {
       await expectUnchangedState(contract, async () => {
         await expect(
           resolver.unset('test')
-        ).rejects.toThrow('Transaction threw an Error event: Sender not owner or key does not exist')
+        ).rejects.toThrow(/Sender not owner or key does not exist/)
       })
     })
 
@@ -347,7 +347,7 @@ describe('smart contracts', () => {
 
       await expectUnchangedState(resolver.contract, async () => {
         await expect(resolver.unset('does_not_exist'))
-          .rejects.toThrow('Transaction threw an Error event: Sender not owner or key does not exist')
+          .rejects.toThrow(/Sender not owner or key does not exist/)
       })
     })
   })
