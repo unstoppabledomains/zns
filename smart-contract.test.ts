@@ -394,7 +394,7 @@ describe('smart contracts', () => {
       const zilliqa = getZilliqa()
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
-      const zns = await Zns.deployRegistry(zilliqa, undefined, undefined, {version})
+      const zns = await Zns.deployRegistry(zilliqa, undefined, defaultRootNode, {version})
       const registry = zns.contract
 
       //////////////////////////////////////////////////////////////////////////
@@ -418,7 +418,7 @@ describe('smart contracts', () => {
       await expectUnchangedState(registry, async () => {
         await expect(
           zns.setApprovedAddress('node-owned-by-someone-else', address2)
-        ).rejects.toThrow("Transaction threw an Error event: Sender not node owner")
+        ).rejects.toThrow(/Sender not node owner/)
       })
 
       //////////////////////////////////////////////////////////////////////////
@@ -525,7 +525,7 @@ describe('smart contracts', () => {
       const zilliqa = getZilliqa()
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
-      const zns = await Zns.deployRegistry(zilliqa, undefined, undefined, {version})
+      const zns = await Zns.deployRegistry(zilliqa, undefined, defaultRootNode, {version})
       const registry = zns.contract
 
       //////////////////////////////////////////////////////////////////////////
@@ -616,7 +616,7 @@ describe('smart contracts', () => {
       const zilliqa = getZilliqa()
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
-      const zns = await Zns.deployRegistry(zilliqa, undefined, undefined, {version})
+      const zns = await Zns.deployRegistry(zilliqa, undefined, defaultRootNode, {version})
       const registry = zns.contract
 
       //////////////////////////////////////////////////////////////////////////
@@ -666,7 +666,7 @@ describe('smart contracts', () => {
       const zilliqa = getZilliqa()
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
-      const zns = await Zns.deployRegistry(zilliqa, undefined, undefined, {version})
+      const zns = await Zns.deployRegistry(zilliqa, undefined, defaultRootNode, {version})
       const registry = zns.contract
 
       //////////////////////////////////////////////////////////////////////////
@@ -744,7 +744,7 @@ describe('smart contracts', () => {
       const zilliqa = getZilliqa()
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
-      const zns = await Zns.deployRegistry(zilliqa, undefined, undefined, {version})
+      const zns = await Zns.deployRegistry(zilliqa, undefined, defaultRootNode, {version})
       const registry = zns.contract
 
       //////////////////////////////////////////////////////////////////////////
@@ -756,8 +756,8 @@ describe('smart contracts', () => {
         {
           _eventname: 'Configured',
           node: Zns.namehash('tld.zil'),
-          owner: '0x' + address,
-          resolver: '0x' + address,
+          owner: address,
+          resolver: address,
         },
         {
           _eventname: 'NewDomain',
@@ -780,7 +780,7 @@ describe('smart contracts', () => {
       await expectUnchangedState(registry, async () => {
         await expect(
           zns.bestow('tld', address2, address2)
-        ).rejects.toThrow('Transaction threw an Error event: Sender admin')
+        ).rejects.toThrow(/Sender admin/)
       })
 
       //////////////////////////////////////////////////////////////////////////
@@ -791,7 +791,7 @@ describe('smart contracts', () => {
 
       await expectUnchangedState(registry, async () => {
         await expect(zns.bestow('other-tld', address2, address2))
-          .rejects.toThrow('Transaction threw an Error event: Sender admin')
+          .rejects.toThrow(/Sender admin/)
       })
     })
 
@@ -858,7 +858,7 @@ describe('smart contracts', () => {
       const zilliqa = getZilliqa()
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
-      const zns = await Zns.deployRegistry(zilliqa, undefined, undefined, {version})
+      const zns = await Zns.deployRegistry(zilliqa, undefined, defaultRootNode, {version})
       const registry = zns.contract
 
       const [, registrar] = await deploySimpleRegistrar(
