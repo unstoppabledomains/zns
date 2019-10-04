@@ -147,7 +147,8 @@ class ZnsError extends Error {
 
 class ZnsTxError extends ZnsError {
   readonly tx: Transaction
-  readonly eventErrorMessage: string | undefined
+  readonly eventErrorMessage?: string
+  readonly transition?: string;
   constructor(message: string, tx: Transaction) {
     super(message)
     this.tx = tx
@@ -155,10 +156,15 @@ class ZnsTxError extends ZnsError {
     if (errorEvent) {
       this.eventErrorMessage = errorEvent.msg || errorEvent.message;
     }
+    this.transition = JSON.parse(this.tx.txParams.data)._tag;
+    if (this.transition) {
+      this.message += ` on transition ${JSON.stringify(this.transition)}`;
+    }
     if (this.eventErrorMessage) {
-      this.message += `: ${this.eventErrorMessage}`
+      this.message += `: ${this.eventErrorMessage}`;
     }
   }
+
 }
 
 let DefaultCurrencies = ['ADA', 'BTC', 'EOS', 'ETH', 'XLM', 'XRP', 'ZIL']
