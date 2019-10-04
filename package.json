@@ -18,9 +18,12 @@
     "@zilliqa-js/zilliqa": "^0.5.4",
     "base32": "^0.0.6",
     "commander": "^2.20.0",
+    "cors": "^2.8.5",
     "events": "^3.0.0",
     "hash.js": "^1.1.7",
-    "kaya-cli": "unstoppabledomains/kaya#ac5df8b51232fa65abbe5ab47f04063b6504c9f3",
+    "ioredis": "^4.11.1",
+    "isomorphic-fetch": "^2.2.1",
+    "kaya-cli": "Zilliqa/kaya#52121cb1ae51f428b8128c4e46bc96154b7ae996",
     "lodash": "^4.17.15",
     "ts-jest": "^24.0.2",
     "tslib": "^1.9.3",
@@ -36,7 +39,9 @@
   "scripts": {
     "verify": "[ -x ./runner/bin/scilla-runner ] && [ -x ./runner/bin/scilla-checker ] && [ -d ./runner/src/stdlib ] || (echo 'Scilla libraries are not symlinked' && exit 1)",
     "contracts": "yarn verify && sh ./scripts/contractInfo.sh",
-    "test": "yarn contracts && jest smart-contract.test.ts",
+    "test": "yarn test:kaya",
+    "test:kaya": "yarn contracts && ZIL_NODE_TYPE=kaya jest smart-contract.test.ts",
+    "test:testnet": "yarn contracts && ZIL_NODE_TYPE=testnet jest smart-contract.test.ts",
     "update-snapshot": "jest -u -t",
     "firebase-auth": "firebase login"
   }

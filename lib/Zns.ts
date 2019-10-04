@@ -189,7 +189,7 @@ class Resolver {
   async reload(): Promise<this> {
     this.contract = getContract(this.registry.zilliqa, this.address)
     this.records = await contractMapField(this.contract, 'records')
-    this.owner = normalizeAddress(await contractField(this.contract, 'owner', true) as Address)
+    this.owner = normalizeAddress(await contractField(this.contract, 'owner', false) as Address)
     return this
   }
 
@@ -212,6 +212,14 @@ class Resolver {
 
   get node(): Node {
     return Zns.namehash(this.domain)
+  }
+
+  getRecordSetEvent(key, value) {
+    return { _eventname: 'RecordSet', key, value }
+  }
+
+  getRecordUnsetEvent(key) {
+    return { _eventname: 'RecordUnset', key }
   }
 
   get configuredEvent() {
@@ -342,7 +350,7 @@ export default class Zns {
       .new(
         Zns.contractSourceCode('resolver'),
         resolverData
-        .init({owner, registry: this.address, node, ...addresses})
+        .init({initialOwner: owner, registry: this.address, node, ...addresses})
       )
       .deploy({...this.defaultTxParams, ...txParams} as TxParams)
     ensureTxConfirmed(tx, 'Failed to deploy resolver')

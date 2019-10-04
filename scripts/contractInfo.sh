@@ -1,4 +1,4 @@
-ROOT="`dirname $0`/.."
+ROOT="$(dirname $0)/.."
 cd $ROOT
 CHECKER=./runner/bin/scilla-checker
 STDLIB=./runner/src/stdlib
@@ -13,8 +13,8 @@ if [ ! -d $STDLIB ]; then
   echo "$STDLIB doesn't exist"
   exit 1
 fi
-for CONTRACT in `ls ./scilla/*.scilla`; do
-  INFO=$OUTDIR/`basename $CONTRACT .scilla`.json
-  $CHECKER -libdir $STDLIB -contractinfo $CONTRACT > $INFO || exit 1
+for CONTRACT in $(ls ./scilla/*.scilla); do
+  INFO=$OUTDIR/$(basename $CONTRACT .scilla).json
+  $CHECKER -libdir $STDLIB -contractinfo $CONTRACT >$INFO || exit 1
 done
 exit 0

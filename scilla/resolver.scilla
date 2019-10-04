@@ -10,21 +10,22 @@ let oneMsg =
   fun(msg: Message) =>
     Cons {Message} msg nilMessage
 
-let eRecordSet =
+let eOwnerSet =
+  fun(address: ByStr20) =>
+    {_eventname: "OwnerSet"; address: address}
+
+    let eRecordSet =
   fun(key: String) =>
   fun(value: String) =>
     {_eventname: "RecordSet"; key: key; value: value}
-
+  
 let eRecordUnset =
   fun(key: String) =>
     {_eventname: "RecordUnset"; key: key}
 
-let eCodeIAM = Uint64 1
-
 let eError =
-  fun(code: Uint64) =>
   fun(message: String) =>
-    {_eventname: "Error"; code: code; message: message}
+    {_eventname: "Error"; message: message}
 
 let mOnResolverConfigured = 
   fun(registry: ByStr20) => 
@@ -33,7 +34,7 @@ let mOnResolverConfigured =
       oneMsg m
 
 contract Resolver(
-  owner: ByStr20,
+  initialOwner: ByStr20,
   registry: ByStr20,
   node: ByStr32,
   ada: String,
@@ -44,6 +45,8 @@ contract Resolver(
   xrp: String,
   zil: String
 )
+
+field owner: ByStr20 = initialOwner
 
 field records: Map String String = 
   let blank = ""                in
@@ -73,6 +76,25 @@ field records: Map String String =
   let withXrp = match xrpBlank with | True => withXlm | False => builtin put withXlm xrpKey xrp end in
                 match zilBlank with | True => withXrp | False => builtin put withXrp zilKey zil end
 
+(* Sets owner address *)
+(* @ensures a sender address is an owner of the contract *)
+(* @param address *)
+(* @emits OwnerSet if the operation was successful *)
+(* @emits Error if a sender address has no permission for the operation *)
+transition setOwner(address: ByStr20)
+  currentOwner <- owner;
+  isOkSender = builtin eq currentOwner _sender;
+  match isOkSender with
+  | True =>
+    owner := address;
+    e = eOwnerSet address;
+    event e
+  | _ =>
+    e = let m = "Sender not owner" in eError m;
+    event e
+  end
+end
+
 (* Sets a key value pair *)
 (* @ensures a sender address is an owner of the contract *)
 (* @param key *)
@@ -81,7 +103,8 @@ field records: Map String String =
 (* @emits Error if a sender address has no permission for the operation *)
 (* @sends onResolverConfigured to the registry *)
 transition set(key: String, value: String)
-  isOkSender = builtin eq owner _sender;
+  currentOwner <- owner;
+  isOkSender = builtin eq currentOwner _sender;
   match isOkSender with
   | True =>
     records[key] := value;
@@ -90,7 +113,7 @@ transition set(key: String, value: String)
     msgs = mOnResolverConfigured registry node;
     send msgs
   | _ =>
-    e = let m = "Sender not owner" in eError eCodeIAM m;
+    e = let m = "Sender not owner" in eError m;
     event e
   end
 end
@@ -103,8 +126,9 @@ end
 (* @sends onResolverConfigured to the registry *)
 transition unset(key: String)
   keyExists <- exists records[key];
+  currentOwner <- owner;
   isOk = 
-    let isOkSender = builtin eq owner _sender in
+    let isOkSender = builtin eq currentOwner _sender in
       andb isOkSender keyExists;
   match isOk with
   | True =>
@@ -115,7 +139,7 @@ transition unset(key: String)
     send msgs
   | _ =>
     e = let m = "Sender not owner or key does not exist" in 
-      eError eCodeIAM m;
+      eError m;
     event e
   end
 end

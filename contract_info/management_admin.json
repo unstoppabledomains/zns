@@ -1,59 +1,58 @@
 {
   "contract_info": {
     "scilla_major_version": "0",
-    "vname": "Resolver",
+    "vname": "Admin",
     "params": [
-      { "vname": "initialOwner", "type": "ByStr20" },
-      { "vname": "registry", "type": "ByStr20" },
-      { "vname": "node", "type": "ByStr32" },
-      { "vname": "ada", "type": "String" },
-      { "vname": "btc", "type": "String" },
-      { "vname": "eos", "type": "String" },
-      { "vname": "eth", "type": "String" },
-      { "vname": "xlm", "type": "String" },
-      { "vname": "xrp", "type": "String" },
-      { "vname": "zil", "type": "String" }
+      { "vname": "initialAdmin", "type": "ByStr20" },
+      { "vname": "registry", "type": "ByStr20" }
     ],
-    "fields": [
-      { "vname": "owner", "type": "ByStr20" },
-      { "vname": "records", "type": "Map (String) (String)" }
-    ],
+    "fields": [ { "vname": "admins", "type": "Map (ByStr20) (Bool)" } ],
     "transitions": [
       {
-        "vname": "setOwner",
-        "params": [ { "vname": "address", "type": "ByStr20" } ]
+        "vname": "setAdmin",
+        "params": [
+          { "vname": "address", "type": "ByStr20" },
+          { "vname": "isApproved", "type": "Bool" }
+        ]
       },
       {
         "vname": "set",
         "params": [
+          { "vname": "address", "type": "ByStr20" },
           { "vname": "key", "type": "String" },
           { "vname": "value", "type": "String" }
         ]
       },
       {
         "vname": "unset",
-        "params": [ { "vname": "key", "type": "String" } ]
-      }
-    ],
-    "events": [
-      {
-        "vname": "Error",
-        "params": [ { "vname": "message", "type": "String" } ]
-      },
-      {
-        "vname": "RecordUnset",
-        "params": [ { "vname": "key", "type": "String" } ]
-      },
-      {
-        "vname": "RecordSet",
         "params": [
-          { "vname": "key", "type": "String" },
-          { "vname": "value", "type": "String" }
+          { "vname": "address", "type": "ByStr20" },
+          { "vname": "key", "type": "String" }
         ]
       },
       {
-        "vname": "OwnerSet",
-        "params": [ { "vname": "address", "type": "ByStr20" } ]
+        "vname": "setOwner",
+        "params": [
+          { "vname": "address", "type": "ByStr20" },
+          { "vname": "owner", "type": "ByStr20" }
+        ]
+      },
+      {
+        "vname": "configureResolver",
+        "params": [
+          { "vname": "node", "type": "ByStr32" },
+          { "vname": "resolver", "type": "ByStr20" }
+        ]
+      }
+    ],
+    "events": [
+      { "vname": "Error", "params": [] },
+      {
+        "vname": "AdminSet",
+        "params": [
+          { "vname": "address", "type": "ByStr20" },
+          { "vname": "isApproved", "type": "Bool" }
+        ]
       }
     ],
     "ADTs": [
