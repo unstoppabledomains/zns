@@ -853,8 +853,9 @@ describe('smart contracts', () => {
     })
 
     it('should register name', async () => {
-      const domainToRegister = 'name'
-      const nodeToRegister = Zns.namehash(`${domainToRegister}.${defaultRootDomain}`)
+      const labelToRegister = 'name'
+      const domainToRegister = `${labelToRegister}.${defaultRootDomain}`
+      const nodeToRegister = Zns.namehash(domainToRegister)
       const zilliqa = getZilliqa()
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
@@ -890,7 +891,7 @@ describe('smart contracts', () => {
         {
           _eventname: 'Register',
           node: nodeToRegister,
-          owner: `0x${address}`,
+          owner: address,
           price: '1',
         },
         {
@@ -902,14 +903,14 @@ describe('smart contracts', () => {
         {
           _eventname: 'NewDomain',
           parent: defaultRootNode,
-          label: domainToRegister,
+          label: labelToRegister,
         },
       ])
 
       expect(await zns.getOwnerAddress(defaultRootNode)).toEqual(address)
       expect(await zns.getResolverAddress(defaultRootNode)).toEqual(nullAddress)
-      expect(await zns.getOwnerAddress(`${domainToRegister}.${defaultRootDomain}`)).toEqual(address)
-      expect(await zns.getResolverAddress(`${domainToRegister}.${defaultRootDomain}`)).toEqual(nullAddress)
+      expect(await zns.getOwnerAddress(domainToRegister)).toEqual(address)
+      expect(await zns.getResolverAddress(domainToRegister)).toEqual(nullAddress)
 
       //////////////////////////////////////////////////////////////////////////
       // fail to register name using bad amount
@@ -917,7 +918,7 @@ describe('smart contracts', () => {
 
       await expectUnchangedState(registry, async () => {
         await expect(zns.register('example', 0))
-          .rejects.toThrow('Transaction threw an Error event: Not valid parent, record owner, amount or sender')
+          .rejects.toThrow(/Not valid parent, record owner, amount or sender/)
       })
 
       //////////////////////////////////////////////////////////////////////////
@@ -980,7 +981,7 @@ describe('smart contracts', () => {
       const zilliqa = getZilliqa()
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
-      const zns = await Zns.deployRegistry(zilliqa, undefined, undefined, {version})
+      const zns = await Zns.deployRegistry(zilliqa, undefined, defaultRootNode, {version})
       const registry = zns.contract
 
       const [, registrar] = await deployAuctionRegistrar(
@@ -1036,7 +1037,7 @@ describe('smart contracts', () => {
       const labelForTest = 'name'
       const domainForTest = `${labelForTest}.${defaultRootDomain}`
       const nodeForTest = Zns.namehash(domainForTest)
-      const labelForRegisterTest = 'registered-name'
+      const labelForRegisterTest = 'registered-name.zil'
       const labelForBidTest = 'bid-name'
       const domainForBidTest = `${labelForBidTest}.${defaultRootDomain}`
       const nodeForBidTest = Zns.namehash(domainForBidTest)
@@ -1045,7 +1046,7 @@ describe('smart contracts', () => {
       // open an auction
       //////////////////////////////////////////////////////////////////////////
 
-      await zns.register(labelForTest, 200)
+      await zns.register(domainForTest, 200)
 
       expect(await zns.getOwnerAddress(defaultRootNode)).toEqual(address)
       expect(await zns.getResolverAddress(defaultRootNode)).toEqual(nullAddress)
@@ -1128,7 +1129,7 @@ describe('smart contracts', () => {
       // close an auction on bid
       //////////////////////////////////////////////////////////////////////////
 
-      await zns.register(labelForBidTest, 200)
+      await zns.register(domainForBidTest, 200)
 
       await registrar.call(
         'bid',

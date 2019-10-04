@@ -138,6 +138,10 @@ const transactionEvent = (tx: Transaction, name: string): TransactionEvent | und
   return transactionEvents(tx).find(e => e._eventname == name);
 }
 
+const isNode = (node: string): boolean => {
+  return !!node.match(/0x[0-9a-f]{40}/);
+}
+
 class ZnsError extends Error {
   constructor(message: string) {
     super(message)
@@ -414,7 +418,8 @@ export default class Zns {
 
   async getRegistryRecord(domain: Domain | Node): Promise<[Address, Address] | []> {
     let records = await contractMapField(this.contract, 'records')
-    let record = records[Zns.namehash(domain)]
+    let node = isNode(domain) ? domain : Zns.namehash(domain)
+    let record = records[node]
     return record ? record.arguments.map(normalizeAddress) : []
   }
 
