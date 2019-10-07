@@ -23,7 +23,7 @@
     "hash.js": "^1.1.7",
     "ioredis": "^4.11.1",
     "isomorphic-fetch": "^2.2.1",
-    "kaya-cli": "https://github.com/Zilliqa/kaya#52121cb1ae51f428b8128c4e46bc96154b7ae996",
+    "kaya-cli": "https://github.com/Zilliqa/kaya#b13dfb64babd14ace284305ce81edcdcf21c448f",
     "lodash": "^4.17.15",
     "ts-jest": "^24.0.2",
     "tslib": "^1.9.3",
