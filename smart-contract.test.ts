@@ -1,5 +1,6 @@
 import {Transaction, TxParams} from '@zilliqa-js/account'
 import {BN, bytes, Long} from '@zilliqa-js/util'
+import {toChecksumAddress} from '@zilliqa-js/crypto'
 import {Zilliqa} from '@zilliqa-js/zilliqa'
 import {readFileSync} from 'fs'
 import * as hashjs from 'hash.js'
@@ -101,34 +102,26 @@ const defaultParams: TxParams = {
 
 function deployMarketplace(
   zilliqa: Zilliqa,
-  {registry, seller, zone, _creation_block = '0'},
+  {registry, seller, zone},
   params: Partial<TxParams> = {},
 ) {
   return zilliqa.contracts
     .new(
       readFileSync('./scilla/marketplace.scilla', 'utf8'),
-      marketplaceData.init({registry, seller, zone}).concat({
-        vname: '_creation_block',
-        type: 'BNum',
-        value: _creation_block.toString(),
-      }),
+      marketplaceData.init({registry, seller, zone})
     )
     .deploy({...defaultParams, ...params})
 }
 
 function deployRegistry(
   zilliqa: Zilliqa,
-  {initialOwner, rootNode = defaultRootNode, _creation_block = '0'},
+  {initialOwner, rootNode = defaultRootNode},
   params: Partial<TxParams> = {},
 ) {
   return zilliqa.contracts
     .new(
       readFileSync('./scilla/registry.scilla', 'utf8'),
-      registryData.init({initialOwner, rootNode}).concat({
-        vname: '_creation_block',
-        type: 'BNum',
-        value: _creation_block.toString(),
-      }),
+      registryData.init({initialOwner, rootNode}),
     )
     .deploy({...defaultParams, ...params})
 }
@@ -141,7 +134,6 @@ function deploySimpleRegistrar(
     owner,
     initialDefaultPrice, // = 1,
     initialQaPerUSD, // 0.017 * 10 ** 12,
-    _creation_block = '0',
   },
   params: Partial<TxParams> = {},
 ) {
@@ -155,11 +147,6 @@ function deploySimpleRegistrar(
           owner,
           initialDefaultPrice,
           initialQaPerUSD,
-        })
-        .concat({
-          vname: '_creation_block',
-          type: 'BNum',
-          value: _creation_block.toString(),
         }),
     )
     .deploy({...defaultParams, ...params})
@@ -178,7 +165,6 @@ function deployAuctionRegistrar(
     bidIncrementDenominator,
     initialPricePerQa,
     initialMaxPriceUSD,
-    _creation_block = '0',
   },
   params: Partial<TxParams> = {},
 ) {
@@ -198,11 +184,6 @@ function deployAuctionRegistrar(
           initialPricePerQa,
           initialMaxPriceUSD,
         })
-        .concat({
-          vname: '_creation_block',
-          type: 'BNum',
-          value: _creation_block.toString(),
-        }),
     )
     .deploy({...defaultParams, ...params})
 }
@@ -229,7 +210,6 @@ const resolverInitState = {
   xlm: '',
   xrp: '',
   zil: '',
-  _creation_block: '0',
 }
 
 function deployResolver(
@@ -245,7 +225,6 @@ function deployResolver(
     xlm,
     xrp,
     zil,
-    _creation_block = '0',
   } = resolverInitState,
   params: Partial<TxParams> = {},
 ) {
@@ -254,11 +233,6 @@ function deployResolver(
       readFileSync('./scilla/resolver.scilla', 'utf8'),
       resolverData
         .init({initialOwner, registry, node, ada, btc, eos, eth, xlm, xrp, zil})
-        .concat({
-          vname: '_creation_block',
-          type: 'BNum',
-          value: _creation_block.toString(),
-        }),
     )
     .deploy({...defaultParams, ...params})
 }
@@ -383,7 +357,6 @@ describe('smart contracts', () => {
         xlm: '0x5555',
         xrp: '0x6666',
         zil: '0x7777',
-        _creation_block: '0',
       })
       expect(resolverTx.isConfirmed()).toBeTruthy()
 
@@ -408,7 +381,7 @@ describe('smart contracts', () => {
       expect(registryTx.isConfirmed()).toBeTruthy()
       const [resolverTx, resolver] = await deployResolver(zilliqa, {
         ...resolverInitState,
-        registry: '0x' + registry.address,
+        registry: registry.address,
         node: namehash('tld.zil'),
       })
       expect(resolverTx.isConfirmed()).toBeTruthy()
@@ -417,7 +390,7 @@ describe('smart contracts', () => {
         registryData.f.bestow({
           label: 'tld',
           owner: '0x' + address,
-          resolver: '0x' + resolver.address,
+          resolver: resolver.address,
         }),
         defaultParams,
       )
@@ -445,7 +418,7 @@ describe('smart contracts', () => {
         _eventname: 'Configured',
         node: namehash('tld.zil'),
         owner: '0x' + address,
-        resolver: '0x' + resolver.address,
+        resolver: resolver.address.toLowerCase(),
       }
 
       expect(await resolverRecords(resolver)).toEqual({
@@ -494,7 +467,7 @@ describe('smart contracts', () => {
       // set record then fail to unset record using bad address
       //////////////////////////////////////////////////////////////////////////
 
-      zilliqa.wallet.setDefault(address)
+      zilliqa.wallet.setDefault(toChecksumAddress("0x" + address))
 
       await resolver.call(
         'set',
@@ -504,7 +477,7 @@ describe('smart contracts', () => {
 
       expect(await resolverRecords(resolver)).toEqual({test: '0x7357'})
 
-      zilliqa.wallet.setDefault(address2)
+      zilliqa.wallet.setDefault(toChecksumAddress("0x" + address2))
 
       await expectUnchangedState(resolver, async () => {
         await resolver.call(
@@ -1122,16 +1095,17 @@ describe('smart contracts', () => {
       const zilliqa = getZilliqa()
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 
-      const [, registry] = await deployRegistry(
+      const [tx, registry] = await deployRegistry(
         zilliqa,
         {rootNode: defaultRootNode, initialOwner: '0x' + address},
         {gasLimit: Long.fromNumber(100000)},
       )
+      expect(tx.isConfirmed()).toEqual(true)
 
       const [, registrar] = await deploySimpleRegistrar(
         zilliqa,
         {
-          registry: '0x' + registry.address,
+          registry: registry.address,
           owner: '0x' + address,
           ownedNode: defaultRootNode,
           initialDefaultPrice: '1',
@@ -1142,7 +1116,7 @@ describe('smart contracts', () => {
 
       await registry.call(
         'setRegistrar',
-        registryData.f.setRegistrar({address: '0x' + registrar.address}),
+        registryData.f.setRegistrar({address: registrar.address}),
         defaultParams,
       )
 
@@ -1276,7 +1250,7 @@ describe('smart contracts', () => {
         zilliqa,
         {
           owner: '0x' + address,
-          registry: '0x' + registry.address,
+          registry: registry.address,
           ownedNode: defaultRootNode,
           initialAuctionLength: '3',
           minimumAuctionLength: '2',
@@ -1291,14 +1265,14 @@ describe('smart contracts', () => {
 
       await registry.call(
         'setRegistrar',
-        registryData.f.setRegistrar({address: '0x' + registrar.address}),
+        registryData.f.setRegistrar({address: registrar.address}),
         defaultParams,
       )
 
       await registry.call(
         'setAdmin',
         registryData.f.setAdmin({
-          address: '0x' + registrar.address,
+          address: registrar.address,
           isApproved: {constructor: 'True', argtypes: [], arguments: []},
         }),
         defaultParams,
@@ -1345,7 +1319,7 @@ describe('smart contracts', () => {
 
       expect(await ownerOf(registry, defaultRootNode)).toEqual(address)
       expect(await resolverOf(registry, defaultRootNode)).toEqual(nullAddress)
-      expect(await ownerOf(registry, domainForTest)).toEqual(registrar.address)
+      expect(await ownerOf(registry, domainForTest)).toEqual(registrar.address.toLowerCase().replace("0x", ""))
       expect(await resolverOf(registry, domainForTest)).toEqual(nullAddress)
 
       expect(
@@ -1488,7 +1462,7 @@ describe('smart contracts', () => {
       )
 
       const [, marketplace] = await deployMarketplace(zilliqa, {
-        registry: '0x' + registry.address,
+        registry: registry.address,
         seller: '0x' + address,
         zone: defaultRootNode,
       })
@@ -1511,7 +1485,7 @@ describe('smart contracts', () => {
       await registry.call(
         'approveFor',
         registryData.f.approveFor({
-          address: '0x' + marketplace.address,
+          address: marketplace.address,
           isApproved: {constructor: 'True', argtypes: [], arguments: []},
         }),
         defaultParams,
@@ -1805,7 +1779,7 @@ describe('smart contracts', () => {
               registryData.f.bestow({
                 label: name,
                 owner: zilAddress,
-                resolver: '0x' + resolver.address,
+                resolver: resolver.address,
               }),
               defaultParams,
             )
