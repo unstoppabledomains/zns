@@ -20,14 +20,9 @@ let defaultParams = [
     vname: '_scilla_version',
     type: 'Uint32',
   },
-  {
-    vname: '_creation_block',
-    type: 'BNum',
-  }
 ]
 let defaultValues = {
   _scilla_version: 0,
-  _creation_block: 0,
 }
 
 export function generateMapperFromContractInfo(info) {

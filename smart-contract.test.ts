@@ -1,5 +1,6 @@
 import {Transaction, TxParams} from '@zilliqa-js/account'
 import {BN, bytes, Long} from '@zilliqa-js/util'
+import {toChecksumAddress} from '@zilliqa-js/crypto'
 import {Zilliqa} from '@zilliqa-js/zilliqa'
 import {readFileSync} from 'fs'
 import * as KayaProvider from 'kaya-cli/src/provider'
@@ -323,14 +324,14 @@ describe('smart contracts', () => {
       // set record then fail to unset record using bad address
       //////////////////////////////////////////////////////////////////////////
 
-      zilliqa.wallet.setDefault(address.replace('0x', ''))
+      zilliqa.wallet.setDefault(toChecksumAddress(address))
 
       await resolver.set('test', '0x7357')
 
       await resolver.reload()
       expect(resolver.records).toEqual({test: '0x7357'})
 
-      zilliqa.wallet.setDefault(address2.replace("0x", ""))
+      zilliqa.wallet.setDefault(toChecksumAddress(address2))
 
       await expectUnchangedState(contract, async () => {
         await expect(
@@ -876,7 +877,7 @@ describe('smart contracts', () => {
 
       await registry.call(
         'setRegistrar',
-        registryData.f.setRegistrar({address: '0x' + registrar.address}),
+        registryData.f.setRegistrar({address: registrar.address}),
         defaultParams,
       )
 
@@ -1003,14 +1004,14 @@ describe('smart contracts', () => {
 
       await registry.call(
         'setRegistrar',
-        registryData.f.setRegistrar({address: '0x' + registrar.address}),
+        registryData.f.setRegistrar({address: registrar.address}),
         defaultParams,
       )
 
       await registry.call(
         'setAdmin',
         registryData.f.setAdmin({
-          address: '0x' + registrar.address,
+          address: registrar.address,
           isApproved: true,
         }),
         defaultParams,
@@ -1051,7 +1052,7 @@ describe('smart contracts', () => {
       expect(await zns.getOwnerAddress(defaultRootNode)).toEqual(address)
       expect(await zns.getResolverAddress(defaultRootNode)).toEqual(nullAddress)
 
-      expect(await zns.getOwnerAddress(domainForTest)).toEqual('0x' + registrar.address)
+      expect(await zns.getOwnerAddress(domainForTest)).toEqual(registrar.address.toLowerCase())
       expect(await zns.getResolverAddress(domainForTest)).toEqual(nullAddress)
 
       expect(
