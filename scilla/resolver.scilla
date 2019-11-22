@@ -14,7 +14,7 @@ let eOwnerSet =
   fun(address: ByStr20) =>
     {_eventname: "OwnerSet"; address: address}
 
-    let eRecordSet =
+let eRecordSet =
   fun(key: String) =>
   fun(value: String) =>
     {_eventname: "RecordSet"; key: key; value: value}
@@ -37,44 +37,12 @@ contract Resolver(
   initialOwner: ByStr20,
   registry: ByStr20,
   node: ByStr32,
-  ada: String,
-  btc: String,
-  eos: String,
-  eth: String,
-  xlm: String,
-  xrp: String,
-  zil: String
+  initialRecords: Map String String
 )
-
+field vendor: String = "UD"
+field version: String = "0.1.0"
 field owner: ByStr20 = initialOwner
-
-field records: Map String String = 
-  let blank = ""                in
-  let empty = Emp String String in
-
-  let adaKey = "crypto.ADA.address" in
-  let btcKey = "crypto.BTC.address" in
-  let eosKey = "crypto.EOS.address" in
-  let ethKey = "crypto.ETH.address" in
-  let xlmKey = "crypto.XLM.address" in
-  let xrpKey = "crypto.XRP.address" in
-  let zilKey = "crypto.ZIL.address" in
-
-  let adaBlank = builtin eq blank ada in
-  let btcBlank = builtin eq blank btc in
-  let eosBlank = builtin eq blank eos in
-  let ethBlank = builtin eq blank eth in
-  let xlmBlank = builtin eq blank xlm in
-  let xrpBlank = builtin eq blank xrp in
-  let zilBlank = builtin eq blank zil in
-
-  let withAda = match adaBlank with | True => empty   | False => builtin put empty   adaKey ada end in
-  let withBtc = match btcBlank with | True => withAda | False => builtin put withAda btcKey btc end in
-  let withEos = match eosBlank with | True => withBtc | False => builtin put withBtc eosKey eos end in
-  let withEth = match ethBlank with | True => withEos | False => builtin put withEos ethKey eth end in
-  let withXlm = match xlmBlank with | True => withEth | False => builtin put withEth xlmKey xlm end in
-  let withXrp = match xrpBlank with | True => withXlm | False => builtin put withXlm xrpKey xrp end in
-                match zilBlank with | True => withXrp | False => builtin put withXrp zilKey zil end
+field records: Map String String = initialRecords
 
 (* Sets owner address *)
 (* @ensures a sender address is an owner of the contract *)
@@ -118,7 +86,7 @@ transition set(key: String, value: String)
   end
 end
 
-(* Remove a key from records hash *)
+(* Remove a key from records map *)
 (* @ensures a sender address is an owner of the contract *)
 (* @param key *)
 (* @emits RecordUnset if the operation was successful *)

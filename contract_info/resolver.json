@@ -6,17 +6,13 @@
       { "vname": "initialOwner", "type": "ByStr20" },
       { "vname": "registry", "type": "ByStr20" },
       { "vname": "node", "type": "ByStr32" },
-      { "vname": "ada", "type": "String" },
-      { "vname": "btc", "type": "String" },
-      { "vname": "eos", "type": "String" },
-      { "vname": "eth", "type": "String" },
-      { "vname": "xlm", "type": "String" },
-      { "vname": "xrp", "type": "String" },
-      { "vname": "zil", "type": "String" }
+      { "vname": "initialRecords", "type": "Map (String) (String)" }
     ],
     "fields": [
-      { "vname": "owner", "type": "ByStr20" },
-      { "vname": "records", "type": "Map (String) (String)" }
+      { "vname": "vendor", "type": "String", "depth": 0 },
+      { "vname": "version", "type": "String", "depth": 0 },
+      { "vname": "owner", "type": "ByStr20", "depth": 0 },
+      { "vname": "records", "type": "Map (String) (String)", "depth": 1 }
     ],
     "transitions": [
       {
@@ -96,5 +92,6 @@
       }
     ]
   },
-  "warnings": []
+  "warnings": [],
+  "gas_remaining": "10000"
 }
