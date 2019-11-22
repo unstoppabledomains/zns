@@ -6,7 +6,9 @@
       { "vname": "initialAdmin", "type": "ByStr20" },
       { "vname": "registry", "type": "ByStr20" }
     ],
-    "fields": [ { "vname": "admins", "type": "Map (ByStr20) (Bool)" } ],
+    "fields": [
+      { "vname": "admins", "type": "Map (ByStr20) (Bool)", "depth": 1 }
+    ],
     "transitions": [
       {
         "vname": "setAdmin",
@@ -95,5 +97,6 @@
       }
     ]
   },
-  "warnings": []
+  "warnings": [],
+  "gas_remaining": "9350"
 }

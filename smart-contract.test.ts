@@ -203,13 +203,7 @@ const resolverInitState = {
   initialOwner: '0x' + address,
   registry: '0x' + address,
   node: namehash('test'),
-  ada: '',
-  btc: '',
-  eos: '',
-  eth: '',
-  xlm: '',
-  xrp: '',
-  zil: '',
+  initialRecords: [],
 }
 
 function deployResolver(
@@ -218,13 +212,7 @@ function deployResolver(
     initialOwner,
     registry,
     node,
-    ada,
-    btc,
-    eos,
-    eth,
-    xlm,
-    xrp,
-    zil,
+    initialRecords,
   } = resolverInitState,
   params: Partial<TxParams> = {},
 ) {
@@ -232,7 +220,7 @@ function deployResolver(
     .new(
       readFileSync('./scilla/resolver.scilla', 'utf8'),
       resolverData
-        .init({initialOwner, registry, node, ada, btc, eos, eth, xlm, xrp, zil})
+        .init({initialOwner, registry, node, initialRecords})
     )
     .deploy({...defaultParams, ...params})
 }
@@ -350,13 +338,15 @@ describe('smart contracts', () => {
         initialOwner: '0x' + address,
         registry: '0x' + address,
         node: namehash('hello'),
-        ada: '0x1111',
-        btc: '0x2222',
-        eos: '0x3333',
-        eth: '0x4444',
-        xlm: '0x5555',
-        xrp: '0x6666',
-        zil: '0x7777',
+        initialRecords: [
+          { key: 'crypto.ADA.address', val: '0x1111' },
+          { key: 'crypto.BTC.address', val: '0x2222' },
+          { key: 'crypto.EOS.address', val: '0x3333' },
+          { key: 'crypto.ETH.address', val: '0x4444' },
+          { key: 'crypto.XLM.address', val: '0x5555' },
+          { key: 'crypto.XRP.address', val: '0x6666' },
+          { key: 'crypto.ZIL.address', val: '0x7777' },
+        ],
       })
       expect(resolverTx.isConfirmed()).toBeTruthy()
 
