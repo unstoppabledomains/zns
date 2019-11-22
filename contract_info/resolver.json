@@ -29,6 +29,12 @@
       {
         "vname": "unset",
         "params": [ { "vname": "key", "type": "String" } ]
+      },
+      {
+        "vname": "setMulti",
+        "params": [
+          { "vname": "newRecords", "type": "List (RecordKeyValue)" }
+        ]
       }
     ],
     "events": [
@@ -36,6 +42,7 @@
         "vname": "Error",
         "params": [ { "vname": "message", "type": "String" } ]
       },
+      { "vname": "RecordsSet", "params": [] },
       {
         "vname": "RecordUnset",
         "params": [ { "vname": "key", "type": "String" } ]
@@ -53,6 +60,13 @@
       }
     ],
     "ADTs": [
+      {
+        "tname": "RecordKeyValue",
+        "tparams": [],
+        "tmap": [
+          { "cname": "RecordKeyValue", "argtypes": [ "String", "String" ] }
+        ]
+      },
       {
         "tname": "Option",
         "tparams": [ "'A" ],
@@ -92,6 +106,27 @@
       }
     ]
   },
-  "warnings": [],
-  "gas_remaining": "10000"
+  "warnings": [
+    {
+      "warning_message": "Consider using in-place Map access",
+      "start_location": {
+        "file": "./scilla/resolver.scilla",
+        "line": 148,
+        "column": 5
+      },
+      "end_location": { "file": "", "line": 0, "column": 0 },
+      "warning_id": 1
+    },
+    {
+      "warning_message": "Consider using in-place Map access",
+      "start_location": {
+        "file": "./scilla/resolver.scilla",
+        "line": 146,
+        "column": 19
+      },
+      "end_location": { "file": "", "line": 0, "column": 0 },
+      "warning_id": 1
+    }
+  ],
+  "gas_remaining": "9967"
 }

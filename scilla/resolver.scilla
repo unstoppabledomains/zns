@@ -4,6 +4,9 @@ import BoolUtils
 
 library ResolverLib
 
+type RecordKeyValue =
+  | RecordKeyValue of String String
+
 let nilMessage = Nil {Message}
 
 let oneMsg =
@@ -23,6 +26,8 @@ let eRecordUnset =
   fun(key: String) =>
     {_eventname: "RecordUnset"; key: key}
 
+let eRecordsSet = {_eventname: "RecordsSet"}
+
 let eError =
   fun(message: String) =>
     {_eventname: "Error"; message: message}
@@ -33,6 +38,20 @@ let mOnResolverConfigured =
     let m = {_tag: "onResolverConfigured"; _amount: Uint128 0; _recipient: registry; node: node} in
       oneMsg m
 
+let copyRecordsFromList =
+  fun (recordsMap: Map String String) =>
+  fun (recordsList: List RecordKeyValue) =>
+    let foldl = @list_foldl RecordKeyValue Map String String in
+      let iter =
+        fun (recordsMap: Map String String) =>
+        fun (el: RecordKeyValue) =>
+          match el with
+            | RecordKeyValue key val =>
+              builtin put recordsMap key val
+          end
+      in
+        foldl iter recordsMap recordsList
+
 contract Resolver(
   initialOwner: ByStr20,
   registry: ByStr20,
@@ -40,7 +59,7 @@ contract Resolver(
   initialRecords: Map String String
 )
 field vendor: String = "UD"
-field version: String = "0.1.0"
+field version: String = "0.1.1"
 field owner: ByStr20 = initialOwner
 field records: Map String String = initialRecords
 
@@ -108,6 +127,30 @@ transition unset(key: String)
   | _ =>
     e = let m = "Sender not owner or key does not exist" in 
       eError m;
+    event e
+  end
+end
+
+
+(* Set multiple keys to records map *)
+(* @ensures a sender address is an owner of the contract *)
+(* @param newRecords *)
+(* @emits RecordsSet if the operation was successful *)
+(* @emits Error if a sender address has no permission for the operation *)
+(* @sends onResolverConfigured to the registry *)
+transition setMulti(newRecords: List RecordKeyValue)
+  currentOwner <- owner;
+  isOkSender = builtin eq currentOwner _sender;
+  match isOkSender with
+  | True =>
+    oldRecords <- records;
+    newRecordsMap = copyRecordsFromList oldRecords newRecords;
+    records := newRecordsMap;
+    event eRecordsSet;
+    msgs = mOnResolverConfigured registry node;
+    send msgs
+  | _ =>
+    e = let m = "Sender not owner" in eError m;
     event e
   end
 end
