@@ -94,7 +94,11 @@ transition set(key: String, value: String)
   isOkSender = builtin eq currentOwner _sender;
   match isOkSender with
   | True =>
-    records[key] := value;
+    isEmpty = builtin eq value emptyValue;
+    match isEmpty with
+    | True => delete records[key]
+    | False => records[key] := value
+    end;
     e = eRecordsSet registry node;
     event e;
     msgs = mOnResolverConfigured registry node;

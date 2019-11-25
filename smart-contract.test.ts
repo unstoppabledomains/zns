@@ -427,6 +427,21 @@ describe('smart contracts', () => {
       )
       expect(await transactionEvents(unsetTx)).toEqual([recordsSetEvent, configuredEvent])
       expect(await resolverRecords(resolver)).toEqual({})
+
+      //////////////////////////////////////////////////////////////////////////
+      // set empty record (expects to delete)
+      //////////////////////////////////////////////////////////////////////////
+      await resolver.call(
+        'set',
+        resolverData.f.set({key: keyForSetTx, value: valueForSetTx}),
+        defaultParams,
+      )
+      await resolver.call(
+        'set',
+        resolverData.f.set({key: keyForSetTx, value: ''}),
+        defaultParams,
+      )
+      expect(await resolverRecords(resolver)).toEqual({})
     })
 
     it('should setMulti records and unset empty ones', async() => {

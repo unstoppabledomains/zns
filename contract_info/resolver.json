@@ -106,7 +106,7 @@
       "warning_message": "Consider using in-place Map access",
       "start_location": {
         "file": "./scilla/resolver.scilla",
-        "line": 149,
+        "line": 153,
         "column": 5
       },
       "end_location": { "file": "", "line": 0, "column": 0 },
@@ -116,7 +116,7 @@
       "warning_message": "Consider using in-place Map access",
       "start_location": {
         "file": "./scilla/resolver.scilla",
-        "line": 147,
+        "line": 151,
         "column": 19
       },
       "end_location": { "file": "", "line": 0, "column": 0 },
