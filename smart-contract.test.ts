@@ -259,11 +259,11 @@ const asHash = params => {
 }
 
 const contractField = async (contract, name) => {
-  const field = (await contract.getState()).find(v => v.vname === name)
-  if (!field) {
+  const value = (await contract.getState())[name];
+  if (!value) {
     throw new Error(`Unknown contract field ${name}`)
   }
-  return field.value
+  return value;
 }
 
 const expectUnchangedState = async (contract, block) => {
