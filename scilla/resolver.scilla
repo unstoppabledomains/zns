@@ -17,20 +17,27 @@ let eOwnerSet =
   fun(address: ByStr20) =>
     {_eventname: "OwnerSet"; address: address}
 
+(* @deprecated eRecordsSet is emitted instead (since 0.1.1) *)
 let eRecordSet =
   fun(key: String) =>
   fun(value: String) =>
     {_eventname: "RecordSet"; key: key; value: value}
-  
+
+(* @deprecated eRecordsSet is emitted instead (since 0.1.1) *)
 let eRecordUnset =
   fun(key: String) =>
     {_eventname: "RecordUnset"; key: key}
 
-let eRecordsSet = {_eventname: "RecordsSet"}
+let eRecordsSet =
+  fun(registry: ByStr20) =>
+  fun(node: ByStr32) =>
+    {_eventname: "RecordsSet"; registry: registry; node: node}
 
 let eError =
   fun(message: String) =>
     {_eventname: "Error"; message: message}
+
+let emptyValue = ""
 
 let mOnResolverConfigured = 
   fun(registry: ByStr20) => 
@@ -46,8 +53,12 @@ let copyRecordsFromList =
         fun (recordsMap: Map String String) =>
         fun (el: RecordKeyValue) =>
           match el with
-            | RecordKeyValue key val =>
-              builtin put recordsMap key val
+          | RecordKeyValue key val =>
+            let isEmpty = builtin eq val emptyValue in
+              match isEmpty with
+              | True => builtin remove recordsMap key
+              | False => builtin put recordsMap key val
+              end
           end
       in
         foldl iter recordsMap recordsList
@@ -95,7 +106,7 @@ transition set(key: String, value: String)
   match isOkSender with
   | True =>
     records[key] := value;
-    e = eRecordSet key value;
+    e = eRecordsSet registry node;
     event e;
     msgs = mOnResolverConfigured registry node;
     send msgs
@@ -120,7 +131,7 @@ transition unset(key: String)
   match isOk with
   | True =>
     delete records[key];
-    e = eRecordUnset key;
+    e = eRecordsSet registry node;
     event e;
     msgs = mOnResolverConfigured registry node;
     send msgs
@@ -133,6 +144,7 @@ end
 
 
 (* Set multiple keys to records map *)
+(* Removes records from the map if according passed value is empty *)
 (* @ensures a sender address is an owner of the contract *)
 (* @param newRecords *)
 (* @emits RecordsSet if the operation was successful *)
@@ -146,7 +158,8 @@ transition setMulti(newRecords: List RecordKeyValue)
     oldRecords <- records;
     newRecordsMap = copyRecordsFromList oldRecords newRecords;
     records := newRecordsMap;
-    event eRecordsSet;
+    e = eRecordsSet registry node;
+    event e;
     msgs = mOnResolverConfigured registry node;
     send msgs
   | _ =>

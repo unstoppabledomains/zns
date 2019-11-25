@@ -42,7 +42,13 @@
         "vname": "Error",
         "params": [ { "vname": "message", "type": "String" } ]
       },
-      { "vname": "RecordsSet", "params": [] },
+      {
+        "vname": "RecordsSet",
+        "params": [
+          { "vname": "registry", "type": "ByStr20" },
+          { "vname": "node", "type": "ByStr32" }
+        ]
+      },
       {
         "vname": "RecordUnset",
         "params": [ { "vname": "key", "type": "String" } ]
@@ -111,7 +117,7 @@
       "warning_message": "Consider using in-place Map access",
       "start_location": {
         "file": "./scilla/resolver.scilla",
-        "line": 148,
+        "line": 160,
         "column": 5
       },
       "end_location": { "file": "", "line": 0, "column": 0 },
@@ -121,7 +127,7 @@
       "warning_message": "Consider using in-place Map access",
       "start_location": {
         "file": "./scilla/resolver.scilla",
-        "line": 146,
+        "line": 158,
         "column": 19
       },
       "end_location": { "file": "", "line": 0, "column": 0 },
