@@ -17,17 +17,6 @@ let eOwnerSet =
   fun(address: ByStr20) =>
     {_eventname: "OwnerSet"; address: address}
 
-(* @deprecated eRecordsSet is emitted instead (since 0.1.1) *)
-let eRecordSet =
-  fun(key: String) =>
-  fun(value: String) =>
-    {_eventname: "RecordSet"; key: key; value: value}
-
-(* @deprecated eRecordsSet is emitted instead (since 0.1.1) *)
-let eRecordUnset =
-  fun(key: String) =>
-    {_eventname: "RecordUnset"; key: key}
-
 let eRecordsSet =
   fun(registry: ByStr20) =>
   fun(node: ByStr32) =>

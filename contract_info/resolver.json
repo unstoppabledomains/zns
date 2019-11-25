@@ -50,17 +50,6 @@
         ]
       },
       {
-        "vname": "RecordUnset",
-        "params": [ { "vname": "key", "type": "String" } ]
-      },
-      {
-        "vname": "RecordSet",
-        "params": [
-          { "vname": "key", "type": "String" },
-          { "vname": "value", "type": "String" }
-        ]
-      },
-      {
         "vname": "OwnerSet",
         "params": [ { "vname": "address", "type": "ByStr20" } ]
       }
@@ -117,7 +106,7 @@
       "warning_message": "Consider using in-place Map access",
       "start_location": {
         "file": "./scilla/resolver.scilla",
-        "line": 160,
+        "line": 149,
         "column": 5
       },
       "end_location": { "file": "", "line": 0, "column": 0 },
@@ -127,7 +116,7 @@
       "warning_message": "Consider using in-place Map access",
       "start_location": {
         "file": "./scilla/resolver.scilla",
-        "line": 158,
+        "line": 147,
         "column": 19
       },
       "end_location": { "file": "", "line": 0, "column": 0 },
