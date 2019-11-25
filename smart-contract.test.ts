@@ -398,10 +398,10 @@ describe('smart contracts', () => {
         defaultParams,
       )
 
-      const setEvent = {
-        _eventname: 'RecordSet',
-        key: keyForSetTx,
-        value: valueForSetTx,
+      const recordsSetEvent = {
+        _eventname: 'RecordsSet',
+        node: namehash('tld.zil'),
+        registry: registry.address.toLowerCase(),
       }
 
       const configuredEvent = {
@@ -414,27 +414,104 @@ describe('smart contracts', () => {
       expect(await resolverRecords(resolver)).toEqual({
         [keyForSetTx]: valueForSetTx,
       })
-      expect(await transactionEvents(setTx)).toEqual([setEvent, configuredEvent])
+      expect(await transactionEvents(setTx)).toEqual([recordsSetEvent, configuredEvent])
 
       //////////////////////////////////////////////////////////////////////////
       // unset record
       //////////////////////////////////////////////////////////////////////////
-
-      const unsetEvent = {
-        _eventname: 'RecordUnset',
-        key: keyForSetTx,
-      }
 
       const unsetTx = await resolver.call(
         'unset',
         resolverData.f.unset({key: keyForSetTx}),
         defaultParams,
       )
-      expect(await transactionEvents(unsetTx)).toEqual([unsetEvent, configuredEvent])
+      expect(await transactionEvents(unsetTx)).toEqual([recordsSetEvent, configuredEvent])
+      expect(await resolverRecords(resolver)).toEqual({})
+
+      //////////////////////////////////////////////////////////////////////////
+      // set empty record (expects to delete)
+      //////////////////////////////////////////////////////////////////////////
+      await resolver.call(
+        'set',
+        resolverData.f.set({key: keyForSetTx, value: valueForSetTx}),
+        defaultParams,
+      )
+      await resolver.call(
+        'set',
+        resolverData.f.set({key: keyForSetTx, value: ''}),
+        defaultParams,
+      )
       expect(await resolverRecords(resolver)).toEqual({})
     })
 
-    it('should fail to set and unset records if sender not owner', async () => {
+    it('should setMulti records and unset empty ones', async() => {
+      const zilliqa = getZilliqa()
+      zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
+      const [registryTx, registry] = await deployRegistry(
+        zilliqa,
+        {initialOwner: '0x' + address, rootNode: defaultRootNode},
+        {gasLimit: Long.fromNumber(100000)},
+      )
+      expect(registryTx.isConfirmed()).toBeTruthy()
+      const [resolverTx, resolver] = await deployResolver(zilliqa, {
+        ...resolverInitState,
+        initialRecords: [
+          { key: 'crypto.ETH.address', val: '0x0000' },
+        ],
+        registry: registry.address,
+        node: namehash('tld.zil'),
+      })
+      expect(resolverTx.isConfirmed()).toBeTruthy()
+      const bestowTx = await registry.call(
+        'bestow',
+        registryData.f.bestow({
+          label: 'tld',
+          owner: '0x' + address,
+          resolver: resolver.address,
+        }),
+        defaultParams,
+      )
+
+      //////////////////////////////////////////////////////////////////////////
+      // setMulti records
+      //////////////////////////////////////////////////////////////////////////
+
+      const pair1 = ['crypto.ADA.address', '0x1111']
+      const pair2 = ['crypto.BTC.address', '0x2222']
+      const pair3 = ['crypto.ETH.address', '']
+      const setMultiTx = await resolver.call(
+        'setMulti',
+        resolverData.f.setMulti({
+          newRecords: [
+            { constructor: 'RecordKeyValue', argtypes: [], arguments: pair1 },
+            { constructor: 'RecordKeyValue', argtypes: [], arguments: pair2 },
+            { constructor: 'RecordKeyValue', argtypes: [], arguments: pair3 },
+          ],
+        }),
+        defaultParams,
+      )
+
+      const recordsSetEvent = {
+        _eventname: 'RecordsSet',
+        node: namehash('tld.zil'),
+        registry: registry.address.toLowerCase(),
+      }
+
+      const configuredEvent = {
+        _eventname: 'Configured',
+        node: namehash('tld.zil'),
+        owner: '0x' + address,
+        resolver: resolver.address.toLowerCase(),
+      }
+
+      expect(await resolverRecords(resolver)).toEqual({
+        [pair1[0]]: pair1[1],
+        [pair2[0]]: pair2[1],
+      })
+      expect(await transactionEvents(setMultiTx)).toEqual([recordsSetEvent, configuredEvent])
+    })
+
+    it('should fail to set, unset and setMulti records if sender not owner', async () => {
       const zilliqa = getZilliqa()
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
       const [, resolver] = await deployResolver(zilliqa)
@@ -473,6 +550,24 @@ describe('smart contracts', () => {
         await resolver.call(
           'unset',
           resolverData.f.unset({key: 'test'}),
+          defaultParams,
+        )
+      })
+
+      //////////////////////////////////////////////////////////////////////////
+      // fail to call setMulti using bad address
+      //////////////////////////////////////////////////////////////////////////
+
+      zilliqa.wallet.setDefault(toChecksumAddress("0x" + address2))
+
+      await expectUnchangedState(resolver, async () => {
+        await resolver.call(
+          'setMulti',
+          resolverData.f.setMulti({
+            newRecords: [
+              { constructor: 'RecordKeyValue', argtypes: [], arguments: ['test', '0x7357'] },
+            ],
+          }),
           defaultParams,
         )
       })

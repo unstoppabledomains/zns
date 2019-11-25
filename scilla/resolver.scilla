@@ -4,6 +4,9 @@ import BoolUtils
 
 library ResolverLib
 
+type RecordKeyValue =
+  | RecordKeyValue of String String
+
 let nilMessage = Nil {Message}
 
 let oneMsg =
@@ -14,24 +17,40 @@ let eOwnerSet =
   fun(address: ByStr20) =>
     {_eventname: "OwnerSet"; address: address}
 
-let eRecordSet =
-  fun(key: String) =>
-  fun(value: String) =>
-    {_eventname: "RecordSet"; key: key; value: value}
-  
-let eRecordUnset =
-  fun(key: String) =>
-    {_eventname: "RecordUnset"; key: key}
+let eRecordsSet =
+  fun(registry: ByStr20) =>
+  fun(node: ByStr32) =>
+    {_eventname: "RecordsSet"; registry: registry; node: node}
 
 let eError =
   fun(message: String) =>
     {_eventname: "Error"; message: message}
+
+let emptyValue = ""
 
 let mOnResolverConfigured = 
   fun(registry: ByStr20) => 
   fun(node: ByStr32) => 
     let m = {_tag: "onResolverConfigured"; _amount: Uint128 0; _recipient: registry; node: node} in
       oneMsg m
+
+let copyRecordsFromList =
+  fun (recordsMap: Map String String) =>
+  fun (recordsList: List RecordKeyValue) =>
+    let foldl = @list_foldl RecordKeyValue Map String String in
+      let iter =
+        fun (recordsMap: Map String String) =>
+        fun (el: RecordKeyValue) =>
+          match el with
+          | RecordKeyValue key val =>
+            let isEmpty = builtin eq val emptyValue in
+              match isEmpty with
+              | True => builtin remove recordsMap key
+              | False => builtin put recordsMap key val
+              end
+          end
+      in
+        foldl iter recordsMap recordsList
 
 contract Resolver(
   initialOwner: ByStr20,
@@ -40,7 +59,7 @@ contract Resolver(
   initialRecords: Map String String
 )
 field vendor: String = "UD"
-field version: String = "0.1.0"
+field version: String = "0.1.1"
 field owner: ByStr20 = initialOwner
 field records: Map String String = initialRecords
 
@@ -75,8 +94,12 @@ transition set(key: String, value: String)
   isOkSender = builtin eq currentOwner _sender;
   match isOkSender with
   | True =>
-    records[key] := value;
-    e = eRecordSet key value;
+    isEmpty = builtin eq value emptyValue;
+    match isEmpty with
+    | True => delete records[key]
+    | False => records[key] := value
+    end;
+    e = eRecordsSet registry node;
     event e;
     msgs = mOnResolverConfigured registry node;
     send msgs
@@ -101,13 +124,39 @@ transition unset(key: String)
   match isOk with
   | True =>
     delete records[key];
-    e = eRecordUnset key;
+    e = eRecordsSet registry node;
     event e;
     msgs = mOnResolverConfigured registry node;
     send msgs
   | _ =>
     e = let m = "Sender not owner or key does not exist" in 
       eError m;
+    event e
+  end
+end
+
+
+(* Set multiple keys to records map *)
+(* Removes records from the map if according passed value is empty *)
+(* @ensures a sender address is an owner of the contract *)
+(* @param newRecords *)
+(* @emits RecordsSet if the operation was successful *)
+(* @emits Error if a sender address has no permission for the operation *)
+(* @sends onResolverConfigured to the registry *)
+transition setMulti(newRecords: List RecordKeyValue)
+  currentOwner <- owner;
+  isOkSender = builtin eq currentOwner _sender;
+  match isOkSender with
+  | True =>
+    oldRecords <- records;
+    newRecordsMap = copyRecordsFromList oldRecords newRecords;
+    records := newRecordsMap;
+    e = eRecordsSet registry node;
+    event e;
+    msgs = mOnResolverConfigured registry node;
+    send msgs
+  | _ =>
+    e = let m = "Sender not owner" in eError m;
     event e
   end
 end
