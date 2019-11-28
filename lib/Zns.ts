@@ -4,7 +4,7 @@ import {Zilliqa} from '@zilliqa-js/zilliqa'
 import {Contract} from '@zilliqa-js/contract'
 import {BN, bytes, Long} from '@zilliqa-js/util'
 import * as fs from 'fs'
-import * as _ from 'lodash'
+import _ from 'lodash'
 
 import {contract_info as registryContractInfo} from '../contract_info/registry.json'
 import {contract_info as resolverContractInfo} from '../contract_info/resolver.json'
