@@ -8,8 +8,8 @@
       { "vname": "zone", "type": "ByStr32" }
     ],
     "fields": [
-      { "vname": "offers", "type": "Map (ByStr32) (Uint128)" },
-      { "vname": "buyerTmp", "type": "ByStr20" }
+      { "vname": "offers", "type": "Map (ByStr32) (Uint128)", "depth": 1 },
+      { "vname": "buyerTmp", "type": "ByStr20", "depth": 0 }
     ],
     "transitions": [
       {
@@ -104,5 +104,6 @@
       }
     ]
   },
-  "warnings": []
+  "warnings": [],
+  "gas_remaining": "8844"
 }

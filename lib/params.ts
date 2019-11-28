@@ -1,9 +1,18 @@
+import * as _ from 'lodash';
+
 function normalizeValue(value) {
   switch(typeof(value)) {
     case "number": return value.toString()
     case "boolean":
       return {constructor: value ? "True" : "False", argtypes: [], arguments: []}
-    case "object": return value
+    case "object":
+      if (value instanceof Array) {
+        return value;
+      }
+      if (_.isObject(value)) {
+        return _.map(value, (val, key) => ({key, val}))
+      }
+      return value
     default:       return value.toString()
   }
 }

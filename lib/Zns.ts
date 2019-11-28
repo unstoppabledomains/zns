@@ -36,11 +36,11 @@ let contractField = async (contract: Contract, name: string, init: boolean = fal
   if (!state) {
     return null;
   }
-  const field = state.find(v => v.vname === name)
-  if (!field) {
+  const value = state[name]
+  if (!value) {
     throw new Error(`Unknown contract field ${name}`)
   }
-  return field.value
+  return value;
 }
 
 let contractMapField = async(contract: Contract, name: string): Promise<{[key: string]: any}> => {
@@ -121,6 +121,21 @@ let ensureAnyTxEvent = (tx: Transaction, names: string[], message: string) => {
   }
   ensureTxEvent(tx, names[0], message)
 }
+
+const resolutionToKeyValue = (data: Record<string, any>, prefix?: string): Record<string, string> => {
+  let result = {};
+  for(const key in data) {
+    const value = data[key];
+    const namespace = prefix ? `${prefix}.${key}` : key;
+    if (_.isObject(value)) {
+      result = {...result, ...resolutionToKeyValue(value, namespace)};
+    } else {
+      result[namespace] = value.toString();
+    }
+  }
+  return result;
+};
+
 
 const asHash = params => {
   return params.reduce((a, v) => ({...a, [v.vname]: v.value}), {})
@@ -224,12 +239,8 @@ class Resolver {
     return Zns.namehash(this.domain)
   }
 
-  getRecordSetEvent(key, value) {
-    return { _eventname: 'RecordSet', key, value }
-  }
-
-  getRecordUnsetEvent(key) {
-    return { _eventname: 'RecordUnset', key }
+  getRecordsSetEvent() {
+    return { _eventname: "RecordsSet", node: this.node, registry: this.registry.address }
   }
 
   get configuredEvent() {
@@ -345,26 +356,20 @@ export default class Zns {
   }
 
   async deployResolver(domain: Domain, resolution: Resolution = {}, txParams: Partial<TxParams> = {}): Promise<Resolver> {
-    let node = Zns.namehash(domain)
-    let owner = this.owner
+    let node = Zns.namehash(domain);
+    let owner = this.owner;
 
-    if (!Zns.isInitResolution(resolution)) {
-      throw new ZnsError("Resolver can not be initialized with non-standard resolution")
-    }
-    let addresses = _(DefaultCurrencies).map(currency => {
-      return [currency.toLowerCase(), _.get(resolution, addressKey(currency)) || '']
-    }).fromPairs().value()
-    let records = _.mapKeys(addresses, (v, k) => addressKey(k))
+    let initialRecords = resolutionToKeyValue(resolution);
 
     let [tx, resolver] = await this.zilliqa.contracts
       .new(
         Zns.contractSourceCode('resolver'),
         resolverData
-        .init({initialOwner: owner, registry: this.address, node, ...addresses})
+        .init({initialOwner: owner, registry: this.address, node, initialRecords})
       )
-      .deploy({...this.defaultTxParams, ...txParams} as TxParams)
-    ensureTxConfirmed(tx, 'Failed to deploy resolver')
-    return new Resolver(this, resolver, domain, owner, records)
+      .deploy({...this.defaultTxParams, ...txParams} as TxParams);
+    ensureTxConfirmed(tx, 'Failed to deploy resolver');
+    return new Resolver(this, resolver, domain, owner, initialRecords);
   }
 
   async bestow(domain: Domain, owner: Address, resolver: Address = Zns.NullAddress, txParams: Partial<TxParams> = {}) {
