@@ -8,6 +8,7 @@ import KayaProvider from 'kaya-cli/src/provider'
 import { loadAccounts } from 'kaya-cli/src/components/wallet/wallet'
 import * as kayaConfig from 'kaya-cli/src/config'
 import uuid from 'uuid/v4'
+import {contract_info as account_funder_contract_info} from './contract_info/account_funder.json'
 import {contract_info as auction_registrar_contract_info} from './contract_info/auction_registrar.json'
 import {contract_info as marketplace_contract_info} from './contract_info/marketplace.json'
 import {contract_info as registry_contract_info} from './contract_info/registry.json'
@@ -21,6 +22,7 @@ kayaConfig.blockchain.blockInterval = 0
 kayaConfig.constants.smart_contract.SCILLA_RUNNER = `${__dirname}/runner/bin/scilla-runner`
 kayaConfig.constants.smart_contract.SCILLA_CHECKER = `${__dirname}/runner/bin/scilla-checker`
 
+const accountFunderData = generateMapperFromContractInfo(account_funder_contract_info)
 const auctionRegistrarData = generateMapperFromContractInfo(
   auction_registrar_contract_info,
 )
@@ -60,19 +62,7 @@ const zilliqaKayaNodeParams = {
   url: null,
   getProvider: () => {
     const id = uuid()
-    loadAccounts({
-      // 1,000,000,000 ZIL
-      [address.replace('0x', '')]: {
-        privateKey,
-        amount: '1000000000000000',
-        nonce: 0
-      },
-      [address2.replace('0x', '')]: {
-        privateKey: privateKey2,
-        amount: '1000000000000000',
-        nonce: 0,
-      },
-    });
+    loadAccounts({ ...defaultLoadedAccounts });
     return new KayaProvider({ dataPath: `/tmp/kaya_${id}_` })
   },
 }
@@ -99,6 +89,18 @@ const defaultParams: TxParams = {
   amount: new BN(0),
   gasPrice: new BN(1000000000),
   gasLimit: Long.fromNumber(25000),
+}
+
+function deployAccountFunder(
+  zilliqa: Zilliqa,
+  params: Partial<TxParams> = {},
+) {
+  return zilliqa.contracts
+    .new(
+      readFileSync('./scilla/account_funder.scilla', 'utf8'),
+      accountFunderData.init({}),
+    )
+    .deploy({...defaultParams, ...params})
 }
 
 function deployMarketplace(
@@ -183,6 +185,20 @@ const address2 = '0x2f4f79ef6abfc0368f5a7e2c2df82e1afdfe7204'
 const privateKey2 =
   '1234567890123456789012345678901234567890123456789012345678901234'
 
+const defaultLoadedAccounts = {
+  // 1,000,000,000 ZIL
+  [address.replace('0x', '')]: {
+    privateKey,
+    amount: '1000000000000000',
+    nonce: 0
+  },
+  [address2.replace('0x', '')]: {
+    privateKey: privateKey2,
+    amount: '1000000000000000',
+    nonce: 0,
+  },
+}
+
 const defaultRootDomain = 'zil'
 
 const defaultRootNode = Zns.namehash(defaultRootDomain)
@@ -226,6 +242,11 @@ describe('smart contracts', () => {
   beforeEach(() => {
     jest.resetModules()
   })
+
+  afterEach(() => {
+    // Reset any additionally loaded accounts in the tests.
+    loadAccounts({ ...defaultLoadedAccounts });
+  });
 
   describe('resolver.scilla', () => {
     it('should deploy', async () => {
@@ -1380,6 +1401,93 @@ describe('smart contracts', () => {
       // )
     })
   })
+
+  describe('account_funder.scilla', () => {
+    it('distributes funds', async () => {
+      const zilliqa = getZilliqa()
+      zilliqa.wallet.addByPrivateKey(privateKey)
+
+      const [, accountFunder] = await deployAccountFunder(zilliqa);
+
+      const args = [
+        { account: zilliqa.wallet.create(), value: '400' },
+        { account: zilliqa.wallet.create(), value: '100' },
+        { account: zilliqa.wallet.create(), value: '500' },
+      ];
+      const accountsToLoad = args.reduce((accounts, arg) => {
+        accounts[arg.account.replace('0x', '').toLowerCase()] = {
+          privateKey: zilliqa.wallet.accounts[arg.account].privateKey,
+          amount: "0",
+          nonce: 0,
+        }
+        return accounts
+      }, {})
+      loadAccounts({ ...defaultLoadedAccounts, ...accountsToLoad });
+
+      const sendFundsTx = await accountFunder.call(
+        'sendFunds',
+        accountFunderData.f.sendFunds({
+          accountValues: args.map(arg => ({
+            constructor: 'AccountValue',
+            argtypes: [],
+            arguments: [arg.account, arg.value],
+          })),
+        }),
+        {
+          ...defaultParams,
+          amount: new BN(1000),
+          nonce: 0,
+        },
+      )
+      expect(sendFundsTx.isConfirmed()).toBe(true);
+
+      const balances = await Promise.all(args.map(arg => zilliqa.blockchain.getBalance(arg.account)));
+      const expectedBalances = args.map(arg => arg.value);
+      expect(balances.map(res => res.result.balance)).toEqual(expectedBalances);
+    });
+
+    it('fails if amount is not equal to fund sum', async () => {
+      const zilliqa = getZilliqa()
+      zilliqa.wallet.addByPrivateKey(privateKey)
+
+      const [, accountFunder] = await deployAccountFunder(zilliqa);
+
+      const args = [
+        { account: zilliqa.wallet.create(), value: '400' },
+        { account: zilliqa.wallet.create(), value: '600' },
+      ];
+      const accountsToLoad = args.reduce((accounts, arg) => {
+        accounts[arg.account.replace('0x', '').toLowerCase()] = {
+          privateKey: zilliqa.wallet.accounts[arg.account].privateKey,
+          amount: "0",
+          nonce: 0,
+        }
+        return accounts
+      }, {})
+      loadAccounts({ ...defaultLoadedAccounts, ...accountsToLoad });
+
+      const sendFundsTx = await accountFunder.call(
+        'sendFunds',
+        accountFunderData.f.sendFunds({
+          accountValues: args.map(arg => ({
+            constructor: 'AccountValue',
+            argtypes: [],
+            arguments: [arg.account, arg.value],
+          })),
+        }),
+        {
+          ...defaultParams,
+          amount: new BN(1100),
+          nonce: 0,
+        },
+      )
+      expect(sendFundsTx.isConfirmed()).toBe(false);
+
+      const balances = await Promise.all(args.map(arg => zilliqa.blockchain.getBalance(arg.account)));
+      const expectedBalances = ['0', '0'];
+      expect(balances.map(res => res.result.balance)).toEqual(expectedBalances);
+    });
+  });
 
   it('should disallow to sell domain outside the zone', async () => {
     const zilliqa = getZilliqa()

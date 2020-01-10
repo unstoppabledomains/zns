@@ -1,0 +1,58 @@
+scilla_version 0
+
+library AccountFunderLib
+
+(* A pair of account address and amount of funds (that are sent to it) *)
+type AccountValue =
+  | AccountValue of ByStr20 Uint128
+
+(* Contains a list of messages and sum of account values *)
+type Result =
+  | Result of (List Message) Uint128
+
+let processAccountValues =
+  fun (accountValues: List AccountValue) =>
+    let foldr = @list_foldr AccountValue Result in
+    let iter =
+      fun (accountValue: AccountValue) =>
+      fun (res: Result) =>
+        match accountValue with
+        | AccountValue account value =>
+          match res with
+          | Result messages sum =>
+            let new_messages =
+              let msg = { _tag: "onFundsReceived"; _recipient : account; _amount : value } in
+                Cons {Message} msg messages
+            in
+              let new_sum = builtin add sum value in
+                Result new_messages new_sum
+          end
+        end
+    in
+      let acc =
+        let empty_list = Nil {Message} in
+        let zero_sum = Uint128 0 in
+          Result empty_list zero_sum
+      in
+        foldr iter acc accountValues
+
+contract AccountFunder()
+
+field vendor: String = "UD"
+field version: String = "0.1.0"
+
+transition sendFunds(accountValues: List AccountValue)
+  res = processAccountValues accountValues;
+  match res with
+  | Result msgs sum =>
+    equalsAmount = builtin eq sum _amount;
+    match equalsAmount with
+    | True =>
+      accept;
+      send msgs
+    | False =>
+      e = { _exception : "InvalidAmount"; sum : sum; amount : _amount };
+      throw e
+    end
+  end
+end
