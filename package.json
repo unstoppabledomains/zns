@@ -5,9 +5,8 @@
     "@types/jest": "^24.0.23",
     "@types/lodash": "^4.14.136",
     "jest": "^24.9.0",
-    "kaya-cli": "https://github.com/Zilliqa/kaya#32f6ca96a0e7269cf9adfd2d59722140c21e736d",
+    "kaya-cli": "https://github.com/unstoppabledomains/kaya.git#b3cd20e",
     "ts-jest": "^24.0.2",
-    "build": "tsc -p .",
     "typescript": "^3.4.5"
   },
   "dependencies": {
@@ -22,6 +21,7 @@
     "testEnvironment": "node"
   },
   "scripts": {
+    "build": "tsc -p .",
     "verify": "[ -x ./runner/bin/scilla-runner ] && [ -x ./runner/bin/scilla-checker ] && [ -d ./runner/src/stdlib ] || (echo 'Scilla libraries are not symlinked' && exit 1)",
     "contracts": "yarn verify && sh ./scripts/contractInfo.sh",
     "test": "yarn test:kaya",

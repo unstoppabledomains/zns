@@ -1,0 +1,75 @@
+{
+  "contract_info": {
+    "scilla_major_version": "0",
+    "vname": "AccountFunder",
+    "params": [],
+    "fields": [
+      { "vname": "vendor", "type": "String", "depth": 0 },
+      { "vname": "version", "type": "String", "depth": 0 }
+    ],
+    "transitions": [
+      {
+        "vname": "sendFunds",
+        "params": [
+          { "vname": "accountValues", "type": "List (AccountValue)" }
+        ]
+      }
+    ],
+    "events": [],
+    "ADTs": [
+      {
+        "tname": "AccountValue",
+        "tparams": [],
+        "tmap": [
+          { "cname": "AccountValue", "argtypes": [ "ByStr20", "Uint128" ] }
+        ]
+      },
+      {
+        "tname": "Option",
+        "tparams": [ "'A" ],
+        "tmap": [
+          { "cname": "Some", "argtypes": [ "'A" ] },
+          { "cname": "None", "argtypes": [] }
+        ]
+      },
+      {
+        "tname": "Bool",
+        "tparams": [],
+        "tmap": [
+          { "cname": "True", "argtypes": [] },
+          { "cname": "False", "argtypes": [] }
+        ]
+      },
+      {
+        "tname": "Nat",
+        "tparams": [],
+        "tmap": [
+          { "cname": "Zero", "argtypes": [] },
+          { "cname": "Succ", "argtypes": [ "Nat" ] }
+        ]
+      },
+      {
+        "tname": "List",
+        "tparams": [ "'A" ],
+        "tmap": [
+          { "cname": "Cons", "argtypes": [ "'A", "List ('A)" ] },
+          { "cname": "Nil", "argtypes": [] }
+        ]
+      },
+      {
+        "tname": "Pair",
+        "tparams": [ "'A", "'B" ],
+        "tmap": [ { "cname": "Pair", "argtypes": [ "'A", "'B" ] } ]
+      },
+      {
+        "tname": "Result",
+        "tparams": [],
+        "tmap": [
+          { "cname": "Result", "argtypes": [ "List (Message)", "Uint128" ] }
+        ]
+      }
+    ]
+  },
+  "warnings": [],
+  "gas_remaining": "9975"
+}
