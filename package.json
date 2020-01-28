@@ -5,7 +5,7 @@
     "@types/jest": "^24.0.23",
     "@types/lodash": "^4.14.136",
     "jest": "^24.9.0",
-    "kaya-cli": "https://github.com/unstoppabledomains/kaya.git#b3cd20e",
+    "kaya-cli": "https://github.com/unstoppabledomains/kaya.git#4280e86",
     "ts-jest": "^24.0.2",
     "typescript": "^3.4.5"
   },
