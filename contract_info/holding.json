@@ -89,5 +89,7 @@
         "tmap": [ { "cname": "Pair", "argtypes": [ "'A", "'B" ] } ]
       }
     ]
-  }
+  },
+  "warnings": [],
+  "gas_remaining": "9329"
 }

@@ -48,7 +48,12 @@ let contractMapField = async(contract: Contract, name: string): Promise<{[key: s
   if (!value) {
     return {};
   }
-  return value.reduce((a, v) => ({...a, [v.key]: v.val}), {})
+
+  if (Array.isArray(value)) {
+    return value.reduce((a, v) => ({...a, [v.key]: v.val}), {})
+  }
+
+  return value;
 }
 let isDefaultResolution = (resolution: Resolution) => {
 }
@@ -254,11 +259,23 @@ class Resolver {
 
   async isLive(): Promise<boolean> {
     let records = await contractField(this.registry.contract, "records");
-    let record = (records || []).find(r => r.key == this.node);
-    if (!record) {
+    if (!records) {
       return false;
     }
-    return this.address == normalizeAddress(record.val.arguments[1]);
+
+    if (Array.isArray(records)) {
+      let record = records.find(r => r.key == this.node);
+      if (record) {
+        return this.address == normalizeAddress(record.val.arguments[1]);
+      }
+    } else {
+      let record = records[this.node];
+      if (record) {
+        return this.address == normalizeAddress(record.arguments[1]);
+      }
+    }
+
+    return false;
   }
 
   async isDetached(): Promise<boolean> {

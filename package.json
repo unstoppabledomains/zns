@@ -26,6 +26,7 @@
     "contracts": "yarn verify && sh ./scripts/contractInfo.sh",
     "test": "yarn test:kaya",
     "test:kaya": "yarn contracts && ZIL_NODE_TYPE=kaya jest smart-contract.test.ts",
+    "test:local-dev": "yarn contracts && ZIL_NODE_TYPE=local-dev jest smart-contract.test.ts",
     "test:testnet": "yarn contracts && ZIL_NODE_TYPE=testnet jest smart-contract.test.ts",
     "update-snapshot": "jest -u -t",
     "firebase-auth": "firebase login"

@@ -212,5 +212,28 @@
         "tmap": [ { "cname": "Pair", "argtypes": [ "'A", "'B" ] } ]
       }
     ]
-  }
+  },
+  "warnings": [
+    {
+      "warning_message": "Name owner shadows a contract parameter.",
+      "start_location": {
+        "file": "./scilla/auction_registrar.scilla",
+        "line": 470,
+        "column": 45
+      },
+      "end_location": { "file": "", "line": 0, "column": 0 },
+      "warning_id": 2
+    },
+    {
+      "warning_message": "Name owner shadows a contract parameter.",
+      "start_location": {
+        "file": "./scilla/auction_registrar.scilla",
+        "line": 469,
+        "column": 45
+      },
+      "end_location": { "file": "", "line": 0, "column": 0 },
+      "warning_id": 2
+    }
+  ],
+  "gas_remaining": "8844"
 }

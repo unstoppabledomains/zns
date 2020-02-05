@@ -4,6 +4,11 @@
         "amount": "1000000000000000000",
         "nonce": 0
     },
+    "2f4f79ef6abfc0368f5a7e2c2df82e1afdfe7204": {
+        "privateKey": "1234567890123456789012345678901234567890123456789012345678901234",
+        "amount": "1000000000000000000",
+        "nonce": 0
+    },
     "d90f2e538ce0df89c8273cad3b63ec44a3c4ed82": {
         "privateKey": "e53d1c3edaffc7a7bab5418eb836cf75819a82872b4a1a0f1c7fcf5c3e020b89",
         "amount": "1000000000000000000",
