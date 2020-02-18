@@ -263,19 +263,9 @@ class Resolver {
       return false;
     }
 
-    if (Array.isArray(records)) {
-      let record = records.find(r => r.key == this.node);
-      if (record) {
-        return this.address == normalizeAddress(record.val.arguments[1]);
-      }
-    } else {
-      let record = records[this.node];
-      if (record) {
-        return this.address == normalizeAddress(record.arguments[1]);
-      }
-    }
-
-    return false;
+    const record = records[this.node] || records.find(r => r.key == this.node);
+    const recordArguments = record.val || record;
+    return record && this.address == normalizeAddress(recordArguments.arguments[1]);
   }
 
   async isDetached(): Promise<boolean> {
