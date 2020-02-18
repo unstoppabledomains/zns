@@ -1,4 +1,4 @@
-FROM zilliqa/scilla:v0.5.0
+FROM zilliqa/scilla:v0.5.2
 
 # Format guideline: one package per line and keep them alphabetically sorted
 RUN apt-get update \
@@ -49,8 +49,8 @@ ARG INSTALL_DIR=/usr/local
 ARG BUILD_TYPE=RelWithDebInfo
 ARG EXTRA_CMAKE_ARGS=
 
-RUN git clone -b ${ZILLIQA_VERSION} --depth 1 ${REPO} ${SOURCE_DIR} && \
-    cmake -H${SOURCE_DIR} -B${BUILD_DIR} -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
+RUN git clone -b ${ZILLIQA_VERSION} --depth 1 ${REPO} ${SOURCE_DIR} \
+    && cmake -H${SOURCE_DIR} -B${BUILD_DIR} -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
         -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} ${EXTRA_CMAKE_ARGS} \
     && cmake --build ${BUILD_DIR} -- -j$(nproc) \
     && cmake --build ${BUILD_DIR} --target install \
