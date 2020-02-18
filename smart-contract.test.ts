@@ -37,7 +37,7 @@ const simpleRegistrarData = generateMapperFromContractInfo(
 
 const getZilliqaNodeType = (): string => {
   const environmentVariable = process.env.ZIL_NODE_TYPE // kaya, testnet
-  if (['kaya', 'testnet', 'local-dev'].includes(environmentVariable)) {
+  if (['kaya', 'testnet', 'standalone-node'].includes(environmentVariable)) {
     return environmentVariable
   }
 
@@ -54,7 +54,7 @@ const testParams = ({
   testnet: {
     jestTimeout: 15 * 60 * 1000,
   },
-  'local-dev': {
+  'standalone-node': {
     jestTimeout: 15 * 60 * 1000,
   },
 })[zilliqaNodeType]
@@ -77,7 +77,7 @@ const zilliqaTestnetNodeParams = {
   getProvider: () => undefined,
 }
 
-const localDevNodeParams = {
+const standaloneNode = {
   chainId: 1,
   msgVersion: 1,
   url: 'http://127.0.0.1:5555',
@@ -87,7 +87,7 @@ const localDevNodeParams = {
 const zilliqaNodeParams = ({
   kaya: zilliqaKayaNodeParams,
   testnet: zilliqaTestnetNodeParams,
-  'local-dev': localDevNodeParams
+  'standalone-node': standaloneNode
 })[zilliqaNodeType]
 
 const getZilliqa = () => new Zilliqa(zilliqaNodeParams.url, zilliqaNodeParams.getProvider())
