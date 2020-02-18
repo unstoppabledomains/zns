@@ -236,8 +236,7 @@ const expectUnchangedState = async (contract: Contract, block) => {
 
 const contractMapValue = async (contract, field, key) => {
   const map = await contractField(contract, field)
-  const record = map.find(r => r.key == key) || null
-  return record && record.val
+  return map[key] || null
 }
 
 const transactionEvents = (tx: Transaction): Array<object> => {
@@ -1494,9 +1493,11 @@ describe('smart contracts', () => {
       )
       expect(sendFundsTx.isConfirmed()).toBe(false);
 
-      const balances = await Promise.all(args.map(arg => zilliqa.blockchain.getBalance(arg.account)));
-      const expectedBalances = ['0', '0'];
-      expect(balances.map(res => res.result.balance)).toEqual(expectedBalances);
+      const responseErrors =
+          (await Promise.all(args.map(arg => zilliqa.blockchain.getBalance(arg.account))))
+              .map(response => response.error.code);
+      const expectedErrors = [-5, -5];
+      expect(responseErrors).toEqual(expectedErrors);
     });
   });
 
