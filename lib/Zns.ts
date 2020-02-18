@@ -258,14 +258,15 @@ class Resolver {
   }
 
   async isLive(): Promise<boolean> {
-    let records = await contractField(this.registry.contract, "records");
+    const records = await contractField(this.registry.contract, "records");
     if (!records) {
       return false;
     }
 
     const record = records[this.node] || records.find(r => r.key == this.node);
     const recordArguments = record.val || record;
-    return record && this.address == normalizeAddress(recordArguments.arguments[1]);
+
+    return recordArguments && this.address == normalizeAddress(recordArguments.arguments[1]);
   }
 
   async isDetached(): Promise<boolean> {
