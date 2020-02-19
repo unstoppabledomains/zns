@@ -1,8 +1,12 @@
-ROOT="$(dirname $0)/.."
+#!/usr/bin/env bash
+
+set -exo pipefail
+
+ROOT=/zns-contracts
 cd $ROOT
-CHECKER=./runner/bin/scilla-checker
-STDLIB=./runner/src/stdlib
-OUTDIR=./contract_info
+CHECKER=/scilla/0/bin/scilla-checker
+STDLIB=/scilla/0/src/stdlib
+OUTDIR=$ROOT/contract_info
 mkdir -p $OUTDIR
 rm $OUTDIR/*
 if [ ! -x $CHECKER ]; then
@@ -13,7 +17,7 @@ if [ ! -d $STDLIB ]; then
   echo "$STDLIB doesn't exist"
   exit 1
 fi
-for CONTRACT in $(ls ./scilla/*.scilla); do
+for CONTRACT in /zns-contracts/scilla/*.scilla; do
   INFO=$OUTDIR/$(basename $CONTRACT .scilla).json
   $CHECKER -gaslimit 10000 -libdir $STDLIB -contractinfo $CONTRACT >$INFO || exit 1
 done

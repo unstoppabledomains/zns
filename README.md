@@ -5,39 +5,74 @@ system like DNS on the blockchain. ZNS connects the familiar and powerful name
 system mechanics to blockchain assets like addresses, websites and application
 data, as well as traditional dns records.
 
-
 ## Getting Started
 
 ### Requirements
 
-- The [Scilla Toolchain](https://github.com/Zilliqa/scilla). It requires a fair
-  amount of space. The
-  [build requirements are listed here](https://github.com/Zilliqa/scilla/blob/master/INSTALL.md).
-- Nodejs and Yarn are required as well.
+- [Docker](https://www.docker.com) required
+- Node.js and Yarn are required as well.
 
 ### Installing
 
 ```sh
 yarn install
-# Symlink scilla toolchain
-ln -s <scilla-toolchain-path> runner
-# Ensure scilla toolchain is ready
-yarn verify
 ```
 
 ### Testing
 
+Tests run against standalone zilliqa development node. You will need to install [Docker](https://www.docker.com) before.
+
+#### Run zilliqa development node.
+```shell script
+docker run -d -p 5555:5555 derain/zilliqa-dev-node
+```
+It's requires keep port `5555` open on local machine. 
+If port already occupied - you may have `zilliqa-dev-node` already run. 
+You can check this via command below. 
+
+#### Check node status
+```shell script
+docker ps
+```
+You should see similar output if node was ran. 
+Almost each docker command requires `CONTAINER ID`. Container id generates automatically on each `docker run`:
+```
+CONTAINER ID        IMAGE                     COMMAND                  CREATED             STATUS              PORTS                    NAMES
+3ab2b677fd8f        derain/zilliqa-dev-node   "/usr/local/bin/isol…"   11 minutes ago      Up 11 minutes       0.0.0.0:5555->5555/tcp   mystifying_wright
+```
+
+#### Run test suite
 ```
 yarn test
 ```
 
-ZNS uses Kaya - an official Zilliqa node simulation library.
-However, mainstream version of Kaya has bugs that are fixed in [our fork](https://github.com/unstoppabledomains/kaya)
+#### Stop zilliqa development node
+```shell script
+docker kill <CONTAINER ID>
+```
 
-Zilliqa RPC calls are made using [Zilliqa-JavaScript-Library](https://github.com/Zilliqa/Zilliqa-JavaScript-Library) by configuring it with Kaya provider instead of default HTTP provider 
-This ensures the Zilliqa node simulator and the test suite exist in the same process.
+For example: `docker kill 3ab2b677fd8f`
 
-## Contracts
+#### Get logs from zilliqa development node
+```shell script
+docker logs <CONTAINER ID>
+```
+
+#### Run node in foreground to get real-time logs on screen
+```shell script
+docker run -p 5555:5555 derain/zilliqa-dev-node
+```
+
+## Build zilliqa-dev-node
+You may need to rebuild docker image for `zilliqa development node`.
+```shell script
+cd docker/build
+docker build . -t zilliqa-dev-node
+```
+And run your brand new docker image:
+```shell script
+docker run -p 5555:5555 zilliqa-dev-node
+```
 
 For an introduction to Zilliqa and Scilla and some of the design considerations
 look at the [Zilliqa Reference](./ZILLIQA.md).

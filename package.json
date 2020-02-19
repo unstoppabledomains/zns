@@ -5,7 +5,6 @@
     "@types/jest": "^24.0.23",
     "@types/lodash": "^4.14.136",
     "jest": "^24.9.0",
-    "kaya-cli": "https://github.com/unstoppabledomains/kaya.git#4280e86",
     "ts-jest": "^24.0.2",
     "typescript": "^3.4.5"
   },
@@ -22,11 +21,10 @@
   },
   "scripts": {
     "build": "tsc -p .",
-    "verify": "[ -x ./runner/bin/scilla-runner ] && [ -x ./runner/bin/scilla-checker ] && [ -d ./runner/src/stdlib ] || (echo 'Scilla libraries are not symlinked' && exit 1)",
-    "contracts": "yarn verify && sh ./scripts/contractInfo.sh",
-    "test": "yarn test:kaya",
-    "test:kaya": "yarn contracts && ZIL_NODE_TYPE=kaya jest smart-contract.test.ts",
-    "test:testnet": "yarn contracts && ZIL_NODE_TYPE=testnet jest smart-contract.test.ts",
+    "contracts": "docker run --entrypoint /bin/sh -v \"$(pwd)\":/zns-contracts derain/zilliqa-dev-node -c /zns-contracts/docker/scripts/generate-contract-info.sh",
+    "test": "yarn contracts && yarn test:standalone-node",
+    "test:standalone-node": "ZIL_NODE_TYPE=standalone-node jest smart-contract.test.ts",
+    "test:testnet": "ZIL_NODE_TYPE=testnet jest smart-contract.test.ts",
     "update-snapshot": "jest -u -t",
     "firebase-auth": "firebase login"
   }
