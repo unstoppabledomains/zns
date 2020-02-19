@@ -21,11 +21,10 @@
   },
   "scripts": {
     "build": "tsc -p .",
-    "verify": "[ -x ./runner/bin/scilla-runner ] && [ -x ./runner/bin/scilla-checker ] && [ -d ./runner/src/stdlib ] || (echo 'Scilla libraries are not symlinked' && exit 1)",
-    "contracts": "yarn verify && sh ./scripts/contractInfo.sh",
-    "test": "yarn test:standalone-node",
-    "test:standalone-node": "yarn contracts && ZIL_NODE_TYPE=standalone-node jest smart-contract.test.ts",
-    "test:testnet": "yarn contracts && ZIL_NODE_TYPE=testnet jest smart-contract.test.ts",
+    "contracts": "sh ./docker/scripts/get-contract-info.sh",
+    "test": "yarn contracts && yarn test:standalone-node",
+    "test:standalone-node": "ZIL_NODE_TYPE=standalone-node jest smart-contract.test.ts",
+    "test:testnet": "ZIL_NODE_TYPE=testnet jest smart-contract.test.ts",
     "update-snapshot": "jest -u -t",
     "firebase-auth": "firebase login"
   }
