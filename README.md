@@ -25,7 +25,7 @@ Tests run against standalone zilliqa development node. You will need to install 
 #### Run zilliqa development node.
 
 ```shell script
-yarn docker
+yarn zilliqa:start
 ```
 
 It's requires keep port `5555` open on local machine. 
@@ -53,7 +53,7 @@ yarn test
 #### Stop zilliqa development node
 
 ```shell script
-yarn docker:kill
+yarn zilliqa:stop
 ```
 
 
