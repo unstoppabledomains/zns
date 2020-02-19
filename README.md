@@ -70,7 +70,16 @@ docker logs <CONTAINER ID>
 docker run -d -p 5555:5555 derain/zilliqa-dev-node
 ```
 
-## Contracts
+## Build zilliqa-dev-node
+You may need to rebuild docker image for `zilliqa development node`.
+```shell script
+cd docker/build
+docker build . -t zilliqa-dev-node
+```
+And run your brand new docker image:
+```shell script
+docker run -p 5555:5555 zilliqa-dev-node
+```
 
 For an introduction to Zilliqa and Scilla and some of the design considerations
 look at the [Zilliqa Reference](./ZILLIQA.md).
