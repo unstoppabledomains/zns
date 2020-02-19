@@ -42,7 +42,7 @@ You can check this via command below.
 docker ps
 ```
 You should see similar output if node was ran. 
-Almost any docker command requires `CONTAINER ID`. Container id generates automatically on each `docker run`:
+Almost each docker command requires `CONTAINER ID`. Container id generates automatically on each `docker run`:
 ```
 CONTAINER ID        IMAGE                     COMMAND                  CREATED             STATUS              PORTS                    NAMES
 3ab2b677fd8f        derain/zilliqa-dev-node   "/usr/local/bin/isol…"   11 minutes ago      Up 11 minutes       0.0.0.0:5555->5555/tcp   mystifying_wright
@@ -67,7 +67,7 @@ docker logs <CONTAINER ID>
 
 #### Run node in foreground to get real-time logs on screen
 ```shell script
-docker run -d -p 5555:5555 derain/zilliqa-dev-node
+docker run -p 5555:5555 derain/zilliqa-dev-node
 ```
 
 ## Build zilliqa-dev-node
