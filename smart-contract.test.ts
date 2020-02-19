@@ -4,10 +4,6 @@ import {toChecksumAddress} from '@zilliqa-js/crypto'
 import {Zilliqa} from '@zilliqa-js/zilliqa'
 import {Contract} from '@zilliqa-js/contract'
 import {readFileSync} from 'fs'
-import KayaProvider from 'kaya-cli/src/provider'
-import { loadAccounts } from 'kaya-cli/src/components/wallet/wallet'
-import * as kayaConfig from 'kaya-cli/src/config'
-import uuid from 'uuid/v4'
 import {contract_info as account_funder_contract_info} from './contract_info/account_funder.json'
 import {contract_info as auction_registrar_contract_info} from './contract_info/auction_registrar.json'
 import {contract_info as marketplace_contract_info} from './contract_info/marketplace.json'
@@ -16,11 +12,6 @@ import {contract_info as resolver_contract_info} from './contract_info/resolver.
 import {contract_info as simple_registrar_contract_info} from './contract_info/simple_registrar.json'
 import {generateMapperFromContractInfo} from './lib/params'
 import Zns from './lib/Zns'
-
-kayaConfig.scilla.remote = false
-kayaConfig.blockchain.blockInterval = 0
-kayaConfig.constants.smart_contract.SCILLA_RUNNER = `${__dirname}/runner/bin/scilla-runner`
-kayaConfig.constants.smart_contract.SCILLA_CHECKER = `${__dirname}/runner/bin/scilla-checker`
 
 const accountFunderData = generateMapperFromContractInfo(account_funder_contract_info)
 const auctionRegistrarData = generateMapperFromContractInfo(
@@ -37,7 +28,7 @@ const simpleRegistrarData = generateMapperFromContractInfo(
 
 const getZilliqaNodeType = (): string => {
   const environmentVariable = process.env.ZIL_NODE_TYPE // kaya, testnet
-  if (['kaya', 'testnet', 'standalone-node'].includes(environmentVariable)) {
+  if (['testnet', 'standalone-node'].includes(environmentVariable)) {
     return environmentVariable
   }
 
@@ -48,9 +39,6 @@ const getZilliqaNodeType = (): string => {
 const zilliqaNodeType = getZilliqaNodeType()
 
 const testParams = ({
-  kaya: {
-    jestTimeout: 5 * 1000,
-  },
   testnet: {
     jestTimeout: 15 * 60 * 1000,
   },
@@ -58,17 +46,6 @@ const testParams = ({
     jestTimeout: 15 * 60 * 1000,
   },
 })[zilliqaNodeType]
-
-const zilliqaKayaNodeParams = {
-  chainId: 111,
-  msgVersion: 1,
-  url: null,
-  getProvider: () => {
-    const id = uuid()
-    loadAccounts({ ...defaultLoadedAccounts });
-    return new KayaProvider({ dataPath: `/tmp/kaya_${id}_` })
-  },
-}
 
 const zilliqaTestnetNodeParams = {
   chainId: 333,
@@ -85,7 +62,6 @@ const standaloneNode = {
 }
 
 const zilliqaNodeParams = ({
-  kaya: zilliqaKayaNodeParams,
   testnet: zilliqaTestnetNodeParams,
   'standalone-node': standaloneNode
 })[zilliqaNodeType]
@@ -252,11 +228,6 @@ describe('smart contracts', () => {
   beforeEach(() => {
     jest.resetModules()
   })
-
-  afterEach(() => {
-    // Reset any additionally loaded accounts in the tests.
-    loadAccounts({ ...defaultLoadedAccounts });
-  });
 
   describe('resolver.scilla', () => {
     it('should deploy', async () => {
@@ -1432,7 +1403,6 @@ describe('smart contracts', () => {
         }
         return accounts
       }, {})
-      loadAccounts({ ...defaultLoadedAccounts, ...accountsToLoad });
 
       const sendFundsTx = await accountFunder.call(
         'sendFunds',
@@ -1474,7 +1444,6 @@ describe('smart contracts', () => {
         }
         return accounts
       }, {})
-      loadAccounts({ ...defaultLoadedAccounts, ...accountsToLoad });
 
       const sendFundsTx = await accountFunder.call(
         'sendFunds',
