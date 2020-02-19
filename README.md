@@ -23,17 +23,21 @@ yarn install
 Tests run against standalone zilliqa development node. You will need to install [Docker](https://www.docker.com) before.
 
 #### Run zilliqa development node.
+
 ```shell script
-docker run -d -p 5555:5555 derain/zilliqa-dev-node
+yarn docker
 ```
+
 It's requires keep port `5555` open on local machine. 
 If port already occupied - you may have `zilliqa-dev-node` already run. 
 You can check this via command below. 
 
 #### Check node status
+
 ```shell script
 docker ps
 ```
+
 You should see similar output if node was ran. 
 Almost each docker command requires `CONTAINER ID`. Container id generates automatically on each `docker run`:
 ```
@@ -47,11 +51,11 @@ yarn test
 ```
 
 #### Stop zilliqa development node
+
 ```shell script
-docker kill <CONTAINER ID>
+yarn docker:kill
 ```
 
-For example: `docker kill 3ab2b677fd8f`
 
 #### Get logs from zilliqa development node
 ```shell script
