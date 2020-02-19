@@ -21,7 +21,7 @@
   },
   "scripts": {
     "build": "tsc -p .",
-    "contracts": "sh ./docker/scripts/get-contract-info.sh",
+    "contracts": "docker run --entrypoint /bin/sh -v \"$(pwd)\":/zns-contracts derain/zilliqa-dev-node -c /zns-contracts/docker/scripts/generate-contract-info.sh",
     "test": "yarn contracts && yarn test:standalone-node",
     "test:standalone-node": "ZIL_NODE_TYPE=standalone-node jest smart-contract.test.ts",
     "test:testnet": "ZIL_NODE_TYPE=testnet jest smart-contract.test.ts",

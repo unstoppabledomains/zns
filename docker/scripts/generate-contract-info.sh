@@ -2,11 +2,11 @@
 
 set -exo pipefail
 
-ROOT="$(dirname $0)/.."
+ROOT=/zns-contracts
 cd $ROOT
 CHECKER=/scilla/0/bin/scilla-checker
 STDLIB=/scilla/0/src/stdlib
-OUTDIR=/zns-contracts/contract_info
+OUTDIR=$ROOT/contract_info
 mkdir -p $OUTDIR
 rm $OUTDIR/*
 if [ ! -x $CHECKER ]; then
