@@ -51,14 +51,12 @@ const zilliqaTestnetNodeParams = {
   chainId: 333,
   msgVersion: 1,
   url: 'https://dev-api.zilliqa.com',
-  getProvider: () => undefined,
 }
 
 const standaloneNode = {
   chainId: 1,
   msgVersion: 1,
   url: 'http://127.0.0.1:5555',
-  getProvider: () => undefined,
 }
 
 const zilliqaNodeParams = ({
@@ -66,7 +64,7 @@ const zilliqaNodeParams = ({
   'standalone-node': standaloneNode
 })[zilliqaNodeType]
 
-const getZilliqa = () => new Zilliqa(zilliqaNodeParams.url, zilliqaNodeParams.getProvider())
+const getZilliqa = () => new Zilliqa(zilliqaNodeParams.url)
 
 const version = bytes.pack(zilliqaNodeParams.chainId, zilliqaNodeParams.msgVersion)
 
