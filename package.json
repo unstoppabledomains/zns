@@ -20,7 +20,7 @@
     "testEnvironment": "node"
   },
   "scripts": {
-    "zilliqa:start": "docker run -d -p 5555:5555 derain/zilliqa-dev-node",
+    "zilliqa:start": "docker run -d -p 5555:5555 derain/zilliqa-dev-node:0.0.1",
     "zilliqa:stop": "docker kill `docker ps --filter 'ancestor=derain/zilliqa-dev-node' -q`",
     "build": "tsc -p .",
     "contracts": "docker run --entrypoint /bin/sh -v \"$(pwd)\":/zns-contracts derain/zilliqa-dev-node -c /zns-contracts/docker/scripts/generate-contract-info.sh",
