@@ -564,14 +564,7 @@ describe('smart contracts', () => {
       // add admin
       //////////////////////////////////////////////////////////////////////////
 
-      await registry.call(
-        'setAdmin',
-        registryData.f.setAdmin({
-          address: address2,
-          isApproved: true,
-        }),
-        defaultParams,
-      )
+      await zns.setAdmin(address2)
 
       expect(await contractField(registry, 'admins')).toEqual([
         address2,
@@ -582,14 +575,7 @@ describe('smart contracts', () => {
       // remove admin
       //////////////////////////////////////////////////////////////////////////
 
-      await registry.call(
-        'setAdmin',
-        registryData.f.setAdmin({
-          address: address2,
-          isApproved: false,
-        }),
-        defaultParams,
-      )
+      await zns.setAdmin(address2, false)
 
       expect(await contractField(registry, 'admins')).toEqual([address])
 
@@ -600,14 +586,9 @@ describe('smart contracts', () => {
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey2))
 
       await expectUnchangedState(registry, async () => {
-        await registry.call(
-          'setAdmin',
-          registryData.f.setAdmin({
-            address: address2,
-            isApproved: true,
-          }),
-          defaultParams,
-        )
+        await expect(
+          zns.setAdmin(address2, true)
+        ).rejects.toThrow(/Sender not root node owner/)
       })
     })
 

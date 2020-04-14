@@ -429,6 +429,16 @@ export default class Zns {
     return tx
   }
 
+  async setAdmin(address: string, value: boolean = true) {
+    return await this.callTransition(
+      'setAdmin',
+      {
+        address,
+        isApproved: value,
+      },
+    )
+  }
+
   async getRegistryRecord(domain: Domain | Node): Promise<[Address, Address] | []> {
     let records = await contractMapField(this.contract, 'records')
     let node = isNode(domain) ? domain : Zns.namehash(domain)
