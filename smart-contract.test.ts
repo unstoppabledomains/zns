@@ -170,20 +170,6 @@ const address2 = '0x2f4f79ef6abfc0368f5a7e2c2df82e1afdfe7204'
 const privateKey2 =
   '1234567890123456789012345678901234567890123456789012345678901234'
 
-const defaultLoadedAccounts = {
-  // 1,000,000,000 ZIL
-  [address.replace('0x', '')]: {
-    privateKey,
-    amount: '1000000000000000',
-    nonce: 0
-  },
-  [address2.replace('0x', '')]: {
-    privateKey: privateKey2,
-    amount: '1000000000000000',
-    nonce: 0,
-  },
-}
-
 const defaultRootDomain = 'zil'
 
 const defaultRootNode = Zns.namehash(defaultRootDomain)
@@ -564,7 +550,7 @@ describe('smart contracts', () => {
 
       await zns.setAdmin(address2)
 
-      expect(await contractField(registry, 'admins')).toEqual([
+      expect(await zns.getAdminAddresses()).toEqual([
         address2,
         address,
       ])
@@ -575,7 +561,7 @@ describe('smart contracts', () => {
 
       await zns.setAdmin(address2, false)
 
-      expect(await contractField(registry, 'admins')).toEqual([address])
+      expect(await zns.getAdminAddresses()).toEqual([address])
 
       //////////////////////////////////////////////////////////////////////////
       // fail to set admin using bad address
@@ -589,6 +575,19 @@ describe('smart contracts', () => {
         ).rejects.toThrow(/Sender not root node owner/)
       })
     })
+
+    it('rotates admin key', async () => {
+
+      const zilliqa = getZilliqa()
+      zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
+
+      const zns = await Zns.deployRegistry(zilliqa, undefined, undefined, {version})
+      expect(await zns.getAdminAddresses()).toEqual([address])
+
+      const registry = zns.contract
+      await zns.rotateAdmin(privateKey2)
+      expect(await zns.getAdminAddresses()).toEqual([address2])
+    });
 
     it('should freely configure names properly', async () => {
       const zilliqa = getZilliqa()

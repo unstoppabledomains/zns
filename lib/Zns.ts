@@ -9,6 +9,7 @@ import _ from 'lodash'
 import {contract_info as registryContractInfo} from '../contract_info/registry.json'
 import {contract_info as resolverContractInfo} from '../contract_info/resolver.json'
 import {generateMapperFromContractInfo} from './params'
+import { getAddressFromPrivateKey } from '@zilliqa-js/crypto'
 
 type Address = string
 type Domain = string
@@ -429,7 +430,7 @@ export default class Zns {
     return tx
   }
 
-  async setAdmin(address: string, value: boolean = true) {
+  async setAdmin(address: Address, value: boolean = true) {
     return await this.callTransition(
       'setAdmin',
       {
@@ -437,6 +438,16 @@ export default class Zns {
         isApproved: value,
       },
     )
+  }
+
+  async rotateAdmin(newAdminPrivateKey: string) {
+    const newAddress = getAddressFromPrivateKey(newAdminPrivateKey)
+    const oldAddress = this.zilliqa.wallet.defaultAccount!.address;
+    const tx1 = await this.setAdmin(newAddress);
+    this.zilliqa.wallet.addByPrivateKey(newAdminPrivateKey);
+    this.zilliqa.wallet.setDefault(newAddress)
+    const tx2 = await this.setAdmin(oldAddress, false)
+    return [tx1, tx2]
   }
 
   async getRegistryRecord(domain: Domain | Node): Promise<[Address, Address] | []> {
@@ -457,6 +468,10 @@ export default class Zns {
   async getApprovedAddress(domain: Domain | Node): Promise<Address> {
     let approvals = await contractMapField(this.contract, 'approvals')
     return approvals[Zns.namehash(domain)]
+  }
+
+  async getAdminAddresses(): Promise<Address[]> {
+    return await contractField(this.contract, 'admins')
   }
 
   private async callTransition(name: string, args: object, txParams: Partial<TxParams> = {}): Promise<Transaction> {
