@@ -577,7 +577,6 @@ describe('smart contracts', () => {
     })
 
     it('rotates admin key', async () => {
-
       const zilliqa = getZilliqa()
       zilliqa.wallet.setDefault(zilliqa.wallet.addByPrivateKey(privateKey))
 

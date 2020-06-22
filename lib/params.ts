@@ -13,6 +13,8 @@ function normalizeValue(value) {
         return _.map(value, (val, key) => ({key, val}))
       }
       return value
+    case "string":
+      return value.match(/0x[0-9a-f]+/i) ? value.toLowerCase() : value;
     default:       return value.toString()
   }
 }

@@ -2,7 +2,8 @@ import * as hashjs from 'hash.js'
 import {Transaction, TxParams} from '@zilliqa-js/account'
 import {Zilliqa} from '@zilliqa-js/zilliqa'
 import {Contract} from '@zilliqa-js/contract'
-import {BN, bytes, Long} from '@zilliqa-js/util'
+import {toChecksumAddress} from '@zilliqa-js/crypto'
+import {BN, bytes, Long, } from '@zilliqa-js/util'
 import * as fs from 'fs'
 import _ from 'lodash'
 
@@ -93,7 +94,7 @@ let defaultWalletAddress = (zilliqa: Zilliqa): Address => {
 }
 
 let getContract = (zilliqa: Zilliqa, address: Address): Contract => {
-  return zilliqa.contracts.at(normalizeAddress(address).slice(2))
+  return zilliqa.contracts.at(toChecksumAddress(normalizeAddress(address)))
 }
 
 let addressKey = (currency: string): string => {
@@ -178,6 +179,12 @@ class ZnsTxError extends ZnsError {
     super(message)
     this.tx = tx
     let errorEvent = transactionEvent(this.tx, 'Error');
+    const {receipt} = this.tx.txParams;
+    const errorCodes = Object.values(receipt?.errors || {})
+    if (errorCodes.length) {
+      this.message += `code: ${errorCodes.join(',')}`
+    }
+
     if (errorEvent) {
       this.eventErrorMessage = errorEvent.msg || errorEvent.message;
     }
@@ -320,7 +327,7 @@ export default class Zns {
       }
     }
 
-    return normalizeAddress(node.toString('hex'))
+    return "0x" + node.toString('hex')
   }
 
   static async deployRegistry(
@@ -434,7 +441,7 @@ export default class Zns {
     return await this.callTransition(
       'setAdmin',
       {
-        address,
+        address: normalizeAddress(address),
         isApproved: value,
       },
     )
@@ -475,10 +482,11 @@ export default class Zns {
   }
 
   private async callTransition(name: string, args: object, txParams: Partial<TxParams> = {}): Promise<Transaction> {
+    const params = {...this.defaultTxParams, ...txParams} as TxParams;
     let tx = await this.contract.call(
       name,
       registryData.f[name](args),
-      {...this.defaultTxParams, ...txParams} as TxParams,
+      params,
     )
     ensureTxConfirmed(tx)
     return tx
