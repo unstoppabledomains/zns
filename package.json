@@ -28,6 +28,8 @@
     "test:standalone-node": "ZIL_NODE_TYPE=standalone-node jest smart-contract.test.ts",
     "test:testnet": "ZIL_NODE_TYPE=testnet jest smart-contract.test.ts",
     "update-snapshot": "jest -u -t",
-    "firebase-auth": "firebase login"
+    "firebase-auth": "firebase login",
+    "migrate": "yarn build && ZIL_NETWORK=mainnet yarn node ./scripts/migrate.js",
+    "migrate:testnet": "yarn build && ZIL_NETWORK=testnet yarn node ./scripts/migrate.js"
   }
 }
