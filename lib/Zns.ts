@@ -3,70 +3,76 @@ import {Transaction, TxParams} from '@zilliqa-js/account'
 import {Zilliqa} from '@zilliqa-js/zilliqa'
 import {Contract} from '@zilliqa-js/contract'
 import {toChecksumAddress} from '@zilliqa-js/crypto'
-import {BN, bytes, Long, } from '@zilliqa-js/util'
+import {BN, bytes, Long} from '@zilliqa-js/util'
 import * as fs from 'fs'
 import _ from 'lodash'
 
 import {contract_info as registryContractInfo} from '../contract_info/registry.json'
 import {contract_info as resolverContractInfo} from '../contract_info/resolver.json'
 import {generateMapperFromContractInfo} from './params'
-import { getAddressFromPrivateKey } from '@zilliqa-js/crypto'
+import {getAddressFromPrivateKey} from '@zilliqa-js/crypto'
 
 type Address = string
 type Domain = string
 type Node = string
 type Resolution = {[key: string]: NestedResolution}
-type NestedResolution = string | null | undefined | {[key: string]: NestedResolution} | {[key: number]: NestedResolution}
+type NestedResolution =
+  | string
+  | null
+  | undefined
+  | {[key: string]: NestedResolution}
+  | {[key: number]: NestedResolution}
 type Records = {[key: string]: string}
 
-type TransactionEvent = {_eventname: string, [key: string]: string};
+type TransactionEvent = {_eventname: string; [key: string]: string}
 
 const registryData = generateMapperFromContractInfo(registryContractInfo)
 const resolverData = generateMapperFromContractInfo(resolverContractInfo)
 
 function sha256(buffer) {
-  return Buffer.from(
-    hashjs
-      .sha256()
-      .update(buffer)
-      .digest(),
-  )
+  return Buffer.from(hashjs.sha256().update(buffer).digest())
 }
 
-let contractField = async (contract: Contract, name: string, init: boolean = false): Promise<any> => {
+let contractField = async (
+  contract: Contract,
+  name: string,
+  init: boolean = false,
+): Promise<any> => {
   let state = init ? await contract.getInit() : await contract.getState()
   if (!state) {
-    return null;
+    return null
   }
   const value = state[name]
   if (!value) {
     throw new Error(`Unknown contract field ${name}`)
   }
-  return value;
+  return value
 }
 
-let contractMapField = async(contract: Contract, name: string): Promise<{[key: string]: any}> => {
-  let value = await contractField(contract, name) as {key: string, val: any}[]
+let contractMapField = async (
+  contract: Contract,
+  name: string,
+): Promise<{[key: string]: any}> => {
+  let value = (await contractField(contract, name)) as {key: string; val: any}[]
   if (!value) {
-    return {};
+    return {}
   }
 
   if (Array.isArray(value)) {
     return value.reduce((a, v) => ({...a, [v.key]: v.val}), {})
   }
 
-  return value;
+  return value
 }
-let isDefaultResolution = (resolution: Resolution) => {
-}
+let isDefaultResolution = (resolution: Resolution) => {}
 
 let normalizeAddress = (address: Address) => {
   if (!address) {
     return null
   }
   address = address.toLowerCase()
-  if (!address.startsWith("0x")) {
-    address = "0x" + address
+  if (!address.startsWith('0x')) {
+    address = '0x' + address
   }
   return address
 }
@@ -74,23 +80,27 @@ let normalizeAddress = (address: Address) => {
 let tokenize = (domain: Domain): [Node, string] => {
   let tokens = domain.split('.')
   let label = tokens.shift()
-  let parent = tokens.length
-    ? Zns.namehash(tokens.join('.'))
-    : Zns.NullNode;
+  let parent = tokens.length ? Zns.namehash(tokens.join('.')) : Zns.NullNode
   return [parent, label]
 }
 
-let normalizeContractAddress = (zilliqa: Zilliqa, argument: Address | Contract): [Address, Contract] => {
-    if (typeof(argument) == "string") {
-      let address = normalizeAddress(argument)
-      return [address, getContract(zilliqa, address)]
-    } else {
-      return [normalizeAddress(argument.address), argument]
-    }
+let normalizeContractAddress = (
+  zilliqa: Zilliqa,
+  argument: Address | Contract,
+): [Address, Contract] => {
+  if (typeof argument == 'string') {
+    let address = normalizeAddress(argument)
+    return [address, getContract(zilliqa, address)]
+  } else {
+    return [normalizeAddress(argument.address), argument]
+  }
 }
 
 let defaultWalletAddress = (zilliqa: Zilliqa): Address => {
-  return zilliqa.wallet.defaultAccount && normalizeAddress(zilliqa.wallet.defaultAccount.address)
+  return (
+    zilliqa.wallet.defaultAccount &&
+    normalizeAddress(zilliqa.wallet.defaultAccount.address)
+  )
 }
 
 let getContract = (zilliqa: Zilliqa, address: Address): Contract => {
@@ -103,24 +113,31 @@ let addressKey = (currency: string): string => {
 
 let ensureTxConfirmed = (tx: Transaction, message?: string): Transaction => {
   if (!tx.isConfirmed()) {
-    throw new ZnsTxError(message ||  "Transaction is not confirmed", tx)
+    throw new ZnsTxError(message || 'Transaction is not confirmed', tx)
   }
-  let errorEvent = transactionEvent(tx, "Error")
+  let errorEvent = transactionEvent(tx, 'Error')
   if (errorEvent) {
-    throw new ZnsTxError(message || "Transaction threw an Error event", tx)
+    console.log('EVENT', errorEvent)
+    throw new ZnsTxError(message || 'Transaction threw an Error event', tx)
   }
   return tx
 }
-let ensureTxEvent = (tx: Transaction, name: string, message: string): Transaction => {
-  ensureTxConfirmed(tx);
+
+let ensureTxEvent = (
+  tx: Transaction,
+  name: string,
+  message: string,
+): Transaction => {
+  ensureTxConfirmed(tx)
   let event = transactionEvent(tx, name)
   if (!event) {
-    throw new ZnsTxError(message, tx);
+    throw new ZnsTxError(message, tx)
   }
-  return tx;
+  return tx
 }
+
 let ensureAnyTxEvent = (tx: Transaction, names: string[], message: string) => {
-  for(let name of names) {
+  for (let name of names) {
     try {
       ensureTxEvent(tx, name, message)
       return
@@ -129,39 +146,44 @@ let ensureAnyTxEvent = (tx: Transaction, names: string[], message: string) => {
   ensureTxEvent(tx, names[0], message)
 }
 
-const resolutionToKeyValue = (data: Record<string, any>, prefix?: string): Record<string, string> => {
-  let result = {};
-  for(const key in data) {
-    const value = data[key];
-    const namespace = prefix ? `${prefix}.${key}` : key;
+const resolutionToKeyValue = (
+  data: Record<string, any>,
+  prefix?: string,
+): Record<string, string> => {
+  let result = {}
+  for (const key in data) {
+    const value = data[key]
+    const namespace = prefix ? `${prefix}.${key}` : key
     if (_.isObject(value)) {
-      result = {...result, ...resolutionToKeyValue(value, namespace)};
+      result = {...result, ...resolutionToKeyValue(value, namespace)}
     } else {
-      result[namespace] = value.toString();
+      result[namespace] = value.toString()
     }
   }
-  return result;
-};
+  return result
+}
 
-
-const asHash = params => {
+const asHash = (params) => {
   return params.reduce((a, v) => ({...a, [v.vname]: v.value}), {})
 }
+
 const transactionEvents = (tx: Transaction): TransactionEvent[] => {
   const events = tx.txParams.receipt ? tx.txParams.receipt.event_logs || [] : []
   // Following the original reverse order of events
-  return events.map(event => {
+  return events.map((event) => {
     return {_eventname: event._eventname, ...asHash(event.params)}
   })
 }
 
-const transactionEvent = (tx: Transaction, name: string): TransactionEvent | undefined => {
-
-  return transactionEvents(tx).find(e => e._eventname == name);
+const transactionEvent = (
+  tx: Transaction,
+  name: string,
+): TransactionEvent | undefined => {
+  return transactionEvents(tx).find((e) => e._eventname == name)
 }
 
 const isNode = (node: string): boolean => {
-  return !!node.match(/0x[0-9a-f]{40}/);
+  return !!node.match(/0x[0-9a-f]{40}/)
 }
 
 class ZnsError extends Error {
@@ -174,29 +196,28 @@ class ZnsError extends Error {
 class ZnsTxError extends ZnsError {
   readonly tx: Transaction
   readonly eventErrorMessage?: string
-  readonly transition?: string;
+  readonly transition?: string
   constructor(message: string, tx: Transaction) {
     super(message)
     this.tx = tx
-    let errorEvent = transactionEvent(this.tx, 'Error');
-    const {receipt} = this.tx.txParams;
+    let errorEvent = transactionEvent(this.tx, 'Error')
+    const {receipt} = this.tx.txParams
     const errorCodes = Object.values(receipt?.errors || {})
     if (errorCodes.length) {
       this.message += `code: ${errorCodes.join(',')}`
     }
 
     if (errorEvent) {
-      this.eventErrorMessage = errorEvent.msg || errorEvent.message;
+      this.eventErrorMessage = errorEvent.msg || errorEvent.message
     }
-    this.transition = JSON.parse(this.tx.txParams.data)._tag;
+    this.transition = JSON.parse(this.tx.txParams.data)._tag
     if (this.transition) {
-      this.message += ` on transition ${JSON.stringify(this.transition)}`;
+      this.message += ` on transition ${JSON.stringify(this.transition)}`
     }
     if (this.eventErrorMessage) {
-      this.message += `: ${this.eventErrorMessage}`;
+      this.message += `: ${this.eventErrorMessage}`
     }
   }
-
 }
 
 let DefaultCurrencies = ['ADA', 'BTC', 'EOS', 'ETH', 'XLM', 'XRP', 'ZIL']
@@ -213,10 +234,13 @@ class Resolver {
     resolver: Address | Contract,
     domain: Domain,
     owner: Address,
-    records: Records
+    records: Records,
   ) {
     this.domain = domain
-    let [address, contract] = normalizeContractAddress(registry.zilliqa, resolver)
+    let [address, contract] = normalizeContractAddress(
+      registry.zilliqa,
+      resolver,
+    )
     this.address = address
     this.contract = contract
     this.owner = owner
@@ -227,11 +251,17 @@ class Resolver {
   async reload(): Promise<this> {
     this.contract = getContract(this.registry.zilliqa, this.address)
     this.records = await contractMapField(this.contract, 'records')
-    this.owner = normalizeAddress(await contractField(this.contract, 'owner', false) as Address)
+    this.owner = normalizeAddress(
+      (await contractField(this.contract, 'owner', false)) as Address,
+    )
     return this
   }
 
-  async set(key: string, value: string, txParams?: Partial<TxParams>): Promise<Transaction> {
+  async set(
+    key: string,
+    value: string,
+    txParams?: Partial<TxParams>,
+  ): Promise<Transaction> {
     let tx = await this.callTransition('set', {key, value})
     this.records[key] = value
     return tx
@@ -244,8 +274,11 @@ class Resolver {
   }
 
   get resolution(): Resolution {
-    return _.reduce(this.records,
-      (result, value, key) => _.set(result, key, value), {})
+    return _.reduce(
+      this.records,
+      (result, value, key) => _.set(result, key, value),
+      {},
+    )
   }
 
   get node(): Node {
@@ -253,7 +286,11 @@ class Resolver {
   }
 
   getRecordsSetEvent() {
-    return { _eventname: "RecordsSet", node: this.node, registry: this.registry.address }
+    return {
+      _eventname: 'RecordsSet',
+      node: this.node,
+      registry: this.registry.address,
+    }
   }
 
   get configuredEvent() {
@@ -266,38 +303,43 @@ class Resolver {
   }
 
   async isLive(): Promise<boolean> {
-    const records = await contractField(this.registry.contract, "records");
+    const records = await contractField(this.registry.contract, 'records')
     if (!records) {
-      return false;
+      return false
     }
 
-    const record = records[this.node] || records.find(r => r.key == this.node);
-    const recordArguments = record.val || record;
+    const record = records[this.node] || records.find((r) => r.key == this.node)
+    const recordArguments = record.val || record
 
-    return recordArguments && this.address == normalizeAddress(recordArguments.arguments[1]);
+    return (
+      recordArguments &&
+      this.address == normalizeAddress(recordArguments.arguments[1])
+    )
   }
 
   async isDetached(): Promise<boolean> {
-    return !await this.isLive();
+    return !(await this.isLive())
   }
 
-  private async callTransition(name: string, args: object, txParams: Partial<TxParams> = {}): Promise<Transaction> {
-    let tx = await this.contract.call(
-      name,
-      resolverData.f[name](args),
-      {...this.registry.defaultTxParams, ...txParams} as TxParams,
-    )
+  private async callTransition(
+    name: string,
+    args: object,
+    txParams: Partial<TxParams> = {},
+  ): Promise<Transaction> {
+    let tx = await this.contract.call(name, resolverData.f[name](args), {
+      ...this.registry.defaultTxParams,
+      ...txParams,
+    } as TxParams)
     ensureTxConfirmed(tx)
     return tx
   }
 }
 
-
 export default class Zns {
   static NullAddress = '0x' + '0'.repeat(40)
   static NullNode = '0x' + '0'.repeat(64)
   static DefaultChainId = 1
-  static DefaultTxParams: Partial<TxParams> =  {
+  static DefaultTxParams: Partial<TxParams> = {
     version: bytes.pack(Zns.DefaultChainId, 1),
     toAddr: Zns.NullAddress,
     amount: new BN(0),
@@ -305,7 +347,6 @@ export default class Zns {
     gasLimit: Long.fromNumber(25000),
   }
   static ReusableTxParams = ['version', 'gasPrice', 'gasLimit']
-
 
   readonly zilliqa: Zilliqa
   readonly address: Address
@@ -327,17 +368,17 @@ export default class Zns {
       }
     }
 
-    return "0x" + node.toString('hex')
+    return '0x' + node.toString('hex')
   }
 
   static async deployRegistry(
     zilliqa: Zilliqa,
     owner: Address = defaultWalletAddress(zilliqa),
     root: Node = Zns.NullNode,
-    txParams: Partial<TxParams> = {}
+    txParams: Partial<TxParams> = {},
   ): Promise<Zns> {
     if (!owner) {
-      throw new ZnsError("owner is not specified")
+      throw new ZnsError('owner is not specified')
     }
     let contract = zilliqa.contracts.new(
       Zns.contractSourceCode('registry'),
@@ -345,7 +386,7 @@ export default class Zns {
     )
     let fullTxParams = {...Zns.DefaultTxParams, ...txParams} as TxParams
     let [registryTx, registry] = await contract.deploy(fullTxParams)
-    ensureTxConfirmed(registryTx, "Failed to deploy the registry")
+    ensureTxConfirmed(registryTx, 'Failed to deploy the registry')
     return new Zns(zilliqa, registry, _.pick(txParams, ...Zns.ReusableTxParams))
   }
 
@@ -355,14 +396,22 @@ export default class Zns {
 
   static isInitResolution(resolution: Resolution): boolean {
     if (_.isEmpty(resolution)) {
-      return true;
+      return true
     }
-    return _.isEqual(_.keys(resolution), ['crypto']) &&
+    return (
+      _.isEqual(_.keys(resolution), ['crypto']) &&
       !_.difference(_.keys(resolution.crypto), DefaultCurrencies).length &&
-      _.every(_.values(resolution.crypto), v => _.isEqual(_.keys(v), ['address']));
+      _.every(_.values(resolution.crypto), (v) =>
+        _.isEqual(_.keys(v), ['address']),
+      )
+    )
   }
 
-  constructor(zilliqa: Zilliqa, registry: Address | Contract, txParams?: Partial<TxParams>) {
+  constructor(
+    zilliqa: Zilliqa,
+    registry: Address | Contract,
+    txParams?: Partial<TxParams>,
+  ) {
     this.zilliqa = zilliqa
     let [address, contract] = normalizeContractAddress(zilliqa, registry)
     this.address = address
@@ -371,93 +420,94 @@ export default class Zns {
     this.defaultTxParams = {...Zns.DefaultTxParams, ...txParams}
   }
 
-  async deployResolver(domain: Domain, resolution: Resolution = {}, txParams: Partial<TxParams> = {}): Promise<Resolver> {
-    let node = Zns.namehash(domain);
-    let owner = this.owner;
+  async deployResolver(
+    domain: Domain,
+    resolution: Resolution = {},
+    txParams: Partial<TxParams> = {},
+  ): Promise<Resolver> {
+    let node = Zns.namehash(domain)
+    let owner = this.owner
 
-    let initialRecords = resolutionToKeyValue(resolution);
+    let initialRecords = resolutionToKeyValue(resolution)
 
     let [tx, resolver] = await this.zilliqa.contracts
       .new(
         Zns.contractSourceCode('resolver'),
-        resolverData
-        .init({initialOwner: owner, registry: this.address, node, initialRecords})
+        resolverData.init({
+          initialOwner: owner,
+          registry: this.address,
+          node,
+          initialRecords,
+        }),
       )
-      .deploy({...this.defaultTxParams, ...txParams} as TxParams);
-    ensureTxConfirmed(tx, 'Failed to deploy resolver');
-    return new Resolver(this, resolver, domain, owner, initialRecords);
+      .deploy({...this.defaultTxParams, ...txParams} as TxParams)
+    ensureTxConfirmed(tx, 'Failed to deploy resolver')
+    return new Resolver(this, resolver, domain, owner, initialRecords)
   }
 
-  async bestow(domain: Domain, owner: Address, resolver: Address = Zns.NullAddress, txParams: Partial<TxParams> = {}) {
-
+  async bestow(
+    domain: Domain,
+    owner: Address,
+    resolver: Address = Zns.NullAddress,
+    txParams: Partial<TxParams> = {},
+  ) {
     let [, label] = tokenize(domain)
     //TODO: ensure domain is a subnode of registry root
-    let tx = await this.callTransition(
-      'bestow',
-      {
-        label,
-        owner: normalizeAddress(owner),
-        resolver: normalizeAddress(resolver),
-      },
-    )
-    ensureTxEvent(tx, "Configured", 'Failed to bestow a domain')
-    return tx;
+    let tx = await this.callTransition('bestow', {
+      label,
+      owner: normalizeAddress(owner),
+      resolver: normalizeAddress(resolver),
+    })
+    ensureTxEvent(tx, 'Configured', 'Failed to bestow a domain')
+    return tx
   }
 
   async setApprovedAddress(
     domain: Domain | Node,
     address: Address,
-    txParams: Partial<TxParams> = {}
+    txParams: Partial<TxParams> = {},
   ): Promise<Transaction> {
-    let tx =  await this.callTransition(
-      'approve',
-      {
-        node: Zns.namehash(domain),
-        address: normalizeAddress(address),
-      },
-    )
-    return tx;
+    let tx = await this.callTransition('approve', {
+      node: Zns.namehash(domain),
+      address: normalizeAddress(address),
+    })
+    return tx
   }
 
   async register(
     domain: Domain,
     amount: BN | number,
-    txParams: Partial<TxParams> = {}
+    txParams: Partial<TxParams> = {},
   ): Promise<Transaction> {
-    if (typeof amount == "number") {
-      amount = new BN(amount);
+    if (typeof amount == 'number') {
+      amount = new BN(amount)
     }
     let [parent, label] = tokenize(domain)
-    let tx = await this.callTransition(
-      'register',
-      {parent, label},
-      {amount},
-    )
-    ensureTxEvent(tx, "Configured", "Transaction did not register a domain")
+    let tx = await this.callTransition('register', {parent, label}, {amount})
+    ensureTxEvent(tx, 'Configured', 'Transaction did not register a domain')
     return tx
   }
 
   async setAdmin(address: Address, value: boolean = true) {
-    return await this.callTransition(
-      'setAdmin',
-      {
-        address: normalizeAddress(address),
-        isApproved: value,
-      },
-    )
+    return await this.callTransition('setAdmin', {
+      address: normalizeAddress(address),
+      isApproved: value,
+    })
   }
 
   async rotateAdmin(newAdminPrivateKey: string) {
     const newAddress = getAddressFromPrivateKey(newAdminPrivateKey)
-    const oldAddress = this.zilliqa.wallet.defaultAccount!.address;
-    const tx1 = await this.setAdmin(newAddress);
-    this.zilliqa.wallet.addByPrivateKey(newAdminPrivateKey);
+    const oldAddress = this.zilliqa.wallet.defaultAccount!.address
+    const tx1 = await this.setAdmin(newAddress)
+    this.zilliqa.wallet.addByPrivateKey(newAdminPrivateKey)
     this.zilliqa.wallet.setDefault(newAddress)
     const tx2 = await this.setAdmin(oldAddress, false)
     return [tx1, tx2]
   }
 
-  async getRegistryRecord(domain: Domain | Node): Promise<[Address, Address] | []> {
+  async getRegistryRecord(
+    domain: Domain | Node,
+  ): Promise<[Address, Address] | []> {
     let records = await contractMapField(this.contract, 'records')
     let node = isNode(domain) ? domain : Zns.namehash(domain)
     let record = records[node]
@@ -465,11 +515,11 @@ export default class Zns {
   }
 
   async getOwnerAddress(domain: Domain | Node): Promise<Address> {
-    return (await this.getRegistryRecord(domain))[0];
+    return (await this.getRegistryRecord(domain))[0]
   }
 
   async getResolverAddress(domain: Domain | Node): Promise<Address> {
-    return (await this.getRegistryRecord(domain))[1];
+    return (await this.getRegistryRecord(domain))[1]
   }
 
   async getApprovedAddress(domain: Domain | Node): Promise<Address> {
@@ -481,13 +531,13 @@ export default class Zns {
     return await contractField(this.contract, 'admins')
   }
 
-  private async callTransition(name: string, args: object, txParams: Partial<TxParams> = {}): Promise<Transaction> {
-    const params = {...this.defaultTxParams, ...txParams} as TxParams;
-    let tx = await this.contract.call(
-      name,
-      registryData.f[name](args),
-      params,
-    )
+  private async callTransition(
+    name: string,
+    args: object,
+    txParams: Partial<TxParams> = {},
+  ): Promise<Transaction> {
+    const params = {...this.defaultTxParams, ...txParams} as TxParams
+    let tx = await this.contract.call(name, registryData.f[name](args), params)
     ensureTxConfirmed(tx)
     return tx
   }

@@ -281,3 +281,5 @@ $RECYCLE.BIN/
 *.lnk
 
 # End of https://www.gitignore.io/api/vim,node,linux,macos,windows,webstorm+all,visualstudiocode
+
+build/
