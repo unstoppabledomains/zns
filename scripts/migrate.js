@@ -18,11 +18,13 @@ const networks = {
   mainnet: {
     version: 65537,
     endpoint: 'https://api.zilliqa.com',
+    privateKey: process.env.ZIL_MAINNET_PRIVATE_KEY,
     admins: []
   },
   testnet: {
     version: 21823489,
     endpoint: 'https://dev-api.zilliqa.com',
+    privateKey: process.env.ZIL_TESTNET_PRIVATE_KEY,
     admins: [
       '0x4007ddaa515063d3753600535211279401b40d89',
       '0x93155e74c7ea923b26b8edaa92359ba3e3589d26'
@@ -109,12 +111,11 @@ async function setAdmins(adminContract, version, gasPrice, admins = []) {
   }
 }
 
-async function migrate(privateKey, net) {
-  console.log('privateKey:', privateKey);
+async function migrate(network) {
+  const _network = networks[network];
+  console.log('Migration config:', _network);
 
-  const {version, endpoint, admins} = networks[net];
-  console.log('version:', version);
-  console.log('url:', endpoint);
+  const {version, endpoint, privateKey, admins} = _network;
 
   const zilliqa = new Zilliqa(endpoint);
   const gasPrice = new BN(
@@ -140,7 +141,6 @@ async function migrate(privateKey, net) {
   await setAdmins(adminContract, version, gasPrice, admins);
 }
 
-const privateKey = 'a68c7b791f65cc61ee8367ba017191356c112d224ab0650b7d8e0a509d524a78'; //0x697d86aB29ffB5831D54C30C35c9240F8E4936b4
-migrate(privateKey, process.env.ZIL_NETWORK || 'testnet')
+migrate(process.env.ZIL_NETWORK || 'testnet')
   .then(console.log)
   .catch(console.error);
