@@ -1,27 +1,33 @@
-import * as _ from 'lodash';
+import * as _ from 'lodash'
 
 function normalizeValue(value) {
-  switch(typeof(value)) {
-    case "number": return value.toString()
-    case "boolean":
-      return {constructor: value ? "True" : "False", argtypes: [], arguments: []}
-    case "object":
+  switch (typeof value) {
+    case 'number':
+      return value.toString()
+    case 'boolean':
+      return {
+        constructor: value ? 'True' : 'False',
+        argtypes: [],
+        arguments: [],
+      }
+    case 'object':
       if (value instanceof Array) {
-        return value;
+        return value
       }
       if (_.isObject(value)) {
         return _.map(value, (val, key) => ({key, val}))
       }
       return value
-    case "string":
-      return value.match(/0x[0-9a-f]+/i) ? value.toLowerCase() : value;
-    default:       return value.toString()
+    case 'string':
+      return value.match(/0x[0-9a-f]+/i) ? value.toLowerCase() : value
+    default:
+      return value.toString()
   }
 }
 function generateMapperForParams(params) {
   return (values) => {
     return params.map((v, i) => {
-      return ({...v, value: normalizeValue(values[v.vname])})
+      return {...v, value: normalizeValue(values[v.vname])}
     })
   }
 }
@@ -49,4 +55,3 @@ export function generateMapperFromContractInfo(info) {
     ),
   }
 }
-

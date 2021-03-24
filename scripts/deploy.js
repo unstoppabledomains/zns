@@ -13,7 +13,7 @@ const {
   contract_info: auctionRegistrarInfo,
 } = require('../contract_info/auction_registrar.json')
 
-const {generateMapperFromContractInfo} = require('../lib/params')
+const {generateMapperFromContractInfo} = require('../build/lib/params')
 
 const resolverData = generateMapperFromContractInfo(resolverInfo)
 const registryData = generateMapperFromContractInfo(registryInfo)

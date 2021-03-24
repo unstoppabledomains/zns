@@ -22,12 +22,14 @@
   "scripts": {
     "zilliqa:start": "docker run -d -p 5555:5555 derain/zilliqa-dev-node:0.0.1",
     "zilliqa:stop": "docker kill `docker ps --filter 'ancestor=derain/zilliqa-dev-node' -q`",
-    "build": "tsc -p .",
+    "build": "tsc -p . && cp -R scilla build",
     "contracts": "docker run --entrypoint /bin/sh -v \"$(pwd)\":/zns-contracts derain/zilliqa-dev-node -c /zns-contracts/docker/scripts/generate-contract-info.sh",
     "test": "yarn contracts && yarn test:standalone-node",
     "test:standalone-node": "ZIL_NODE_TYPE=standalone-node jest smart-contract.test.ts",
     "test:testnet": "ZIL_NODE_TYPE=testnet jest smart-contract.test.ts",
     "update-snapshot": "jest -u -t",
-    "firebase-auth": "firebase login"
+    "firebase-auth": "firebase login",
+    "migrate": "yarn build && ZIL_NETWORK=mainnet yarn node ./scripts/migrate.js",
+    "migrate:testnet": "yarn build && ZIL_NETWORK=testnet yarn node ./scripts/migrate.js"
   }
 }
