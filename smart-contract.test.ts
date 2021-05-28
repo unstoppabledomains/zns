@@ -168,9 +168,9 @@ function deployAuctionRegistrar(
 const address = '0xd90f2e538ce0df89c8273cad3b63ec44a3c4ed82'
 const privateKey =
   'e53d1c3edaffc7a7bab5418eb836cf75819a82872b4a1a0f1c7fcf5c3e020b89'
-const address2 = '0x2f4f79ef6abfc0368f5a7e2c2df82e1afdfe7204'
+const address2 = '0x7bb3b0e8a59f3f61d9bff038f4aeb42cae2ecce8'
 const privateKey2 =
-  '1234567890123456789012345678901234567890123456789012345678901234'
+  'db11cfa086b92497c8ed5a4cc6edb3a5bfe3a640c43ffb9fc6aa0873c56f2ee3'
 
 const defaultRootDomain = 'zil'
 
@@ -539,7 +539,7 @@ describe('smart contracts', () => {
       )
 
       expect(await contractMapValue(registry, 'operators', address)).toEqual([
-        '0x2f4f79ef6abfc0368f5a7e2c2df82e1afdfe7204',
+        '0x7bb3b0e8a59f3f61d9bff038f4aeb42cae2ecce8',
       ])
 
       //////////////////////////////////////////////////////////////////////////
