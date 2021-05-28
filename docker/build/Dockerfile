@@ -1,3 +1,5 @@
+# Reference: https://github.com/Zilliqa/Zilliqa/blob/release-8.0/docker/Dockerfile
+
 FROM zilliqa/zilliqa:v8.0.3
 
 ARG SOURCE_DIR=/zilliqa
