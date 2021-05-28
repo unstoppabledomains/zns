@@ -11,17 +11,24 @@
       {
         "vname": "sendFunds",
         "params": [
-          { "vname": "accountValues", "type": "List (AccountValue)" }
+          {
+            "vname": "accountValues",
+            "type": "List (account_funder.AccountValue)"
+          }
         ]
       }
     ],
+    "procedures": [],
     "events": [],
     "ADTs": [
       {
-        "tname": "AccountValue",
+        "tname": "account_funder.Result",
         "tparams": [],
         "tmap": [
-          { "cname": "AccountValue", "argtypes": [ "ByStr20", "Uint128" ] }
+          {
+            "cname": "account_funder.Result",
+            "argtypes": [ "List (Message)", "Uint128" ]
+          }
         ]
       },
       {
@@ -62,12 +69,18 @@
         "tmap": [ { "cname": "Pair", "argtypes": [ "'A", "'B" ] } ]
       },
       {
-        "tname": "Result",
+        "tname": "account_funder.AccountValue",
         "tparams": [],
         "tmap": [
-          { "cname": "Result", "argtypes": [ "List (Message)", "Uint128" ] }
+          {
+            "cname": "account_funder.AccountValue",
+            "argtypes": [ "ByStr20", "Uint128" ]
+          }
         ]
       }
     ]
-  }
+  },
+  "warnings": [],
+  "gas_remaining": "9996"
 }
+
