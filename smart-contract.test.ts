@@ -79,7 +79,7 @@ const defaultParams: TxParams = {
   version,
   toAddr: '0x' + '0'.repeat(40),
   amount: new BN(0),
-  gasPrice: new BN(1000000000),
+  gasPrice: new BN(2000000000),
   gasLimit: Long.fromNumber(25000),
 }
 
@@ -336,15 +336,20 @@ describe('smart contracts', () => {
       const pair1 = ['crypto.ADA.address', '0x1111']
       const pair2 = ['crypto.BTC.address', '0x2222']
       const pair3 = ['crypto.ETH.address', '']
+
+      const resolverAddress = resolver.contract.address.toLowerCase();
+      const values = resolverData.f.setMulti({
+        newRecords: [
+          {constructor: `${resolverAddress}.RecordKeyValue`, argtypes: [], arguments: pair1},
+          {constructor: `${resolverAddress}.RecordKeyValue`, argtypes: [], arguments: pair2},
+          {constructor: `${resolverAddress}.RecordKeyValue`, argtypes: [], arguments: pair3},
+        ],
+      });
+      values[0].type = `List (${resolverAddress}.RecordKeyValue)`;
+     
       const setMultiTx = await resolver.contract.call(
         'setMulti',
-        resolverData.f.setMulti({
-          newRecords: [
-            {constructor: 'RecordKeyValue', argtypes: [], arguments: pair1},
-            {constructor: 'RecordKeyValue', argtypes: [], arguments: pair2},
-            {constructor: 'RecordKeyValue', argtypes: [], arguments: pair3},
-          ],
-        }),
+        values,
         defaultParams,
       )
 
@@ -416,18 +421,22 @@ describe('smart contracts', () => {
 
       zilliqa.wallet.setDefault(toChecksumAddress(address2))
 
+      const resolverAddress = resolver.contract.address.toLowerCase();
+      const values = resolverData.f.setMulti({
+        newRecords: [
+          {
+            constructor: `${resolverAddress}.RecordKeyValue`,
+            argtypes: [],
+            arguments: ['test', '0x7357'],
+          },
+        ],
+      });
+      values[0].type = `List (${resolverAddress}.RecordKeyValue)`;
+
       await expectUnchangedState(resolver.contract, async () => {
         await resolver.contract.call(
           'setMulti',
-          resolverData.f.setMulti({
-            newRecords: [
-              {
-                constructor: 'RecordKeyValue',
-                argtypes: [],
-                arguments: ['test', '0x7357'],
-              },
-            ],
-          }),
+          values,
           defaultParams,
         )
       })
@@ -1459,15 +1468,20 @@ describe('smart contracts', () => {
         return accounts
       }, {})
 
+
+     const accountFunderAddress = accountFunder.address.toLowerCase();
+     const values = accountFunderData.f.sendFunds({
+        accountValues: args.map((arg) => ({
+          constructor: `${accountFunderAddress}.AccountValue`,
+          argtypes: [],
+          arguments: [arg.account, arg.value],
+        })),
+      })
+      values[0].type = `List (${accountFunderAddress}.AccountValue)`;
+
       const sendFundsTx = await accountFunder.call(
         'sendFunds',
-        accountFunderData.f.sendFunds({
-          accountValues: args.map((arg) => ({
-            constructor: 'AccountValue',
-            argtypes: [],
-            arguments: [arg.account, arg.value],
-          })),
-        }),
+        values,
         {
           ...defaultParams,
           amount: new BN(1000),
@@ -1504,15 +1518,19 @@ describe('smart contracts', () => {
         return accounts
       }, {})
 
+      const accountFunderAddress = accountFunder.address.toLowerCase();
+      const values = accountFunderData.f.sendFunds({
+        accountValues: args.map((arg) => ({
+          constructor: `${accountFunderAddress}.AccountValue`,
+          argtypes: [],
+          arguments: [arg.account, arg.value],
+        })),
+      });
+      values[0].type = `List (${accountFunderAddress}.AccountValue)`;
+
       const sendFundsTx = await accountFunder.call(
         'sendFunds',
-        accountFunderData.f.sendFunds({
-          accountValues: args.map((arg) => ({
-            constructor: 'AccountValue',
-            argtypes: [],
-            arguments: [arg.account, arg.value],
-          })),
-        }),
+        values,
         {
           ...defaultParams,
           amount: new BN(1100),
