@@ -7,7 +7,11 @@
       { "vname": "rootNode", "type": "ByStr32" }
     ],
     "fields": [
-      { "vname": "records", "type": "Map (ByStr32) (Record)", "depth": 1 },
+      {
+        "vname": "records",
+        "type": "Map (ByStr32) (registry.Record)",
+        "depth": 1
+      },
       { "vname": "registrar", "type": "ByStr20", "depth": 0 },
       { "vname": "approvals", "type": "Map (ByStr32) (ByStr20)", "depth": 1 },
       {
@@ -93,6 +97,7 @@
         "params": [ { "vname": "node", "type": "ByStr32" } ]
       }
     ],
+    "procedures": [],
     "events": [
       {
         "vname": "Error",
@@ -139,18 +144,21 @@
     ],
     "ADTs": [
       {
-        "tname": "Record",
-        "tparams": [],
-        "tmap": [
-          { "cname": "Record", "argtypes": [ "ByStr20", "ByStr20" ] }
-        ]
-      },
-      {
         "tname": "Option",
         "tparams": [ "'A" ],
         "tmap": [
           { "cname": "Some", "argtypes": [ "'A" ] },
           { "cname": "None", "argtypes": [] }
+        ]
+      },
+      {
+        "tname": "registry.Record",
+        "tparams": [],
+        "tmap": [
+          {
+            "cname": "registry.Record",
+            "argtypes": [ "ByStr20", "ByStr20" ]
+          }
         ]
       },
       {
@@ -183,5 +191,8 @@
         "tmap": [ { "cname": "Pair", "argtypes": [ "'A", "'B" ] } ]
       }
     ]
-  }
+  },
+  "warnings": [],
+  "gas_remaining": "9916"
 }
+

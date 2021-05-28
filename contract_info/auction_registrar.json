@@ -16,7 +16,11 @@
     ],
     "fields": [
       { "vname": "running", "type": "Bool", "depth": 0 },
-      { "vname": "auctions", "type": "Map (ByStr32) (Auction)", "depth": 1 },
+      {
+        "vname": "auctions",
+        "type": "Map (ByStr32) (auction_registrar.Auction)",
+        "depth": 1
+      },
       { "vname": "qaPerUSD", "type": "Uint128", "depth": 0 },
       { "vname": "defaultPriceUSD", "type": "Uint128", "depth": 0 },
       {
@@ -101,6 +105,7 @@
         ]
       }
     ],
+    "procedures": [],
     "events": [
       {
         "vname": "Error",
@@ -165,11 +170,11 @@
     ],
     "ADTs": [
       {
-        "tname": "Auction",
+        "tname": "auction_registrar.Auction",
         "tparams": [],
         "tmap": [
           {
-            "cname": "Auction",
+            "cname": "auction_registrar.Auction",
             "argtypes": [ "ByStr20", "Uint128", "BNum", "String" ]
           }
         ]
@@ -212,5 +217,29 @@
         "tmap": [ { "cname": "Pair", "argtypes": [ "'A", "'B" ] } ]
       }
     ]
-  }
+  },
+  "warnings": [
+    {
+      "warning_message": "Name owner shadows a contract parameter.",
+      "start_location": {
+        "file": "/zns-contracts/scilla/auction_registrar.scilla",
+        "line": 470,
+        "column": 45
+      },
+      "end_location": { "file": "", "line": 0, "column": 0 },
+      "warning_id": 2
+    },
+    {
+      "warning_message": "Name owner shadows a contract parameter.",
+      "start_location": {
+        "file": "/zns-contracts/scilla/auction_registrar.scilla",
+        "line": 469,
+        "column": 45
+      },
+      "end_location": { "file": "", "line": 0, "column": 0 },
+      "warning_id": 2
+    }
+  ],
+  "gas_remaining": "9855"
 }
+

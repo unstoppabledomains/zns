@@ -33,10 +33,11 @@
       {
         "vname": "setMulti",
         "params": [
-          { "vname": "newRecords", "type": "List (RecordKeyValue)" }
+          { "vname": "newRecords", "type": "List (resolver.RecordKeyValue)" }
         ]
       }
     ],
+    "procedures": [],
     "events": [
       {
         "vname": "Error",
@@ -56,10 +57,13 @@
     ],
     "ADTs": [
       {
-        "tname": "RecordKeyValue",
+        "tname": "resolver.RecordKeyValue",
         "tparams": [],
         "tmap": [
-          { "cname": "RecordKeyValue", "argtypes": [ "String", "String" ] }
+          {
+            "cname": "resolver.RecordKeyValue",
+            "argtypes": [ "String", "String" ]
+          }
         ]
       },
       {
@@ -100,5 +104,19 @@
         "tmap": [ { "cname": "Pair", "argtypes": [ "'A", "'B" ] } ]
       }
     ]
-  }
+  },
+  "warnings": [
+    {
+      "warning_message": "Consider using in-place Map access",
+      "start_location": {
+        "file": "/zns-contracts/scilla/resolver.scilla",
+        "line": 151,
+        "column": 19
+      },
+      "end_location": { "file": "", "line": 0, "column": 0 },
+      "warning_id": 1
+    }
+  ],
+  "gas_remaining": "9995"
 }
+

@@ -63,6 +63,7 @@
         ]
       }
     ],
+    "procedures": [],
     "events": [
       {
         "vname": "Error",
@@ -138,5 +139,8 @@
         "tmap": [ { "cname": "Pair", "argtypes": [ "'A", "'B" ] } ]
       }
     ]
-  }
+  },
+  "warnings": [],
+  "gas_remaining": "9855"
 }
+
