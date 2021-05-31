@@ -78,6 +78,10 @@ And run your brand new docker image:
 docker run -p 5555:5555 zilliqa-dev-node
 ```
 
+## Push new zilliqa-dev-node image
+
+To build & push a new version of node image use `Build & Push Zilliqa Dev Node` GitHub Action.
+
 For an introduction to Zilliqa and Scilla and some of the design considerations
 look at the [Zilliqa Reference](./ZILLIQA.md).
 
