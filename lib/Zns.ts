@@ -385,7 +385,7 @@ export default class Zns {
       registryData.init({initialOwner: owner, rootNode: root}),
     )
     let fullTxParams = {...Zns.DefaultTxParams, ...txParams} as TxParams
-    let [registryTx, registry] = await contract.deploy(fullTxParams) // registryTx.txParams.receipt - for debug
+    let [registryTx, registry] = await contract.deploy(fullTxParams) // registryTx.txParams.receipt - for debug: https://github.com/Zilliqa/Zilliqa/blob/master/src/libData/AccountData/TransactionReceipt.h
     ensureTxConfirmed(registryTx, 'Failed to deploy the registry')
     return new Zns(zilliqa, registry, _.pick(txParams, ...Zns.ReusableTxParams))
   }
