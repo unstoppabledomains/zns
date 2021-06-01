@@ -22,8 +22,8 @@ jobs:
         with:
           push: false
           tags: unstoppabledomains/zilliqa-dev-node:v0.0.1
-          file: docker/build/Dockerfile
-          context: .
+          # file: ${{ github.workspace }}/docker/build/Dockerfile
+          context: ./docker/build
       -
         name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
