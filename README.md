@@ -24,6 +24,8 @@ Tests run against standalone zilliqa development node. You will need to install 
 
 #### Run zilliqa development node.
 
+> Note: don't forget to perform `docker login` to be able to pull `unstoppabledomains/zilliqa-dev-node` image
+
 ```shell script
 yarn zilliqa:start
 ```
