@@ -1,0 +1,50 @@
+name: Build & Test
+
+on:
+  pull_request:
+
+env:
+  NODE_VERSION: 12
+
+jobs:
+
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    services:
+      zilliqa:
+        image: unstoppabledomains/zilliqa-dev-node:latest
+        ports:
+          - 5555:5555
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Get yarn cache path
+        id: yarn-cache
+        run: echo "::set-output name=dir::$(yarn cache dir)"
+
+      - name: Add yarn cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ${{ steps.yarn-cache.outputs.dir }}
+            node_modules
+          key:
+            ${{ runner.os }}-${{ env.NODE_VERSION }}-yarn-dev-${{ hashFiles('yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ env.NODE_VERSION }}-yarn-dev-${{ hashFiles('yarn.lock') }}
+            ${{ runner.os }}-${{ env.NODE_VERSION }}-yarn-dev-
+
+      - name: Install dependencies
+        run: yarn install --freeze-dependencies
+
+      - name: Build
+        run: yarn build
+
+      - name: Test
+        run: yarn test
