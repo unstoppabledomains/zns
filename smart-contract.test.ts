@@ -79,7 +79,7 @@ const defaultParams: TxParams = {
   version,
   toAddr: '0x' + '0'.repeat(40),
   amount: new BN(0),
-  gasPrice: new BN(1000000000),
+  gasPrice: new BN(2000000000),
   gasLimit: Long.fromNumber(25000),
 }
 
@@ -168,9 +168,9 @@ function deployAuctionRegistrar(
 const address = '0xd90f2e538ce0df89c8273cad3b63ec44a3c4ed82'
 const privateKey =
   'e53d1c3edaffc7a7bab5418eb836cf75819a82872b4a1a0f1c7fcf5c3e020b89'
-const address2 = '0x2f4f79ef6abfc0368f5a7e2c2df82e1afdfe7204'
+const address2 = '0x7bb3b0e8a59f3f61d9bff038f4aeb42cae2ecce8'
 const privateKey2 =
-  '1234567890123456789012345678901234567890123456789012345678901234'
+  'db11cfa086b92497c8ed5a4cc6edb3a5bfe3a640c43ffb9fc6aa0873c56f2ee3'
 
 const defaultRootDomain = 'zil'
 
@@ -336,15 +336,20 @@ describe('smart contracts', () => {
       const pair1 = ['crypto.ADA.address', '0x1111']
       const pair2 = ['crypto.BTC.address', '0x2222']
       const pair3 = ['crypto.ETH.address', '']
+
+      const resolverAddress = resolver.contract.address.toLowerCase();
+      const values = resolverData.f.setMulti({
+        newRecords: [
+          {constructor: `${resolverAddress}.RecordKeyValue`, argtypes: [], arguments: pair1},
+          {constructor: `${resolverAddress}.RecordKeyValue`, argtypes: [], arguments: pair2},
+          {constructor: `${resolverAddress}.RecordKeyValue`, argtypes: [], arguments: pair3},
+        ],
+      });
+      values[0].type = `List (${resolverAddress}.RecordKeyValue)`;
+     
       const setMultiTx = await resolver.contract.call(
         'setMulti',
-        resolverData.f.setMulti({
-          newRecords: [
-            {constructor: 'RecordKeyValue', argtypes: [], arguments: pair1},
-            {constructor: 'RecordKeyValue', argtypes: [], arguments: pair2},
-            {constructor: 'RecordKeyValue', argtypes: [], arguments: pair3},
-          ],
-        }),
+        values,
         defaultParams,
       )
 
@@ -416,18 +421,22 @@ describe('smart contracts', () => {
 
       zilliqa.wallet.setDefault(toChecksumAddress(address2))
 
+      const resolverAddress = resolver.contract.address.toLowerCase();
+      const values = resolverData.f.setMulti({
+        newRecords: [
+          {
+            constructor: `${resolverAddress}.RecordKeyValue`,
+            argtypes: [],
+            arguments: ['test', '0x7357'],
+          },
+        ],
+      });
+      values[0].type = `List (${resolverAddress}.RecordKeyValue)`;
+
       await expectUnchangedState(resolver.contract, async () => {
         await resolver.contract.call(
           'setMulti',
-          resolverData.f.setMulti({
-            newRecords: [
-              {
-                constructor: 'RecordKeyValue',
-                argtypes: [],
-                arguments: ['test', '0x7357'],
-              },
-            ],
-          }),
+          values,
           defaultParams,
         )
       })
@@ -539,7 +548,7 @@ describe('smart contracts', () => {
       )
 
       expect(await contractMapValue(registry, 'operators', address)).toEqual([
-        '0x2f4f79ef6abfc0368f5a7e2c2df82e1afdfe7204',
+        '0x7bb3b0e8a59f3f61d9bff038f4aeb42cae2ecce8',
       ])
 
       //////////////////////////////////////////////////////////////////////////
@@ -1459,15 +1468,20 @@ describe('smart contracts', () => {
         return accounts
       }, {})
 
+
+     const accountFunderAddress = accountFunder.address.toLowerCase();
+     const values = accountFunderData.f.sendFunds({
+        accountValues: args.map((arg) => ({
+          constructor: `${accountFunderAddress}.AccountValue`,
+          argtypes: [],
+          arguments: [arg.account, arg.value],
+        })),
+      })
+      values[0].type = `List (${accountFunderAddress}.AccountValue)`;
+
       const sendFundsTx = await accountFunder.call(
         'sendFunds',
-        accountFunderData.f.sendFunds({
-          accountValues: args.map((arg) => ({
-            constructor: 'AccountValue',
-            argtypes: [],
-            arguments: [arg.account, arg.value],
-          })),
-        }),
+        values,
         {
           ...defaultParams,
           amount: new BN(1000),
@@ -1504,15 +1518,19 @@ describe('smart contracts', () => {
         return accounts
       }, {})
 
+      const accountFunderAddress = accountFunder.address.toLowerCase();
+      const values = accountFunderData.f.sendFunds({
+        accountValues: args.map((arg) => ({
+          constructor: `${accountFunderAddress}.AccountValue`,
+          argtypes: [],
+          arguments: [arg.account, arg.value],
+        })),
+      });
+      values[0].type = `List (${accountFunderAddress}.AccountValue)`;
+
       const sendFundsTx = await accountFunder.call(
         'sendFunds',
-        accountFunderData.f.sendFunds({
-          accountValues: args.map((arg) => ({
-            constructor: 'AccountValue',
-            argtypes: [],
-            arguments: [arg.account, arg.value],
-          })),
-        }),
+        values,
         {
           ...defaultParams,
           amount: new BN(1100),

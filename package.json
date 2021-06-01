@@ -9,7 +9,7 @@
     "typescript": "^3.8.3"
   },
   "dependencies": {
-    "@zilliqa-js/zilliqa": ">=0.11.0",
+    "@zilliqa-js/zilliqa": "^2.2.1",
     "hash.js": "^1.1.7",
     "lodash": "^4.17.15",
     "tslib": "^1.9.3"
@@ -20,10 +20,10 @@
     "testEnvironment": "node"
   },
   "scripts": {
-    "zilliqa:start": "docker run -d -p 5555:5555 derain/zilliqa-dev-node:0.0.1",
-    "zilliqa:stop": "docker kill `docker ps --filter 'ancestor=derain/zilliqa-dev-node' -q`",
+    "zilliqa:start": "docker run -d -p 5555:5555 unstoppabledomains/zilliqa-dev-node:v0.0.1",
+    "zilliqa:stop": "docker kill `docker ps --filter 'ancestor=unstoppabledomains/zilliqa-dev-node:v0.0.1' -q`",
     "build": "tsc -p . && cp -R scilla build",
-    "contracts": "docker run --entrypoint /bin/sh -v \"$(pwd)\":/zns-contracts derain/zilliqa-dev-node -c /zns-contracts/docker/scripts/generate-contract-info.sh",
+    "contracts": "docker run --entrypoint /bin/sh -v \"$(pwd)\":/zns-contracts unstoppabledomains/zilliqa-dev-node:v0.0.1 -c /zns-contracts/docker/scripts/generate-contract-info.sh",
     "test": "yarn contracts && yarn test:standalone-node",
     "test:standalone-node": "ZIL_NODE_TYPE=standalone-node jest smart-contract.test.ts",
     "test:testnet": "ZIL_NODE_TYPE=testnet jest smart-contract.test.ts",

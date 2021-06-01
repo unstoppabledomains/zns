@@ -43,6 +43,7 @@
         ]
       }
     ],
+    "procedures": [],
     "events": [
       {
         "vname": "Sold",
@@ -103,5 +104,8 @@
         "tmap": [ { "cname": "Pair", "argtypes": [ "'A", "'B" ] } ]
       }
     ]
-  }
+  },
+  "warnings": [],
+  "gas_remaining": "9855"
 }
+
