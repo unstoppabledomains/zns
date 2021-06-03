@@ -117,7 +117,6 @@ let ensureTxConfirmed = (tx: Transaction, message?: string): Transaction => {
   }
   let errorEvent = transactionEvent(tx, 'Error')
   if (errorEvent) {
-    console.log('EVENT', errorEvent)
     throw new ZnsTxError(message || 'Transaction threw an Error event', tx)
   }
   return tx
