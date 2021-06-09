@@ -16,7 +16,7 @@ jobs:
 
     services:
       zilliqa:
-        image: unstoppabledomains/zilliqa-dev-node:v0.0.1
+        image: unstoppabledomains/zilliqa-dev-node:v0.0.2
         ports:
           - 5555:5555
 
