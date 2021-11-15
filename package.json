@@ -9,7 +9,7 @@
     "typescript": "^3.8.3"
   },
   "dependencies": {
-    "@zilliqa-js/zilliqa": "^3.0.0",
+    "@zilliqa-js/zilliqa": "^3.3.3",
     "hash.js": "^1.1.7",
     "lodash": "^4.17.15",
     "tslib": "^1.9.3"
