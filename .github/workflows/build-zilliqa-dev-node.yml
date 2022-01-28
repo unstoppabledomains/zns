@@ -50,11 +50,3 @@ jobs:
 
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
-
-      - name: Create GitHub Release
-        uses: zendesk/action-create-release@v1
-        id: release
-        with:
-          tag_name: ${{ github.event.inputs.tag }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
