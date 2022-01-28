@@ -17,6 +17,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
+      - name: Get package version
+        id: package-version
+        uses: martinbeentjes/npm-get-version-action@master
+
       - id: auth
         name: Authenticate to GCP
         uses: google-github-actions/auth@v0
@@ -44,3 +48,11 @@ jobs:
 
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
+
+      - name: Create GitHub Release
+        uses: zendesk/action-create-release@v1
+        id: release
+        with:
+          tag_name: ${{ github.event.inputs.tag }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

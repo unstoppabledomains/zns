@@ -32,7 +32,7 @@
   "scripts": {
     "zilliqa:start": "docker run -d -p 5555:5555 us-central1-docker.pkg.dev/unstoppable-domains/zilliqa/zilliqa-dev-node:latest",
     "zilliqa:stop": "docker kill `docker ps --filter 'ancestor=us-central1-docker.pkg.dev/unstoppable-domains/zilliqa/zilliqa-dev-node:latest' -q`",
-    "build": "tsc -p . && cp -R scilla build",
+    "build": "tsc -p . && cp -R scilla build; docker build --tag us-central1-docker.pkg.dev/unstoppable-domains/zilliqa/zilliqa-dev-node:latest docker/build",
     "contracts": "docker run --entrypoint /bin/sh -v \"$(pwd)\":/zns-contracts us-central1-docker.pkg.dev/unstoppable-domains/zilliqa/zilliqa-dev-node:latest -c /zns-contracts/docker/scripts/generate-contract-info.sh",
     "test": "yarn contracts && yarn test:standalone-node",
     "test:standalone-node": "ZIL_NODE_TYPE=standalone-node jest smart-contract.test.ts",
