@@ -1,6 +1,16 @@
 {
   "name": "zns",
-  "version": "0.0.0",
+  "description": "Zilliqa Naming Service",
+  "author": {
+    "name": "Unstoppable Domains",
+    "email": "support@unstoppabledomains.com"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/unstoppabledomains/zns.git"
+  },
+  "version": "0.2.0",
   "devDependencies": {
     "@types/jest": "^24.0.23",
     "@types/lodash": "^4.14.136",
@@ -20,10 +30,10 @@
     "testEnvironment": "node"
   },
   "scripts": {
-    "zilliqa:start": "docker run -d -p 5555:5555 unstoppabledomains/zilliqa-dev-node:v0.0.2",
-    "zilliqa:stop": "docker kill `docker ps --filter 'ancestor=unstoppabledomains/zilliqa-dev-node:v0.0.2' -q`",
+    "zilliqa:start": "docker run -d -p 5555:5555 us-central1-docker.pkg.dev/unstoppable-domains/zilliqa/zilliqa-dev-node:latest",
+    "zilliqa:stop": "docker kill `docker ps --filter 'ancestor=us-central1-docker.pkg.dev/unstoppable-domains/zilliqa/zilliqa-dev-node:latest' -q`",
     "build": "tsc -p . && cp -R scilla build",
-    "contracts": "docker run --entrypoint /bin/sh -v \"$(pwd)\":/zns-contracts unstoppabledomains/zilliqa-dev-node:v0.0.2 -c /zns-contracts/docker/scripts/generate-contract-info.sh",
+    "contracts": "docker run --entrypoint /bin/sh -v \"$(pwd)\":/zns-contracts us-central1-docker.pkg.dev/unstoppable-domains/zilliqa/zilliqa-dev-node:latest -c /zns-contracts/docker/scripts/generate-contract-info.sh",
     "test": "yarn contracts && yarn test:standalone-node",
     "test:standalone-node": "ZIL_NODE_TYPE=standalone-node jest smart-contract.test.ts",
     "test:testnet": "ZIL_NODE_TYPE=testnet jest smart-contract.test.ts",

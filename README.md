@@ -20,19 +20,21 @@ yarn install
 
 ### Testing
 
-Tests run against standalone zilliqa development node. You will need to install [Docker](https://www.docker.com) before.
+Tests run against standalone zilliqa development node. You will need to install
+[Docker](https://www.docker.com) before.
 
-#### Run zilliqa development node.
+#### Run zilliqa development node
 
-> Note: don't forget to perform `docker login` to be able to pull `unstoppabledomains/zilliqa-dev-node` image
+> Note: don't forget to perform `docker login` to be able to pull
+> `unstoppabledomains/zilliqa-dev-node` image
 
 ```shell script
 yarn zilliqa:start
 ```
 
-It's requires keep port `5555` open on local machine. 
-If port already occupied - you may have `zilliqa-dev-node` already run. 
-You can check this via command below. 
+It's requires keep port `5555` open on local machine. If port already occupied -
+you may have `zilliqa-dev-node` already run. You can check this via command
+below.
 
 #### Check node status
 
@@ -40,14 +42,17 @@ You can check this via command below.
 docker ps
 ```
 
-You should see similar output if node was ran. 
-Almost each docker command requires `CONTAINER ID`. Container id generates automatically on each `docker run`:
+You should see similar output if node was ran. Almost each docker command
+requires `CONTAINER ID`. Container id generates automatically on each
+`docker run`:
+
 ```
 CONTAINER ID        IMAGE                     COMMAND                  CREATED             STATUS              PORTS                    NAMES
-3ab2b677fd8f        unstoppabledomains/zilliqa-dev-node   "/usr/local/bin/isol…"   11 minutes ago      Up 11 minutes       0.0.0.0:5555->5555/tcp   mystifying_wright
+3ab2b677fd8f        us-central1-docker.pkg... "/usr/local/bin/isol…"   11 minutes ago      Up 11 minutes       0.0.0.0:5555->5555/tcp   mystifying_wright
 ```
 
 #### Run test suite
+
 ```
 yarn test
 ```
@@ -58,31 +63,37 @@ yarn test
 yarn zilliqa:stop
 ```
 
-
 #### Get logs from zilliqa development node
+
 ```shell script
 docker logs <CONTAINER ID>
 ```
 
 #### Run node in foreground to get real-time logs on screen
+
 ```shell script
-docker run -p 5555:5555 unstoppabledomains/zilliqa-dev-node
+docker run -p 5555:5555 us-central1-docker.pkg.dev/unstoppable-domains/zilliqa/zilliqa-dev-node
 ```
 
 ## Build zilliqa-dev-node
+
 You may need to rebuild docker image for `zilliqa development node`.
+
 ```shell script
 cd docker/build
 docker build . -t zilliqa-dev-node
 ```
+
 And run your brand new docker image:
+
 ```shell script
 docker run -p 5555:5555 zilliqa-dev-node
 ```
 
 ## Push new zilliqa-dev-node image
 
-To build & push a new version of node image use `Build & Push Zilliqa Dev Node` GitHub Action.
+To build & push a new version of node image use `Build & Push Zilliqa Dev Node`
+GitHub Action.
 
 For an introduction to Zilliqa and Scilla and some of the design considerations
 look at the [Zilliqa Reference](./ZILLIQA.md).
@@ -92,17 +103,16 @@ There are 3 ZNS contract variants.
 - Registry – This contract where the ZNS names are stored. Registry mechanics
   are explained in detail in the [Registry Reference](./REGISTRY.md).
 
-- Resolvers – In order to keep the size of the main ZNS contract low, the ZNS resolution is stored in separate contracts called
-  Resolvers. Resolvers mechanics are explained in detail in the
+- Resolvers – In order to keep the size of the main ZNS contract low, the ZNS
+  resolution is stored in separate contracts called Resolvers. Resolvers
+  mechanics are explained in detail in the
   [Resolvers Reference](./RESOLVERS.md).
 
-- Registrars – These contracts manage the registration of new ZNS names. ZNS has 2
-  of them. An auction registrar, which implements open, ascending price,
+- Registrars – These contracts manage the registration of new ZNS names. ZNS has
+  2 of them. An auction registrar, which implements open, ascending price,
   variable length auction. And a simple registrar listing all names for a fixed
   price designed to be put in place after the initial auction period. Registrar
   mechanics are explained in detail in the
   [Registrar Reference](./REGISTRAR.md).
 
 ## License
-
-
