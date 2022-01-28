@@ -23,10 +23,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Get package version
-        id: package-version
-        uses: martinbeentjes/npm-get-version-action@master
-
       - id: auth
         name: Authenticate to GCP
         uses: google-github-actions/auth@v0
