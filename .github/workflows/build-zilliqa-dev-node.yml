@@ -28,25 +28,19 @@ jobs:
       - name: Set up Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v0
 
+      - name: Configure Docker with Google Artifact Registry
+        id: push_to_registry
+        run: gcloud auth configure-docker us-central1-docker.pkg.dev
+
       - name: Build container image
         id: docker_build
         uses: docker/build-push-action@v2
         with:
-          push: false
-          tags:
-            - us-central1-docker.pkg.dev/unstoppable-domains/zilliqa/zilliqa-dev-node:${{
-              github.event.inputs.tag }}
-            - us-central1-docker.pkg.dev/unstoppable-domains/zilliqa/zilliqa-dev-node:latest
+          push: true
+          tags: |
+            us-central1-docker.pkg.dev/unstoppable-domains/zilliqa/zilliqa-dev-node:${{ github.event.inputs.tag }}
+            us-central1-docker.pkg.dev/unstoppable-domains/zilliqa/zilliqa-dev-node:latest
           context: ./docker/build
 
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
-
-      - name: Push to Google Artifact Registry
-        id: push_to_registry
-        run: |
-          gcloud auth configure-docker us-central1-docker.pkg.dev
-          docker push us-central1-docker.pkg.dev/unstoppable-domains/zilliqa/zilliqa-dev-node:${{
-              github.event.inputs.tag }}
-          docker push
-          us-central1-docker.pkg.dev/unstoppable-domains/zilliqa/zilliqa-dev-node:latest
