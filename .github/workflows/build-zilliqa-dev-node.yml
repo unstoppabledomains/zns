@@ -6,29 +6,46 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "New tag"
-        default: "v0.0.0"
+        description: 'New tag'
+        default: 'v0.0.0'
         required: true
 
 jobs:
-  docker-build:
+  build:
+    name: Build and push container image
     runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
     steps:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Login to DockerHub
-        uses: docker/login-action@v1 
+      - id: auth
+        name: Authenticate to GCP
+        uses: google-github-actions/auth@v0
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          workload_identity_provider:
+            ${{ secrets.WORKLOAD_ID_PROVIDER_PRODUCTION }}
+          service_account: ${{ secrets.SERVICE_ACCOUNT_PRODUCTION }}
 
-      - name: Build and push to DockerHub
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v0
+
+      - name: Configure Docker with Google Artifact Registry
+        id: push_to_registry
+        run: gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
+
+      - name: Build container image
         id: docker_build
         uses: docker/build-push-action@v2
         with:
           push: true
-          tags: unstoppabledomains/zilliqa-dev-node:${{ github.event.inputs.tag }}
+          tags: |
+            us-central1-docker.pkg.dev/unstoppable-domains/zilliqa/zilliqa-dev-node:${{ github.event.inputs.tag }}
+            us-central1-docker.pkg.dev/unstoppable-domains/zilliqa/zilliqa-dev-node:latest
           context: ./docker/build
 
       - name: Image digest
